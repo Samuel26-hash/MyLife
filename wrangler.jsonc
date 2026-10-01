@@ -1,0 +1,24 @@
+{
+  // Ein einziger Cloudflare Worker liefert die React-App (statische Dateien aus /dist)
+  // und die API unter /api/* aus.
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "mylife",
+  "main": "worker/index.ts",
+  "compatibility_date": "2025-09-01",
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/api/*"]
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "mylife-db",
+      // Nach "npx wrangler d1 create mylife-db" hier die ID einsetzen:
+      "database_id": "HIER-DEINE-DATABASE-ID-EINSETZEN",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "observability": { "enabled": true }
+}
