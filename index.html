@@ -1,17 +1,595 @@
-<!doctype html>
+
+<!DOCTYPE html>
 <html lang="de">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <meta name="theme-color" content="#FFC62E" />
-    <title>MyLife – Dein Leben. Deine Ziele. Deine Entwicklung.</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='46' fill='%23FFC62E'/><circle cx='50' cy='50' r='20' fill='%232A2C30'/></svg>" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Onest:wght@400;500;600&display=swap" rel="stylesheet" />
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MYLife – Dein persönliches Lebens-Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .active-tab { background-color: #3b82f6; color: white; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800 font-sans min-h-screen pb-12">
+
+    <!-- Header Navigation -->
+    <header class="bg-slate-900 text-white sticky top-0 z-50 shadow-md">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap justify-between items-center gap-4">
+            <div class="flex items-center space-x-2">
+                <i class="fa-solid fa-chart-line text-blue-500 text-2xl"></i>
+                <span class="text-2xl font-black tracking-wider text-blue-400">MYLife</span>
+            </div>
+            
+            <nav class="flex flex-wrap gap-2 text-sm font-medium">
+                <button onclick="switchTab('tab-dashboard')" id="btn-tab-dashboard" class="tab-btn active-tab px-3 py-2 rounded-lg transition"><i class="fa-solid fa-house mr-1"></i> Dashboard</button>
+                <button onclick="switchTab('tab-noten')" id="btn-tab-noten" class="tab-btn px-3 py-2 rounded-lg hover:bg-slate-800 transition"><i class="fa-solid fa-graduation-cap mr-1"></i> Noten (CH)</button>
+                <button onclick="switchTab('tab-budget')" id="btn-tab-budget" class="tab-btn px-3 py-2 rounded-lg hover:bg-slate-800 transition"><i class="fa-solid fa-wallet mr-1"></i> Budget</button>
+                <button onclick="switchTab('tab-fitness')" id="btn-tab-fitness" class="tab-btn px-3 py-2 rounded-lg hover:bg-slate-800 transition"><i class="fa-solid fa-dumbbell mr-1"></i> Fitness & Ernährung</button>
+                <button onclick="switchTab('tab-fussball')" id="btn-tab-fussball" class="tab-btn px-3 py-2 rounded-lg hover:bg-slate-800 transition"><i class="fa-solid fa-futbol mr-1"></i> Fußball-Promotion</button>
+                <button onclick="switchTab('tab-social')" id="btn-tab-social" class="tab-btn px-3 py-2 rounded-lg hover:bg-slate-800 transition"><i class="fa-solid fa-hashtag mr-1"></i> Social Media</button>
+                <button onclick="switchTab('tab-lifestyle')" id="btn-tab-lifestyle" class="tab-btn px-3 py-2 rounded-lg hover:bg-slate-800 transition"><i class="fa-solid fa-sparkles mr-1"></i> Hygiene & Wachstum</button>
+            </nav>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 mt-6">
+
+        <!-- 1. DASHBOARD & STECKBRIEF -->
+        <section id="tab-dashboard" class="tab-content active space-y-6">
+            <!-- Steckbrief & Quick Tools Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                
+                <!-- Steckbrief Card -->
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 md:col-span-1">
+                    <h2 class="text-xl font-bold mb-4 flex items-center text-slate-900">
+                        <i class="fa-solid fa-id-card text-blue-500 mr-2"></i> Mein Steckbrief
+                    </h2>
+                    <div class="space-y-3">
+                        <div>
+                            <label class="text-xs font-semibold text-slate-500">Name</label>
+                            <input type="text" id="profile-name" value="Alex" oninput="saveProfile()" class="w-full p-2 border rounded-lg font-bold text-slate-800">
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="text-xs font-semibold text-slate-500">Alter</label>
+                                <input type="number" id="profile-age" value="18" oninput="saveProfile()" class="w-full p-2 border rounded-lg">
+                            </div>
+                            <div>
+                                <label class="text-xs font-semibold text-slate-500">Hauptziel</label>
+                                <input type="text" id="profile-goal" value="Promotion & Aufbau" oninput="saveProfile()" class="w-full p-2 border rounded-lg">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="text-xs font-semibold text-slate-500">Motto / Fokus</label>
+                            <input type="text" id="profile-motto" value="Jeden Tag 1% besser!" oninput="saveProfile()" class="w-full p-2 border rounded-lg italic">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Wetter Widget -->
+                <div class="bg-gradient-to-br from-blue-500 to-indigo-600 text-white p-6 rounded-2xl shadow-sm flex flex-col justify-between">
+                    <div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm font-medium bg-white/20 px-3 py-1 rounded-full">Schweiz Live-Wetter</span>
+                            <i class="fa-solid fa-cloud-sun text-3xl"></i>
+                        </div>
+                        <div class="mt-4">
+                            <h3 id="weather-city" class="text-2xl font-bold">Zürich</h3>
+                            <p id="weather-temp" class="text-5xl font-black mt-2">18°C</p>
+                            <p id="weather-desc" class="text-blue-100 capitalize mt-1">Leicht bewölkt</p>
+                        </div>
+                    </div>
+                    <div class="mt-4 flex gap-2">
+                        <input type="text" id="weather-input" placeholder="Stadt eingeben..." class="px-3 py-1.5 rounded-lg text-slate-800 text-sm w-full">
+                        <button onclick="getCustomWeather()" class="bg-slate-900 px-3 py-1.5 rounded-lg text-sm font-semibold hover:bg-slate-800">Suchen</button>
+                    </div>
+                </div>
+
+                <!-- Kalender & Tagesaufgabe -->
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                    <h2 class="text-xl font-bold mb-3 flex items-center text-slate-900">
+                        <i class="fa-solid fa-calendar-day text-blue-500 mr-2"></i> Kalender
+                    </h2>
+                    <p id="current-date" class="text-sm font-semibold text-blue-600 mb-4"></p>
+                    <div class="space-y-2">
+                        <label class="text-xs font-semibold text-slate-500">Heutiger Fokus / Wichtigstes Ziel:</label>
+                        <textarea id="daily-focus" oninput="localStorage.setItem('mylife_daily_focus', this.value)" class="w-full p-2 border rounded-lg text-sm h-24" placeholder="z. B. 2h Training + Notenrechner prüfen..."></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dashboard Übersicht / Module Quick-Stats -->
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                <h3 class="text-lg font-bold mb-4">Übersicht aller Analysen & Fortschritte</h3>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+                    <div class="p-4 bg-slate-50 rounded-xl">
+                        <p class="text-xs text-slate-500">Notenschnitt (CH)</p>
+                        <p id="stat-grade" class="text-2xl font-black text-blue-600">5.0</p>
+                    </div>
+                    <div class="p-4 bg-slate-50 rounded-xl">
+                        <p class="text-xs text-slate-500">Budget Bilanz</p>
+                        <p id="stat-budget" class="text-2xl font-black text-emerald-600">+0 CHF</p>
+                    </div>
+                    <div class="p-4 bg-slate-50 rounded-xl">
+                        <p class="text-xs text-slate-500">Gewicht Ziel</p>
+                        <p id="stat-weight" class="text-2xl font-black text-indigo-600">-- kg</p>
+                    </div>
+                    <div class="p-4 bg-slate-50 rounded-xl">
+                        <p class="text-xs text-slate-500">Fußball Zielzeit</p>
+                        <p id="stat-football" class="text-2xl font-black text-amber-500">365 Tage</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 2. SCHWEIZER NOTENRECHNER -->
+        <section id="tab-noten" class="tab-content space-y-6">
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                <div class="flex justify-between items-center mb-4">
+                    <div>
+                        <h2 class="text-2xl font-bold">Schweizer Notenrechner</h2>
+                        <p class="text-sm text-slate-500">Berechne deine Note basierend auf der offiziellen Formel: <span class="font-mono bg-slate-100 p-1 rounded">(Erzielte Punkte / Max. Punkte) * 5 + 1</span></p>
+                    </div>
+                    <span class="bg-blue-100 text-blue-800 text-xs font-bold px-3 py-1 rounded-full">Notenskala 1.0 - 6.0</span>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 bg-slate-50 p-4 rounded-xl mb-6">
+                    <div>
+                        <label class="text-xs font-semibold text-slate-600">Erzielte Punkte</label>
+                        <input type="number" id="grade-points" placeholder="z. B. 21" class="w-full p-2 border rounded-lg mt-1">
+                    </div>
+                    <div>
+                        <label class="text-xs font-semibold text-slate-600">Maximale Punkte</label>
+                        <input type="number" id="grade-max" placeholder="z. B. 25" class="w-full p-2 border rounded-lg mt-1">
+                    </div>
+                    <div class="flex items-end">
+                        <button onclick="calculateSwissGrade()" class="w-full bg-blue-600 text-white font-semibold py-2 rounded-lg hover:bg-blue-700 transition">Note Berechnen</button>
+                    </div>
+                </div>
+
+                <div id="grade-result-box" class="hidden p-4 rounded-xl text-center mb-6">
+                    <p class="text-sm font-medium">Berechnete Note:</p>
+                    <p id="grade-result" class="text-4xl font-black my-1">--</p>
+                    <p id="grade-feedback" class="text-xs font-semibold"></p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 3. BUDGET RECHNER -->
+        <section id="tab-budget" class="tab-content space-y-6">
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                <h2 class="text-2xl font-bold mb-2">Budget & Finanzen (CHF)</h2>
+                <p class="text-sm text-slate-500 mb-6">Erfasse deine monatlichen Einnahmen und Ausgaben für die Finanzanalyse.</p>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Einnahmen -->
+                    <div class="space-y-4">
+                        <h3 class="font-bold text-emerald-600 flex items-center"><i class="fa-solid fa-arrow-down-long mr-2"></i> Einnahmen</h3>
+                        <div class="flex gap-2">
+                            <input type="text" id="inc-name" placeholder="Grund (z. B. Lohn, Sackgeld)" class="w-2/3 p-2 border rounded-lg text-sm">
+                            <input type="number" id="inc-amount" placeholder="Betrag CHF" class="w-1/3 p-2 border rounded-lg text-sm">
+                            <button onclick="addBudgetItem('in')" class="bg-emerald-600 text-white px-3 py-2 rounded-lg">+</button>
+                        </div>
+                        <ul id="income-list" class="space-y-2 text-sm max-h-48 overflow-y-auto"></ul>
+                    </div>
+
+                    <!-- Ausgaben -->
+                    <div class="space-y-4">
+                        <h3 class="font-bold text-rose-600 flex items-center"><i class="fa-solid fa-arrow-up-long mr-2"></i> Ausgaben</h3>
+                        <div class="flex gap-2">
+                            <input type="text" id="exp-name" placeholder="Grund (z. B. Abo, Kleidung)" class="w-2/3 p-2 border rounded-lg text-sm">
+                            <input type="number" id="exp-amount" placeholder="Betrag CHF" class="w-1/3 p-2 border rounded-lg text-sm">
+                            <button onclick="addBudgetItem('out')" class="bg-rose-600 text-white px-3 py-2 rounded-lg">+</button>
+                        </div>
+                        <ul id="expense-list" class="space-y-2 text-sm max-h-48 overflow-y-auto"></ul>
+                    </div>
+                </div>
+
+                <div class="mt-6 pt-4 border-t flex justify-between items-center font-bold">
+                    <span>Monatlicher Überschuss / Bilanz:</span>
+                    <span id="budget-total" class="text-xl">0 CHF</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- 4. FITNESS & ERNÄHRUNGSANALYSE -->
+        <section id="tab-fitness" class="tab-content space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Ernährungsanalyse -->
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                    <h2 class="text-xl font-bold mb-4 flex items-center text-emerald-600">
+                        <i class="fa-solid fa-utensils mr-2"></i> Ernährungsanalyse (Gewicht)
+                    </h2>
+                    <div class="space-y-3">
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="text-xs font-semibold">Aktuelles Gewicht (kg)</label>
+                                <input type="number" id="weight-current" placeholder="z. B. 70" class="w-full p-2 border rounded-lg text-sm">
+                            </div>
+                            <div>
+                                <label class="text-xs font-semibold">Zielgewicht (kg)</label>
+                                <input type="number" id="weight-target" placeholder="z. B. 76" class="w-full p-2 border rounded-lg text-sm">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="text-xs font-semibold">Ziel-Richtung</label>
+                            <select id="weight-goal-type" class="w-full p-2 border rounded-lg text-sm">
+                                <option value="gain">Gewicht / Muskelmasse zunehmen (Kalorienüberschuss)</option>
+                                <option value="lose">Gewicht / Fett abnehmen (Kaloriendefizit)</option>
+                                <option value="maintain">Gewicht halten</option>
+                            </select>
+                        </div>
+                        <button onclick="analyzeNutrition()" class="w-full bg-emerald-600 text-white py-2 rounded-lg font-semibold hover:bg-emerald-700 transition">Ernährung Analysieren</button>
+                        
+                        <div id="nutrition-analysis" class="p-4 bg-emerald-50 rounded-xl border border-emerald-200 text-sm hidden space-y-2"></div>
+                    </div>
+                </div>
+
+                <!-- Krafttraining Analyse -->
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                    <h2 class="text-xl font-bold mb-4 flex items-center text-indigo-600">
+                        <i class="fa-solid fa-dumbbell mr-2"></i> Krafttraining & Sport
+                    </h2>
+                    <div class="space-y-3">
+                        <div>
+                            <label class="text-xs font-semibold">Trainingsfrequenz (Tage pro Woche)</label>
+                            <input type="number" id="workout-days" placeholder="z. B. 4" class="w-full p-2 border rounded-lg text-sm">
+                        </div>
+                        <div>
+                            <label class="text-xs font-semibold">Hauptfokus Übungen (z. B. Bankdrücken, Kniebeugen)</label>
+                            <input type="text" id="workout-focus" placeholder="z. B. Brust, Beine, Rücken" class="w-full p-2 border rounded-lg text-sm">
+                        </div>
+                        <button onclick="analyzeWorkout()" class="w-full bg-indigo-600 text-white py-2 rounded-lg font-semibold hover:bg-indigo-700 transition">Sport-Plan Analysieren</button>
+                        
+                        <div id="workout-analysis" class="p-4 bg-indigo-50 rounded-xl border border-indigo-200 text-sm hidden space-y-2"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 5. FUSSBALL PROMOTION ANALYSE -->
+        <section id="tab-fussball" class="tab-content space-y-6">
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-2xl font-bold flex items-center text-slate-900">
+                        <i class="fa-solid fa-trophy text-amber-500 mr-2"></i> Fußball Entwicklungs-Analyse
+                    </h2>
+                    <span class="bg-amber-100 text-amber-800 text-xs font-bold px-3 py-1 rounded-full">Ziel: Promotion / Höhere Liga</span>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="space-y-3">
+                        <div>
+                            <label class="text-xs font-semibold text-slate-600">Aktuelle Mannschaft / Liga</label>
+                            <input type="text" id="fb-current-team" placeholder="z. B. 2. Liga / Junioren A" class="w-full p-2 border rounded-lg text-sm">
+                        </div>
+                        <div>
+                            <label class="text-xs font-semibold text-slate-600">Ziel-Mannschaft (Promotion)</label>
+                            <input type="text" id="fb-target-team" placeholder="z. B. 1. Liga / Promotion League" class="w-full p-2 border rounded-lg text-sm">
+                        </div>
+                        <div>
+                            <label class="text-xs font-semibold text-slate-600">Zeitfenster für Promotion (Monate)</label>
+                            <input type="number" id="fb-timeframe" value="12" class="w-full p-2 border rounded-lg text-sm">
+                        </div>
+                    </div>
+
+                    <div class="space-y-3">
+                        <div>
+                            <label class="text-xs font-semibold text-slate-600">Größte Schwächen im Training</label>
+                            <input type="text" id="fb-weakness-train" placeholder="z. B. Ausdauer, Erstes Touch" class="w-full p-2 border rounded-lg text-sm">
+                        </div>
+                        <div>
+                            <label class="text-xs font-semibold text-slate-600">Größte Schwächen im Match</label>
+                            <input type="text" id="fb-weakness-match" placeholder="z. B. Entscheidungsschnelligkeit, Zweikampf" class="w-full p-2 border rounded-lg text-sm">
+                        </div>
+                        <button onclick="analyzeFootball()" class="w-full bg-amber-500 text-slate-900 font-bold py-2 rounded-lg hover:bg-amber-400 transition mt-2">Promotion-Analyse Erstellen</button>
+                    </div>
+                </div>
+
+                <div id="football-analysis" class="mt-6 p-4 bg-slate-50 border rounded-xl hidden space-y-3"></div>
+            </div>
+        </section>
+
+        <!-- 6. SOCIAL MEDIA CREATOR ANALYSE -->
+        <section id="tab-social" class="tab-content space-y-6">
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                <h2 class="text-2xl font-bold mb-4 flex items-center text-rose-500">
+                    <i class="fa-brands fa-tiktok mr-2"></i> Social Media Creator Analyse
+                </h2>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                    <div>
+                        <label class="text-xs font-semibold">Plattform</label>
+                        <select id="sm-platform" class="w-full p-2 border rounded-lg text-sm">
+                            <option value="TikTok">TikTok</option>
+                            <option value="Instagram">Instagram</option>
+                            <option value="YouTube Shorts">YouTube Shorts</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-xs font-semibold">Aktuelle Abos/Follower</label>
+                        <input type="number" id="sm-current" placeholder="z. B. 1200" class="w-full p-2 border rounded-lg text-sm">
+                    </div>
+                    <div>
+                        <label class="text-xs font-semibold">Ziel-Abos</label>
+                        <input type="number" id="sm-target" placeholder="z. B. 10000" class="w-full p-2 border rounded-lg text-sm">
+                    </div>
+                </div>
+
+                <button onclick="analyzeSocialMedia()" class="w-full bg-rose-500 text-white font-bold py-2 rounded-lg hover:bg-rose-600 transition">Creator-Wachstum Analysieren</button>
+
+                <div id="sm-analysis-result" class="mt-6 p-4 bg-rose-50 rounded-xl border border-rose-200 hidden space-y-3"></div>
+            </div>
+        </section>
+
+        <!-- 7. HYGIENE & WACHSTUMS ANALYSE -->
+        <section id="tab-lifestyle" class="tab-content space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Hygiene & Hautpflege -->
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                    <h2 class="text-xl font-bold mb-4 flex items-center text-teal-600">
+                        <i class="fa-solid fa-sparkles mr-2"></i> Hygiene & Hautpflege
+                    </h2>
+                    <div class="space-y-3">
+                        <div>
+                            <label class="text-xs font-semibold">Haut-Problembereich</label>
+                            <select id="skin-issue" class="w-full p-2 border rounded-lg text-sm">
+                                <option value="unclean">Unreine Haut / Pickel</option>
+                                <option value="dry">Trockene / Ungepflegte Haut</option>
+                                <option value="oily">Ölige Haut</option>
+                            </select>
+                        </div>
+                        <button onclick="analyzeHygiene()" class="w-full bg-teal-600 text-white py-2 rounded-lg font-semibold hover:bg-teal-700 transition">Routine Generieren</button>
+                        <div id="hygiene-result" class="p-4 bg-teal-50 border border-teal-200 rounded-xl hidden text-sm space-y-2"></div>
+                    </div>
+                </div>
+
+                <!-- Körperschaft / Wachstum -->
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                    <h2 class="text-xl font-bold mb-4 flex items-center text-purple-600">
+                        <i class="fa-solid fa-ruler-vertical mr-2"></i> Wachstum & Körperhaltung
+                    </h2>
+                    <div class="space-y-3">
+                        <div>
+                            <label class="text-xs font-semibold">Aktuelle Körpergröße (cm)</label>
+                            <input type="number" id="height-current" placeholder="z. B. 175" class="w-full p-2 border rounded-lg text-sm">
+                        </div>
+                        <button onclick="analyzeGrowth()" class="w-full bg-purple-600 text-white py-2 rounded-lg font-semibold hover:bg-purple-700 transition">Tipps & Analyse anzeigen</button>
+                        <div id="growth-result" class="p-4 bg-purple-50 border border-purple-200 rounded-xl hidden text-sm space-y-2"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        // Tab Switching
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active-tab'));
+            
+            document.getElementById(tabId).classList.add('active');
+            document.getElementById('btn-' + tabId).classList.add('active-tab');
+        }
+
+        // Datum setzen
+        document.getElementById('current-date').innerText = new Date().toLocaleDateString('de-CH', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
+        // LocalStorage für Steckbrief
+        function saveProfile() {
+            const profile = {
+                name: document.getElementById('profile-name').value,
+                age: document.getElementById('profile-age').value,
+                goal: document.getElementById('profile-goal').value,
+                motto: document.getElementById('profile-motto').value
+            };
+            localStorage.setItem('mylife_profile', JSON.stringify(profile));
+        }
+
+        function loadProfile() {
+            const saved = localStorage.getItem('mylife_profile');
+            if(saved) {
+                const profile = JSON.parse(saved);
+                document.getElementById('profile-name').value = profile.name || '';
+                document.getElementById('profile-age').value = profile.age || '';
+                document.getElementById('profile-goal').value = profile.goal || '';
+                document.getElementById('profile-motto').value = profile.motto || '';
+            }
+            const focus = localStorage.getItem('mylife_daily_focus');
+            if(focus) document.getElementById('daily-focus').value = focus;
+        }
+
+        // Live Schweizer Wetter API (Open-Meteo)
+        async function fetchWeather(lat = 47.3769, lon = 8.5417, city = 'Zürich') {
+            try {
+                const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true`);
+                const data = await res.json();
+                document.getElementById('weather-city').innerText = city;
+                document.getElementById('weather-temp').innerText = Math.round(data.current_weather.temperature) + '°C';
+                document.getElementById('weather-desc').innerText = 'Wind: ' + data.current_weather.windspeed + ' km/h';
+            } catch(e) {
+                document.getElementById('weather-desc').innerText = 'Wetter nicht geladen';
+            }
+        }
+
+        async function getCustomWeather() {
+            const city = document.getElementById('weather-input').value;
+            if(!city) return;
+            try {
+                const geoRes = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=1`);
+                const geoData = await geoRes.json();
+                if(geoData.results && geoData.results.length > 0) {
+                    const loc = geoData.results[0];
+                    fetchWeather(loc.latitude, loc.longitude, loc.name);
+                }
+            } catch(e) { alert('Stadt nicht gefunden'); }
+        }
+
+        // Schweizer Notenrechner
+        function calculateSwissGrade() {
+            const pts = parseFloat(document.getElementById('grade-points').value);
+            const max = parseFloat(document.getElementById('grade-max').value);
+            const box = document.getElementById('grade-result-box');
+            const resEl = document.getElementById('grade-result');
+            const feedEl = document.getElementById('grade-feedback');
+
+            if(!pts || !max || max <= 0) { alert('Bitte gültige Punkte eingeben'); return; }
+
+            const grade = ((pts / max) * 5 + 1).toFixed(2);
+            resEl.innerText = grade;
+            document.getElementById('stat-grade').innerText = grade;
+            box.classList.remove('hidden');
+
+            if(grade >= 5.5) {
+                box.className = "p-4 rounded-xl text-center mb-6 bg-emerald-100 text-emerald-900 border border-emerald-300";
+                feedEl.innerText = "Hervorragende Leistung! (Sehr gut)";
+            } else if(grade >= 4.0) {
+                box.className = "p-4 rounded-xl text-center mb-6 bg-blue-100 text-blue-900 border border-blue-300";
+                feedEl.innerText = "Genügend / Bestanden.";
+            } else {
+                box.className = "p-4 rounded-xl text-center mb-6 bg-rose-100 text-rose-900 border border-rose-300";
+                feedEl.innerText = "Ungenügend! Mehr Einsatz nötig.";
+            }
+        }
+
+        // Budget Rechner
+        let budgetItems = [];
+        function addBudgetItem(type) {
+            const nameEl = document.getElementById(type === 'in' ? 'inc-name' : 'exp-name');
+            const amtEl = document.getElementById(type === 'in' ? 'inc-amount' : 'exp-amount');
+            const name = nameEl.value;
+            const amt = parseFloat(amtEl.value);
+
+            if(!name || isNaN(amt)) return;
+
+            budgetItems.push({ type, name, amt });
+            nameEl.value = ''; amtEl.value = '';
+            renderBudget();
+        }
+
+        function renderBudget() {
+            const incList = document.getElementById('income-list');
+            const expList = document.getElementById('expense-list');
+            incList.innerHTML = ''; expList.innerHTML = '';
+
+            let totalInc = 0, totalExp = 0;
+
+            budgetItems.forEach((item) => {
+                const li = document.createElement('li');
+                li.className = "flex justify-between bg-slate-50 p-2 rounded border";
+                li.innerHTML = `<span>${item.name}</span><span class="font-bold">${item.amt} CHF</span>`;
+
+                if(item.type === 'in') {
+                    totalInc += item.amt;
+                    incList.appendChild(li);
+                } else {
+                    totalExp += item.amt;
+                    expList.appendChild(li);
+                }
+            });
+
+            const diff = totalInc - totalExp;
+            const totalEl = document.getElementById('budget-total');
+            totalEl.innerText = (diff >= 0 ? '+' : '') + diff + ' CHF';
+            totalEl.className = 'text-xl font-black ' + (diff >= 0 ? 'text-emerald-600' : 'text-rose-600');
+            document.getElementById('stat-budget').innerText = totalEl.innerText;
+        }
+
+        // Analysen Logic
+        function analyzeNutrition() {
+            const cur = parseFloat(document.getElementById('weight-current').value);
+            const tar = parseFloat(document.getElementById('weight-target').value);
+            const type = document.getElementById('weight-goal-type').value;
+            const res = document.getElementById('nutrition-analysis');
+
+            if(!cur || !tar) return;
+
+            document.getElementById('stat-weight').innerText = tar + ' kg';
+            const diff = Math.abs(tar - cur).toFixed(1);
+
+            let text = `<strong>Analyse:</strong> Du möchtest ${diff} kg ${type === 'gain' ? 'zunehmen' : 'abnehmen'}.<br>`;
+            if(type === 'gain') {
+                text += `• <strong>Empfehlung:</strong> Tägliches Kalorienüberschuss von +300-500 kcal.<br>• Eiweißzufuhr: ca. ${(cur * 2).toFixed(0)}g Protein pro Tag.<br>• Fokus auf echten Vollwertnahrungsmitteln (Reis, Haferflocken, Fleisch/Eier).`;
+            } else {
+                text += `• <strong>Empfehlung:</strong> Kaloriendefizit von -300-500 kcal.<br>• Hoher Proteingehalt zur Muskelhaltung + viel Gemüse & Wasser.`;
+            }
+            res.innerHTML = text;
+            res.classList.remove('hidden');
+        }
+
+        function analyzeWorkout() {
+            const days = document.getElementById('workout-days').value;
+            const focus = document.getElementById('workout-focus').value;
+            const res = document.getElementById('workout-analysis');
+
+            res.innerHTML = `<strong>Trainings-Analyse:</strong> Bei ${days} Tagen/Woche empfehlen wir einen Push/Pull/Legs oder OK/UK Split.<br>• <strong>Hauptfokus:</strong> Progressive Overload (Schrittweise Gewicht/Wiederholungen steigern bei: ${focus}).`;
+            res.classList.remove('hidden');
+        }
+
+        function analyzeFootball() {
+            const curr = document.getElementById('fb-current-team').value;
+            const targ = document.getElementById('fb-target-team').value;
+            const time = document.getElementById('fb-timeframe').value;
+            const wTrain = document.getElementById('fb-weakness-train').value;
+            const wMatch = document.getElementById('fb-weakness-match').value;
+            const res = document.getElementById('football-analysis');
+
+            document.getElementById('stat-football').innerText = time + ' Monate';
+
+            res.innerHTML = `
+                <h4 class="font-bold text-amber-700">Promotion-Strategie (${curr} ➔ ${targ})</h4>
+                <p><strong>Zeitraum:</strong> ${time} Monate</p>
+                <p><strong>1. Trainings-Fokus:</strong> Extra Einheiten für <em>${wTrain}</em> (2x pro Woche vor/nach dem Mannschaftstraining).</p>
+                <p><strong>2. Match-Performance:</strong> Gezielte Arbeit an <em>${wMatch}</em>. Analysiere deine Spielszenen direkt nach dem Match.</p>
+                <p><strong>3. Mindset:</strong> Mache in jedem Spiel 5% mehr Meter als der Gegenspieler.</p>
+            `;
+            res.classList.remove('hidden');
+        }
+
+        function analyzeSocialMedia() {
+            const plat = document.getElementById('sm-platform').value;
+            const cur = parseInt(document.getElementById('sm-current').value);
+            const tar = parseInt(document.getElementById('sm-target').value);
+            const res = document.getElementById('sm-analysis-result');
+
+            if(!cur || !tar) return;
+
+            const needed = tar - cur;
+            res.innerHTML = `
+                <h4 class="font-bold text-rose-700">${plat} Wachstum-Plan</h4>
+                <p>Dir fehlen noch <strong>${needed} Follower/Abos</strong> zum Ziel.</p>
+                <p>• <strong>Posting-Frequenz:</strong> 1-2 Videos pro Tag für maximale Reichweite.</p>
+                <p>• <strong>Fokus:</strong> Verwende starke Hooks in den ersten 3 Sekunden & scharfe Videoqualität.</p>
+            `;
+            res.classList.remove('hidden');
+        }
+
+        function analyzeHygiene() {
+            const issue = document.getElementById('skin-issue').value;
+            const res = document.getElementById('hygiene-result');
+            
+            let tip = "";
+            if(issue === 'unclean') tip = "• Morgens & Abends sanfter Cleanser (Salizylsäure)<br>• Täglich Kissenbezug wechseln<br>• Nicht ins Gesicht fassen!";
+            else tip = "• Feuchtigkeitscreme mit Hyaluron nutzen<br>• Ausreichend Wasser trinken (min. 2.5L / Tag)";
+
+            res.innerHTML = `<strong>Hautpflege-Routine:</strong><br>${tip}`;
+            res.classList.remove('hidden');
+        }
+
+        function analyzeGrowth() {
+            const h = document.getElementById('height-current').value;
+            const res = document.getElementById('growth-result');
+            res.innerHTML = `<strong>Haltungs- & Wachstumsanalyse (${h} cm):</strong><br>• Achte auf aufrechte Haltung (Brust raus, Schultern zurück).<br>• Täglich 8-9h Schlaf (Wachstumshormone).<br>• Aushängen an der Klimmzugstange für die Wirbelsäule.`;
+            res.classList.remove('hidden');
+        }
+
+        // Init
+        loadProfile();
+        fetchWeather();
+    </script>
+</body>
 </html>
