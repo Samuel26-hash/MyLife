@@ -100,7 +100,7 @@
     </main>
   </div>
 
-  <!-- MODAL: ENTWICKLUNG HINZUFÜGEN -->
+  <!-- MODAL: MODULE VERWALTEN -->
   <div id="modal-add-module" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
     <div class="glass w-full max-w-xl p-6 rounded-3xl border border-slate-800 space-y-6">
       <div class="flex items-center justify-between border-b border-slate-800 pb-4">
@@ -144,7 +144,7 @@
         <input type="text" id="new-subject-name" placeholder="z. B. Mathematik, Deutsch, W&R" class="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-blue-500">
       </div>
       <div>
-        <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Fach-Kategorie (Wichtig für Bestehen)</label>
+        <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Fach-Kategorie</label>
         <select id="new-subject-type" class="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-blue-500">
           <option value="BM">BM-Fach (Berufsmaturität: max. 2 ungenügende, max. 2.0 Minuspunkte)</option>
           <option value="EFZ">EFZ-Fach (Eidg. Fähigkeitszeugnis: max. 1 ungenügende)</option>
@@ -531,12 +531,6 @@
 
         const semAvg = validSubjectsCount > 0 ? (totalSubjectGrades / validSubjectsCount) : null;
         
-        // BESTEHENS-LOGIK:
-        // 1. Schnitt mindestens 4.00
-        // 2. Höchstens 2 ungenügende BM-Fächer
-        // 3. Höchstens 1 ungenügendes EFZ-Fach
-        // 4. Höchstens 2.0 Minuspunkte insgesamt (Abweichung von 4.0 nach unten)
-        
         let failReasons = [];
         if (semAvg !== null && semAvg < 4.0) failReasons.push(`Gesamtdurchschnitt unter 4.00 (Aktuell: ${semAvg.toFixed(2)})`);
         if (bmUngenuegendCount > 2) failReasons.push(`Zu viele ungenügende BM-Fächer (Aktuell: ${bmUngenuegendCount}, max. 2 erlaubt)`);
@@ -590,7 +584,6 @@
       return html;
     }
 
-    // FACH & NOTE LÖSCHEN
     function deleteSubject(semIdx, subIdx) {
       if (confirm('Möchtest du dieses Fach wirklich löschen?')) {
         currentUser.semesters[semIdx].subjects.splice(subIdx, 1);
@@ -601,6 +594,146 @@
 
     function deleteExam(semIdx, subIdx, exIdx) {
       currentUser.semesters[semIdx].subjects[subIdx].exams.splice(exIdx, 1);
+      saveUserData();
+      renderDashboard();
+    }
+
+    // ---------------- BUDGET ENGINE WITH STATS & DATE ----------------
+    function getTodayString() {
+      const today = new Date();
+      const yyyy = today.getFullYear();
+      const mm = String(today.getMonth() + 1).padStart(2, '0');
+      const dd = String(today.getDate()).padStart(2, '0');
+      return `${yyyy}-${mm}-${dd}`;
+    }
+
+    function renderBudgetContent() {
+      const items = currentUser.budget || [];
+      const todayStr = getTodayString();
+
+      let totalIncome = 0;
+      let totalExpense = 0;
+
+      items.forEach(item => {
+        if (item.type === 'income') {
+          totalIncome += item.amt;
+        } else {
+          totalExpense += item.amt;
+        }
+      });
+
+      const netBalance = totalIncome - totalExpense;
+      const expenseRatio = totalIncome > 0 ? Math.min(100, Math.round((totalExpense / totalIncome) * 100)) : 0;
+
+      return `
+        <div class="space-y-4">
+          <!-- FORMULAR -->
+          <div class="bg-slate-900/80 p-3.5 rounded-2xl border border-slate-800 space-y-2.5">
+            <div class="grid grid-cols-2 gap-2">
+              <div>
+                <label class="block text-[10px] font-bold uppercase text-slate-400 mb-1">Typ</label>
+                <select id="budget-type" class="w-full bg-slate-950 border border-slate-700 p-2 rounded-xl text-xs text-white focus:outline-none focus:border-blue-500">
+                  <option value="income">🟢 Einnahme (+)</option>
+                  <option value="expense">🔴 Ausgabe (-)</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-[10px] font-bold uppercase text-slate-400 mb-1">Datum</label>
+                <input type="date" id="budget-date" value="${todayStr}" class="w-full bg-slate-950 border border-slate-700 p-2 rounded-xl text-xs text-white focus:outline-none focus:border-blue-500">
+              </div>
+            </div>
+
+            <div class="grid grid-cols-3 gap-2">
+              <div class="col-span-2">
+                <label class="block text-[10px] font-bold uppercase text-slate-400 mb-1">Beschreibung</label>
+                <input type="text" id="budget-desc" placeholder="z. B. Lohn, Ausgang, Essen" class="w-full bg-slate-950 border border-slate-700 p-2 rounded-xl text-xs text-white focus:outline-none focus:border-blue-500">
+              </div>
+              <div>
+                <label class="block text-[10px] font-bold uppercase text-slate-400 mb-1">Betrag (CHF)</label>
+                <input type="number" step="0.05" id="budget-amt" placeholder="50.00" class="w-full bg-slate-950 border border-slate-700 p-2 rounded-xl text-xs text-white focus:outline-none focus:border-blue-500">
+              </div>
+            </div>
+
+            <button onclick="addBudgetItem()" class="w-full py-2 bg-blue-600 hover:bg-blue-500 font-bold text-xs text-white rounded-xl transition flex items-center justify-center gap-1">
+              <i data-lucide="plus" class="w-4 h-4"></i> Eintrag Hinzufügen
+            </button>
+          </div>
+
+          <!-- HISTORIE LISTE -->
+          <div>
+            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1 block">Letzte Transaktionen</span>
+            ${items.length === 0 ? `<p class="text-xs text-slate-500 italic">Noch keine Buchungen vorhanden.</p>` : `
+              <ul class="space-y-1.5 text-xs max-h-40 overflow-y-auto pr-1">
+                ${items.slice().reverse().map((b, origIdx) => {
+                  const actualIdx = items.length - 1 - origIdx;
+                  const isInc = b.type === 'income';
+                  return `
+                    <li class="flex items-center justify-between bg-slate-900/60 px-3 py-2 rounded-xl border border-slate-800/80">
+                      <div>
+                        <div class="font-semibold text-slate-200">${b.desc}</div>
+                        <div class="text-[10px] text-slate-500">${b.date || 'Heute'}</div>
+                      </div>
+                      <div class="flex items-center gap-2">
+                        <span class="font-bold ${isInc ? 'text-emerald-400' : 'text-rose-400'}">
+                          ${isInc ? '+' : '-'}${b.amt.toFixed(2)} CHF
+                        </span>
+                        <button onclick="deleteBudgetItem(${actualIdx})" class="text-slate-600 hover:text-rose-400 transition"><i data-lucide="x" class="w-3.5 h-3.5"></i></button>
+                      </div>
+                    </li>
+                  `;
+                }).join('')}
+              </ul>
+            `}
+          </div>
+
+          <!-- STATISTIK SECTION UNTEN -->
+          <div class="pt-3 border-t border-slate-800 space-y-2">
+            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Finanz-Statistik</span>
+            
+            <div class="grid grid-cols-2 gap-2 text-xs">
+              <div class="bg-slate-950/80 p-2.5 rounded-xl border border-slate-800/80">
+                <span class="text-[10px] text-slate-400 block">Einnahmen</span>
+                <span class="font-black text-emerald-400 text-sm">+${totalIncome.toFixed(2)} CHF</span>
+              </div>
+              <div class="bg-slate-950/80 p-2.5 rounded-xl border border-slate-800/80">
+                <span class="text-[10px] text-slate-400 block">Ausgaben</span>
+                <span class="font-black text-rose-400 text-sm">-${totalExpense.toFixed(2)} CHF</span>
+              </div>
+            </div>
+
+            <div class="bg-slate-950/90 p-3 rounded-xl border border-slate-800 flex justify-between items-center">
+              <div>
+                <span class="text-[10px] font-bold uppercase text-slate-400 block">Nettosaldo / Bilanz</span>
+                <span class="text-xs text-slate-400">Ausgabenquote: ${expenseRatio}%</span>
+              </div>
+              <span class="font-black text-base ${netBalance >= 0 ? 'text-emerald-400' : 'text-rose-400'}">
+                ${netBalance >= 0 ? '+' : ''}${netBalance.toFixed(2)} CHF
+              </span>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function addBudgetItem() {
+      const type = document.getElementById('budget-type').value;
+      const date = document.getElementById('budget-date').value || getTodayString();
+      const desc = document.getElementById('budget-desc').value.trim();
+      const amt = parseFloat(document.getElementById('budget-amt').value);
+
+      if (!desc || isNaN(amt) || amt <= 0) {
+        return alert('Bitte gib eine gültige Beschreibung und einen Betrag ein!');
+      }
+
+      if (!currentUser.budget) currentUser.budget = [];
+      currentUser.budget.push({ type, date, desc, amt });
+
+      saveUserData();
+      renderDashboard();
+    }
+
+    function deleteBudgetItem(idx) {
+      currentUser.budget.splice(idx, 1);
       saveUserData();
       renderDashboard();
     }
@@ -664,33 +797,6 @@
       saveUserData();
       renderDashboard();
       closeModal('modal-add-exam');
-    }
-
-    // BUDGET ENGINE
-    function renderBudgetContent() {
-      return `
-        <div class="space-y-3 text-sm">
-          <div class="flex gap-2">
-            <input type="text" id="budget-desc" placeholder="Einnahme/Ausgabe" class="flex-1 bg-slate-900 border border-slate-800 p-2 rounded-xl text-xs text-white">
-            <input type="number" id="budget-amt" placeholder="CHF" class="w-20 bg-slate-900 border border-slate-800 p-2 rounded-xl text-xs text-white">
-            <button onclick="addBudgetItem()" class="bg-emerald-600 px-3 rounded-xl font-bold text-xs hover:bg-emerald-500 transition">+</button>
-          </div>
-          <ul class="space-y-1 text-xs max-h-36 overflow-y-auto">
-            ${(currentUser.budget || []).map(b => `<li class="flex justify-between bg-slate-900/60 p-2 rounded-lg border border-slate-800"><span>${b.desc}</span><span class="font-bold text-emerald-400">+${b.amt} CHF</span></li>`).join('')}
-          </ul>
-        </div>
-      `;
-    }
-
-    function addBudgetItem() {
-      const desc = document.getElementById('budget-desc').value;
-      const amt = parseFloat(document.getElementById('budget-amt').value);
-      if (!desc || isNaN(amt)) return;
-
-      if (!currentUser.budget) currentUser.budget = [];
-      currentUser.budget.push({ desc, amt });
-      saveUserData();
-      renderDashboard();
     }
 
     // MODULE MANAGER
