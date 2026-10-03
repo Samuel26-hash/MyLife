@@ -54,7 +54,7 @@
         <div>
           <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Schule / Schulsystem</label>
           <select id="reg-school" class="w-full px-4 py-3 bg-slate-900/60 border border-slate-700/60 rounded-xl text-white focus:outline-none focus:border-blue-500 transition">
-            <option value="WMS">WMS (Wirtschaftsmittelschule)</option>
+            <option value="WMS">WMS (Wirtschaftsmittelschule EFZ/BM)</option>
             <option value="Andere">Andere Schule</option>
           </select>
         </div>
@@ -84,7 +84,7 @@
         <div class="flex items-center gap-3">
           <button onclick="openAddModuleModal()" class="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-xl text-sm font-semibold transition shadow-lg shadow-blue-600/20">
             <i data-lucide="plus" class="w-4 h-4"></i>
-            <span class="hidden sm:inline">Entwicklung hinzufügen</span>
+            <span class="hidden sm:inline">Modul hinzufügen</span>
           </button>
           
           <button onclick="openProfileModal()" class="flex items-center gap-2 p-1.5 bg-slate-900 border border-slate-800 rounded-xl hover:border-blue-500 transition">
@@ -105,7 +105,7 @@
     <div class="glass w-full max-w-xl p-6 rounded-3xl border border-slate-800 space-y-6">
       <div class="flex items-center justify-between border-b border-slate-800 pb-4">
         <h3 class="text-xl font-bold text-white flex items-center gap-2">
-          <i data-lucide="layout-grid" class="text-blue-400"></i> Entwicklung hinzufügen
+          <i data-lucide="layout-grid" class="text-blue-400"></i> Module Verwalten
         </h3>
         <button onclick="closeModal('modal-add-module')" class="text-slate-400 hover:text-white"><i data-lucide="x"></i></button>
       </div>
@@ -124,13 +124,13 @@
       </div>
       <div>
         <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Semester Name</label>
-        <input type="text" id="new-semester-name" placeholder="z. B. 2. Semester 2026" class="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-blue-500">
+        <input type="text" id="new-semester-name" placeholder="z. B. 1. Semester 2026" class="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-blue-500">
       </div>
       <button onclick="saveSemester()" class="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition">Erstellen</button>
     </div>
   </div>
 
-  <!-- MODAL: NEUES FACH -->
+  <!-- MODAL: NEUES FACH (EFZ / BM SEPARATION) -->
   <div id="modal-add-subject" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
     <div class="glass w-full max-w-md p-6 rounded-3xl border border-slate-800 space-y-4">
       <div class="flex items-center justify-between border-b border-slate-800 pb-3">
@@ -141,7 +141,14 @@
       </div>
       <div>
         <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Fach Name</label>
-        <input type="text" id="new-subject-name" placeholder="z. B. Mathematik, Wirtschaft" class="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-blue-500">
+        <input type="text" id="new-subject-name" placeholder="z. B. Mathematik, Deutsch, W&R" class="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-blue-500">
+      </div>
+      <div>
+        <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Fach-Kategorie (Wichtig für Bestehen)</label>
+        <select id="new-subject-type" class="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-blue-500">
+          <option value="BM">BM-Fach (Berufsmaturität: max. 2 ungenügende, max. 2.0 Minuspunkte)</option>
+          <option value="EFZ">EFZ-Fach (Eidg. Fähigkeitszeugnis: max. 1 ungenügende)</option>
+        </select>
       </div>
       <button onclick="saveSubject()" class="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition">Fach Hinzufügen</button>
     </div>
@@ -158,7 +165,7 @@
       </div>
       <div>
         <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Prüfungsbezeichnung (Optional)</label>
-        <input type="text" id="new-exam-title" placeholder="z.B. Prüfung 1" class="w-full px-4 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-blue-500 mb-3 text-sm">
+        <input type="text" id="new-exam-title" placeholder="z.B. Test 1" class="w-full px-4 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-blue-500 mb-3 text-sm">
       </div>
       <div class="grid grid-cols-2 gap-3">
         <div>
@@ -250,8 +257,10 @@
     let activeSemIdx = null;
     let activeSubIdx = null;
 
+    const DEFAULT_AVATAR = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100';
+
     const MODULE_DEFINITIONS = [
-      { id: 'wms_grades', name: 'WMS Notensystem', icon: 'graduation-cap', desc: 'Semester, Fächer, Notenrechner & WMS-Bestehensregeln' },
+      { id: 'wms_grades', name: 'WMS Notensystem', icon: 'graduation-cap', desc: 'Semester, EFZ/BM Fächer, Minuspunkte-Check & Bestehensregeln' },
       { id: 'budget', name: 'Budget & Finanzen', icon: 'wallet', desc: 'Monatliche Einnahmen & Ausgaben in CHF' },
       { id: 'fitness', name: 'Fitness & Ernährung', icon: 'dumbbell', desc: 'Gewichtsziele, Protein & Krafttraining' },
       { id: 'football', name: 'Fußball-Promotion', icon: 'trophy', desc: 'Ligen-Entwicklung & Match-Analysen' },
@@ -309,10 +318,10 @@
           age: 17,
           weight: 68,
           height: 182,
-          goal: 'WMS erfolgreich abschliessen',
+          goal: 'WMS (BM & EFZ) erfolgreich abschliessen',
           motto: 'Jeden Tag 1% besser!',
           bio: 'Mein persönliches Dashboard.',
-          pic: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100'
+          pic: DEFAULT_AVATAR
         },
         activeModules: ['wms_grades', 'budget', 'fitness'],
         semesters: [],
@@ -372,9 +381,10 @@
     }
 
     function updateNavProfile() {
+      const userPic = (currentUser.profile && currentUser.profile.pic && currentUser.profile.pic.trim() !== '') ? currentUser.profile.pic : DEFAULT_AVATAR;
       document.getElementById('user-greeting').innerText = 'Hallo, ' + currentUser.profile.name;
       document.getElementById('nav-username').innerText = currentUser.profile.name;
-      document.getElementById('nav-avatar').src = currentUser.profile.pic || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100';
+      document.getElementById('nav-avatar').src = userPic;
     }
 
     function renderDashboard() {
@@ -425,7 +435,7 @@
       `;
     }
 
-    // ---------------- WMS NOTENSYSTEM ENGINE ----------------
+    // ---------------- WMS / EFZ / BM NOTENSYSTEM ENGINE ----------------
     function roundToHalfGrade(val) {
       return Math.round(val * 2) / 2;
     }
@@ -448,7 +458,10 @@
         let subjectsHTML = '';
         let totalSubjectGrades = 0;
         let validSubjectsCount = 0;
-        let ungenuegendCount = 0;
+
+        let bmUngenuegendCount = 0;
+        let efzUngenuegendCount = 0;
+        let minuspunkteTotal = 0;
 
         if (sem.subjects && sem.subjects.length > 0) {
           sem.subjects.forEach((sub, subIdx) => {
@@ -464,31 +477,47 @@
               });
             }
 
-            // Fachdurchschnitt berechnen & runden
-            const subAvg = examCount > 0 ? roundToHalfGrade(examSum / examCount) : null;
-            
+            const subAvg = examCount > 0 ? (examSum / examCount) : null;
+            const subType = sub.type || 'BM';
+
             if (subAvg !== null) {
               totalSubjectGrades += subAvg;
               validSubjectsCount++;
-              if (subAvg < 4.0) ungenuegendCount++;
+
+              if (subAvg < 4.0) {
+                const diff = 4.0 - subAvg;
+                minuspunkteTotal += diff;
+
+                if (subType === 'BM') bmUngenuegendCount++;
+                if (subType === 'EFZ') efzUngenuegendCount++;
+              }
             }
 
             subjectsHTML += `
               <div class="bg-slate-900/60 p-3 rounded-2xl border border-slate-800 space-y-2">
                 <div class="flex justify-between items-center">
-                  <span class="font-bold text-sm text-slate-200">${sub.name}</span>
-                  <span class="text-sm font-black ${subAvg !== null ? (subAvg < 4.0 ? 'text-rose-400' : 'text-emerald-400') : 'text-slate-500'}">
-                    ${subAvg !== null ? subAvg.toFixed(1) : '--'}
-                  </span>
+                  <div class="flex items-center gap-2">
+                    <span class="font-bold text-sm text-slate-200">${sub.name}</span>
+                    <span class="text-[10px] px-1.5 py-0.5 rounded font-bold ${subType === 'BM' ? 'bg-indigo-600/30 text-indigo-400 border border-indigo-500/30' : 'bg-emerald-600/30 text-emerald-400 border border-emerald-500/30'}">${subType}</span>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <span class="text-sm font-black ${subAvg !== null ? (subAvg < 4.0 ? 'text-rose-400' : 'text-emerald-400') : 'text-slate-500'}">
+                      ${subAvg !== null ? subAvg.toFixed(2) : '--'}
+                    </span>
+                    <button onclick="deleteSubject(${semIdx}, ${subIdx})" class="text-slate-500 hover:text-rose-400 transition" title="Fach löschen"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+                  </div>
                 </div>
 
                 ${sub.exams && sub.exams.length > 0 ? `
                   <div class="text-xs text-slate-400 space-y-1">
-                    ${sub.exams.map(ex => {
+                    ${sub.exams.map((ex, exIdx) => {
                       const g = roundToHalfGrade(1 + 5 * (ex.achieved / ex.max));
-                      return `<div class="flex justify-between bg-slate-950/80 px-2 py-1 rounded-lg">
+                      return `<div class="flex justify-between items-center bg-slate-950/80 px-2 py-1 rounded-lg">
                         <span>${ex.title || 'Prüfung'}: ${ex.achieved}/${ex.max} Pkt.</span>
-                        <span class="font-bold text-slate-200">${g.toFixed(1)}</span>
+                        <div class="flex items-center gap-2">
+                          <span class="font-bold text-slate-200">${g.toFixed(1)}</span>
+                          <button onclick="deleteExam(${semIdx}, ${subIdx}, ${exIdx})" class="text-slate-600 hover:text-rose-400 transition"><i data-lucide="x" class="w-3 h-3"></i></button>
+                        </div>
                       </div>`;
                     }).join('')}
                   </div>
@@ -500,11 +529,21 @@
           });
         }
 
-        // Semesterdurchschnitt berechnen & runden
-        const semAvg = validSubjectsCount > 0 ? roundToHalfGrade(totalSubjectGrades / validSubjectsCount) : null;
+        const semAvg = validSubjectsCount > 0 ? (totalSubjectGrades / validSubjectsCount) : null;
         
-        // WMS Bestehensregel
-        const isPassed = semAvg !== null && semAvg >= 4.0 && ungenuegendCount <= 2;
+        // BESTEHENS-LOGIK:
+        // 1. Schnitt mindestens 4.00
+        // 2. Höchstens 2 ungenügende BM-Fächer
+        // 3. Höchstens 1 ungenügendes EFZ-Fach
+        // 4. Höchstens 2.0 Minuspunkte insgesamt (Abweichung von 4.0 nach unten)
+        
+        let failReasons = [];
+        if (semAvg !== null && semAvg < 4.0) failReasons.push(`Gesamtdurchschnitt unter 4.00 (Aktuell: ${semAvg.toFixed(2)})`);
+        if (bmUngenuegendCount > 2) failReasons.push(`Zu viele ungenügende BM-Fächer (Aktuell: ${bmUngenuegendCount}, max. 2 erlaubt)`);
+        if (efzUngenuegendCount > 1) failReasons.push(`Zu viele ungenügende EFZ-Fächer (Aktuell: ${efzUngenuegendCount}, max. 1 erlaubt)`);
+        if (minuspunkteTotal > 2.0) failReasons.push(`Zu viele Minuspunkte/Abweichungspunkte (Aktuell: -${minuspunkteTotal.toFixed(2)}, max. -2.0 erlaubt)`);
+
+        const isPassed = semAvg !== null && failReasons.length === 0;
 
         html += `
           <div class="bg-slate-950/80 p-4 rounded-2xl border border-slate-800 space-y-3">
@@ -518,15 +557,28 @@
             ${semAvg !== null ? `
               <div class="pt-3 border-t border-slate-800 space-y-1.5 text-xs">
                 <div class="flex justify-between font-bold">
-                  <span class="text-slate-300">Semesterdurchschnitt:</span>
-                  <span class="${semAvg < 4.0 ? 'text-rose-400' : 'text-emerald-400'} text-sm">${semAvg.toFixed(1)}</span>
+                  <span class="text-slate-300">Gesamtdurchschnitt:</span>
+                  <span class="${semAvg < 4.0 ? 'text-rose-400' : 'text-emerald-400'} text-sm">${semAvg.toFixed(2)}</span>
                 </div>
                 <div class="flex justify-between text-slate-400">
-                  <span>Ungenügende Fächer (&lt; 4.0):</span>
-                  <span class="${ungenuegendCount > 2 ? 'text-rose-400 font-bold' : 'text-slate-300'}">${ungenuegendCount}</span>
+                  <span>Minuspunkte (Abweichung &lt; 4.0):</span>
+                  <span class="${minuspunkteTotal > 2.0 ? 'text-rose-400 font-bold' : 'text-slate-300'}">-${minuspunkteTotal.toFixed(2)} / -2.0</span>
                 </div>
-                <div class="mt-2 p-2 rounded-xl font-bold text-center text-xs ${isPassed ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-rose-500/20 text-rose-400 border border-rose-500/30'}">
-                  ${isPassed ? '✓ Semester Bestanden' : '✗ Nicht Bestanden (Schnitt < 4.0 oder >2 ungenügend)'}
+                <div class="flex justify-between text-slate-400">
+                  <span>Ungenügende BM / EFZ Fächer:</span>
+                  <span class="text-slate-300">BM: ${bmUngenuegendCount}/2 \vert{} EFZ:${efzUngenuegendCount}/1</span>
+                </div>
+
+                <div class="mt-2 p-3 rounded-xl font-bold text-xs ${isPassed ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-rose-500/20 text-rose-400 border border-rose-500/30'}">
+                  ${isPassed ? `
+                    <div class="flex items-center gap-1.5 mb-1"><i data-lucide="check-circle-2" class="w-4 h-4"></i> Semester Bestanden!</div>
+                    <p class="font-normal text-[11px] text-emerald-300/80">Schnitt ist ≥ 4.00, max. Minuspunkte (-2.0) eingehalten und alle EFZ/BM Hürden erfüllt.</p>
+                  ` : `
+                    <div class="flex items-center gap-1.5 mb-1 text-rose-400"><i data-lucide="alert-triangle" class="w-4 h-4"></i> Nicht Bestanden</div>
+                    <ul class="font-normal text-[11px] text-rose-300/90 list-disc list-inside space-y-0.5">
+                      ${failReasons.map(r => `<li>${r}</li>`).join('')}
+                    </ul>
+                  `}
                 </div>
               </div>
             ` : ''}
@@ -536,6 +588,21 @@
 
       html += `</div>`;
       return html;
+    }
+
+    // FACH & NOTE LÖSCHEN
+    function deleteSubject(semIdx, subIdx) {
+      if (confirm('Möchtest du dieses Fach wirklich löschen?')) {
+        currentUser.semesters[semIdx].subjects.splice(subIdx, 1);
+        saveUserData();
+        renderDashboard();
+      }
+    }
+
+    function deleteExam(semIdx, subIdx, exIdx) {
+      currentUser.semesters[semIdx].subjects[subIdx].exams.splice(exIdx, 1);
+      saveUserData();
+      renderDashboard();
     }
 
     // MODAL DIALOG CONTROLLERS
@@ -564,9 +631,10 @@
 
     function saveSubject() {
       const name = document.getElementById('new-subject-name').value.trim();
+      const type = document.getElementById('new-subject-type').value;
       if (!name) return alert('Bitte gib einen Fach-Namen ein!');
 
-      currentUser.semesters[activeSemIdx].subjects.push({ name: name, exams: [] });
+      currentUser.semesters[activeSemIdx].subjects.push({ name: name, type: type, exams: [] });
 
       saveUserData();
       renderDashboard();
@@ -672,9 +740,10 @@
 
     // PROFILE & FILE UPLOAD
     function openProfileModal() {
-      const p = currentUser.profile;
+      const p = currentUser.profile || {};
+      const pic = p.pic || DEFAULT_AVATAR;
       document.getElementById('edit-profile-pic').value = p.pic || '';
-      document.getElementById('edit-profile-img-preview').src = p.pic || '';
+      document.getElementById('edit-profile-img-preview').src = pic;
       document.getElementById('edit-profile-name').value = p.name || '';
       document.getElementById('edit-profile-age').value = p.age || '';
       document.getElementById('edit-profile-weight').value = p.weight || '';
@@ -700,13 +769,13 @@
     }
 
     function updateProfilePicPreview(url) {
-      document.getElementById('edit-profile-img-preview').src = url;
+      document.getElementById('edit-profile-img-preview').src = url || DEFAULT_AVATAR;
     }
 
     function saveProfile(e) {
       e.preventDefault();
       currentUser.profile = {
-        pic: document.getElementById('edit-profile-pic').value,
+        pic: document.getElementById('edit-profile-pic').value || DEFAULT_AVATAR,
         name: document.getElementById('edit-profile-name').value,
         age: parseFloat(document.getElementById('edit-profile-age').value),
         weight: parseFloat(document.getElementById('edit-profile-weight').value),
