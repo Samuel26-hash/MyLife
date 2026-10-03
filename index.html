@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="de" class="h-full bg-slate-900 text-slate-100">
+<html lang="de" class="h-full bg-slate-950 text-slate-100">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,8 +8,8 @@
   <script src="https://unpkg.com/lucide@latest"></script>
   <style>
     .glass {
-      background: rgba(30, 41, 59, 0.7);
-      backdrop-filter: blur(12px);
+      background: rgba(15, 23, 42, 0.75);
+      backdrop-filter: blur(16px);
       border: 1px solid rgba(255, 255, 255, 0.08);
     }
   </style>
@@ -18,7 +18,7 @@
 
   <!-- AUTH SCREEN -->
   <div id="auth-screen" class="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
-    <div class="glass w-full max-w-md p-8 rounded-3xl shadow-2xl space-y-6">
+    <div class="glass w-full max-w-md p-8 rounded-3xl shadow-2xl space-y-6 border border-slate-800">
       <div class="text-center space-y-2">
         <div class="inline-flex p-3 bg-blue-600/20 text-blue-400 rounded-2xl mb-2">
           <i data-lucide="sparkles" class="w-8 h-8"></i>
@@ -27,8 +27,7 @@
         <p class="text-slate-400 text-sm">Dein persönliches Entwicklungs-Dashboard</p>
       </div>
 
-      <!-- Auth Tabs -->
-      <div class="flex p-1 bg-slate-800/80 rounded-xl text-sm font-medium">
+      <div class="flex p-1 bg-slate-900/80 rounded-xl text-sm font-medium border border-slate-800">
         <button id="tab-login-btn" onclick="showAuthTab('login')" class="flex-1 py-2 rounded-lg bg-blue-600 text-white transition">Anmelden</button>
         <button id="tab-register-btn" onclick="showAuthTab('register')" class="flex-1 py-2 rounded-lg text-slate-400 hover:text-white transition">Registrieren</button>
       </div>
@@ -36,12 +35,12 @@
       <!-- Form Login -->
       <form id="form-login" onsubmit="handleLogin(event)" class="space-y-4">
         <div>
-          <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">E-Mail oder Benutzername</label>
-          <input type="text" id="login-user" required class="w-full px-4 py-3 bg-slate-800/60 border border-slate-700/60 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition">
+          <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Benutzername</label>
+          <input type="text" id="login-user" required class="w-full px-4 py-3 bg-slate-900/60 border border-slate-700/60 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition">
         </div>
         <div>
           <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Passwort</label>
-          <input type="password" id="login-pass" required class="w-full px-4 py-3 bg-slate-800/60 border border-slate-700/60 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition">
+          <input type="password" id="login-pass" required class="w-full px-4 py-3 bg-slate-900/60 border border-slate-700/60 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition">
         </div>
         <button type="submit" class="w-full py-3.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl shadow-lg shadow-blue-600/30 transition">Anmelden</button>
       </form>
@@ -50,18 +49,18 @@
       <form id="form-register" onsubmit="handleRegister(event)" class="space-y-4 hidden">
         <div>
           <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Name / Benutzername</label>
-          <input type="text" id="reg-name" required class="w-full px-4 py-3 bg-slate-800/60 border border-slate-700/60 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition">
+          <input type="text" id="reg-name" required class="w-full px-4 py-3 bg-slate-900/60 border border-slate-700/60 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition">
         </div>
         <div>
-          <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Schule / Ausbildung</label>
-          <select id="reg-school" class="w-full px-4 py-3 bg-slate-800/60 border border-slate-700/60 rounded-xl text-white focus:outline-none focus:border-blue-500 transition">
+          <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Schule / Schulsystem</label>
+          <select id="reg-school" class="w-full px-4 py-3 bg-slate-900/60 border border-slate-700/60 rounded-xl text-white focus:outline-none focus:border-blue-500 transition">
             <option value="WMS">WMS (Wirtschaftsmittelschule)</option>
-            <option value="Andere">Andere Schule / Betrieb</option>
+            <option value="Andere">Andere Schule</option>
           </select>
         </div>
         <div>
           <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Passwort festlegen</label>
-          <input type="password" id="reg-pass" required class="w-full px-4 py-3 bg-slate-800/60 border border-slate-700/60 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition">
+          <input type="password" id="reg-pass" required class="w-full px-4 py-3 bg-slate-900/60 border border-slate-700/60 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition">
         </div>
         <button type="submit" class="w-full py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl shadow-lg shadow-emerald-600/30 transition">Account Erstellen</button>
       </form>
@@ -70,7 +69,6 @@
 
   <!-- MAIN APP SCREEN -->
   <div id="app-screen" class="hidden min-h-screen flex flex-col">
-    <!-- Navigation Header -->
     <header class="glass sticky top-0 z-40 border-b border-slate-800">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
         <div class="flex items-center gap-3">
@@ -79,7 +77,7 @@
           </div>
           <div>
             <h1 class="text-xl font-bold tracking-wider text-white">MYLife</h1>
-            <p id="user-greeting" class="text-xs text-slate-400">Hallo, User</p>
+            <p id="user-greeting" class="text-xs text-slate-400">Hallo</p>
           </div>
         </div>
 
@@ -89,7 +87,7 @@
             <span class="hidden sm:inline">Entwicklung hinzufügen</span>
           </button>
           
-          <button onclick="openProfileModal()" class="flex items-center gap-2 p-1.5 bg-slate-800 border border-slate-700/60 rounded-xl hover:border-blue-500 transition">
+          <button onclick="openProfileModal()" class="flex items-center gap-2 p-1.5 bg-slate-900 border border-slate-800 rounded-xl hover:border-blue-500 transition">
             <img id="nav-avatar" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100" class="w-8 h-8 rounded-lg object-cover">
             <span id="nav-username" class="text-sm font-medium text-slate-200 hidden md:inline">Profil</span>
           </button>
@@ -97,16 +95,13 @@
       </div>
     </header>
 
-    <!-- Main Content Grid -->
     <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 space-y-6">
-      <div id="dashboard-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <!-- Module werden hier dynamisch eingefügt -->
-      </div>
+      <div id="dashboard-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
     </main>
   </div>
 
   <!-- MODAL: ENTWICKLUNG HINZUFÜGEN -->
-  <div id="modal-add-module" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+  <div id="modal-add-module" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
     <div class="glass w-full max-w-xl p-6 rounded-3xl border border-slate-800 space-y-6">
       <div class="flex items-center justify-between border-b border-slate-800 pb-4">
         <h3 class="text-xl font-bold text-white flex items-center gap-2">
@@ -114,15 +109,74 @@
         </h3>
         <button onclick="closeModal('modal-add-module')" class="text-slate-400 hover:text-white"><i data-lucide="x"></i></button>
       </div>
+      <div id="available-modules-list" class="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-96 overflow-y-auto p-1"></div>
+    </div>
+  </div>
 
-      <div id="available-modules-list" class="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-96 overflow-y-auto p-1">
-        <!-- Dynamische Modulauswahl -->
+  <!-- MODAL: NEUES SEMESTER -->
+  <div id="modal-add-semester" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="glass w-full max-w-md p-6 rounded-3xl border border-slate-800 space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <h3 class="text-lg font-bold text-white flex items-center gap-2">
+          <i data-lucide="folder-plus" class="text-blue-400"></i> Neues Semester
+        </h3>
+        <button onclick="closeModal('modal-add-semester')" class="text-slate-400 hover:text-white"><i data-lucide="x"></i></button>
       </div>
+      <div>
+        <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Semester Name</label>
+        <input type="text" id="new-semester-name" placeholder="z. B. 2. Semester 2026" class="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-blue-500">
+      </div>
+      <button onclick="saveSemester()" class="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition">Erstellen</button>
+    </div>
+  </div>
+
+  <!-- MODAL: NEUES FACH -->
+  <div id="modal-add-subject" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="glass w-full max-w-md p-6 rounded-3xl border border-slate-800 space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <h3 class="text-lg font-bold text-white flex items-center gap-2">
+          <i data-lucide="book-open" class="text-blue-400"></i> Neues Fach
+        </h3>
+        <button onclick="closeModal('modal-add-subject')" class="text-slate-400 hover:text-white"><i data-lucide="x"></i></button>
+      </div>
+      <div>
+        <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Fach Name</label>
+        <input type="text" id="new-subject-name" placeholder="z. B. Mathematik, Wirtschaft" class="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-blue-500">
+      </div>
+      <button onclick="saveSubject()" class="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition">Fach Hinzufügen</button>
+    </div>
+  </div>
+
+  <!-- MODAL: NEUE PRÜFUNG -->
+  <div id="modal-add-exam" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="glass w-full max-w-md p-6 rounded-3xl border border-slate-800 space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <h3 class="text-lg font-bold text-white flex items-center gap-2">
+          <i data-lucide="file-text" class="text-blue-400"></i> Note / Prüfung eintragen
+        </h3>
+        <button onclick="closeModal('modal-add-exam')" class="text-slate-400 hover:text-white"><i data-lucide="x"></i></button>
+      </div>
+      <div>
+        <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Prüfungsbezeichnung (Optional)</label>
+        <input type="text" id="new-exam-title" placeholder="z.B. Prüfung 1" class="w-full px-4 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-blue-500 mb-3 text-sm">
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Erreichte Punkte</label>
+          <input type="number" step="0.5" id="new-exam-achieved" placeholder="45" class="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-blue-500">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Maximale Punkte</label>
+          <input type="number" step="0.5" id="new-exam-max" placeholder="50" class="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-blue-500">
+        </div>
+      </div>
+      <p class="text-xs text-slate-400">Formel: <code class="text-blue-400">1 + 5 * (Erreicht / Max)</code> (Gerundet auf 0.5)</p>
+      <button onclick="saveExam()" class="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition">Berechnen & Speichern</button>
     </div>
   </div>
 
   <!-- MODAL: STECKBRIEF / PROFIL -->
-  <div id="modal-profile" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+  <div id="modal-profile" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
     <div class="glass w-full max-w-xl p-6 rounded-3xl border border-slate-800 space-y-6 max-h-[90vh] overflow-y-auto">
       <div class="flex items-center justify-between border-b border-slate-800 pb-4">
         <h3 class="text-xl font-bold text-white flex items-center gap-2">
@@ -132,49 +186,55 @@
       </div>
 
       <form onsubmit="saveProfile(event)" class="space-y-4">
-        <div class="flex items-center gap-4">
+        <div class="flex items-center gap-4 bg-slate-900/60 p-4 rounded-2xl border border-slate-800">
           <img id="edit-profile-img-preview" src="" class="w-16 h-16 rounded-2xl object-cover bg-slate-800 border border-slate-700">
-          <div class="flex-1">
-            <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Profilbild URL</label>
-            <input type="text" id="edit-profile-pic" oninput="updateProfilePicPreview(this.value)" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-sm text-white">
+          <div class="flex-1 space-y-2">
+            <div>
+              <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Profilbild hochladen</label>
+              <input type="file" accept="image/*" onchange="handleFileUpload(event)" class="text-xs text-slate-400 file:mr-2 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:bg-blue-600 file:text-white file:font-semibold hover:file:bg-blue-500 cursor-pointer">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Oder Profilbild URL</label>
+              <input type="text" id="edit-profile-pic" oninput="updateProfilePicPreview(this.value)" placeholder="https://..." class="w-full px-3 py-1.5 bg-slate-800 border border-slate-700 rounded-xl text-xs text-white">
+            </div>
           </div>
         </div>
 
         <div class="grid grid-cols-2 gap-3">
           <div>
             <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Name</label>
-            <input type="text" id="edit-profile-name" required class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-sm text-white">
+            <input type="text" id="edit-profile-name" required class="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-sm text-white">
           </div>
           <div>
             <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Alter</label>
-            <input type="number" id="edit-profile-age" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-sm text-white">
+            <input type="number" id="edit-profile-age" class="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-sm text-white">
           </div>
         </div>
 
         <div class="grid grid-cols-2 gap-3">
           <div>
             <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Gewicht (kg)</label>
-            <input type="number" id="edit-profile-weight" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-sm text-white">
+            <input type="number" id="edit-profile-weight" class="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-sm text-white">
           </div>
           <div>
             <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Grösse (cm)</label>
-            <input type="number" id="edit-profile-height" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-sm text-white">
+            <input type="number" id="edit-profile-height" class="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-sm text-white">
           </div>
         </div>
 
         <div>
           <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Hauptziel im Leben</label>
-          <input type="text" id="edit-profile-goal" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-sm text-white">
+          <input type="text" id="edit-profile-goal" class="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-sm text-white">
         </div>
 
         <div>
           <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Motto</label>
-          <input type="text" id="edit-profile-motto" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-sm text-white italic">
+          <input type="text" id="edit-profile-motto" class="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-sm text-white italic">
         </div>
 
         <div>
           <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Über mich</label>
-          <textarea id="edit-profile-bio" rows="3" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-sm text-white"></textarea>
+          <textarea id="edit-profile-bio" rows="3" class="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-sm text-white"></textarea>
         </div>
 
         <div class="flex gap-2 pt-2">
@@ -186,10 +246,12 @@
   </div>
 
   <script>
-    // DATA STRUCTURE & STATE
     let currentUser = null;
+    let activeSemIdx = null;
+    let activeSubIdx = null;
+
     const MODULE_DEFINITIONS = [
-      { id: 'wms_grades', name: 'WMS Noten', icon: 'graduation-cap', desc: 'Semester, Fächer, Notenrechnung & WMS-Bestehensregeln' },
+      { id: 'wms_grades', name: 'WMS Notensystem', icon: 'graduation-cap', desc: 'Semester, Fächer, Notenrechner & WMS-Bestehensregeln' },
       { id: 'budget', name: 'Budget & Finanzen', icon: 'wallet', desc: 'Monatliche Einnahmen & Ausgaben in CHF' },
       { id: 'fitness', name: 'Fitness & Ernährung', icon: 'dumbbell', desc: 'Gewichtsziele, Protein & Krafttraining' },
       { id: 'football', name: 'Fußball-Promotion', icon: 'trophy', desc: 'Ligen-Entwicklung & Match-Analysen' },
@@ -200,7 +262,6 @@
       { id: 'news', name: 'Welt-News (Vorbereitet)', icon: 'newspaper', desc: 'Platzhalter für Schlagzeilen' }
     ];
 
-    // INITIALIZATION
     window.onload = function() {
       lucide.createIcons();
       checkAuthSession();
@@ -218,7 +279,6 @@
       showAuthScreen();
     }
 
-    // AUTH LOGIC
     function showAuthTab(tab) {
       document.getElementById('form-login').classList.toggle('hidden', tab !== 'login');
       document.getElementById('form-register').classList.toggle('hidden', tab !== 'register');
@@ -249,17 +309,14 @@
           age: 17,
           weight: 68,
           height: 182,
-          goal: 'WMS erfolgreich abschliessen & wachsen',
+          goal: 'WMS erfolgreich abschliessen',
           motto: 'Jeden Tag 1% besser!',
-          bio: 'Willkommen auf meinem Entwicklungs-Dashboard.',
+          bio: 'Mein persönliches Dashboard.',
           pic: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100'
         },
         activeModules: ['wms_grades', 'budget', 'fitness'],
         semesters: [],
-        budget: [],
-        fitness: {},
-        football: {},
-        social: {}
+        budget: []
       };
 
       saveUserData();
@@ -302,7 +359,6 @@
       }
     }
 
-    // SCREEN TOGGLES
     function showAuthScreen() {
       document.getElementById('auth-screen').classList.remove('hidden');
       document.getElementById('app-screen').classList.add('hidden');
@@ -321,7 +377,6 @@
       document.getElementById('nav-avatar').src = currentUser.profile.pic || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100';
     }
 
-    // DASHBOARD & MODULE RENDERER
     function renderDashboard() {
       const grid = document.getElementById('dashboard-grid');
       grid.innerHTML = '';
@@ -345,16 +400,15 @@
       } else if (modId === 'budget') {
         contentHTML = renderBudgetContent();
       } else if (modId === 'fitness') {
-        contentHTML = renderFitnessContent();
+        contentHTML = `<p class="text-xs text-slate-400">Zielgewicht: ${currentUser.profile.weight} kg. Eiweißziel: ${(currentUser.profile.weight * 2)}g/Tag.</p>`;
       } else if (modId === 'football') {
-        contentHTML = renderFootballContent();
+        contentHTML = `<p class="text-xs text-slate-400">Promotion-Plan aktiv. Fokus: Ausdauer & Match-Zweikampf.</p>`;
       } else if (modId === 'social_media') {
-        contentHTML = renderSocialMediaContent();
+        contentHTML = `<p class="text-xs text-slate-400">Wachstums-Tracker: 1-2 Videos pro Tag posten.</p>`;
       } else if (modId === 'lifestyle') {
-        contentHTML = renderLifestyleContent();
+        contentHTML = `<p class="text-xs text-slate-400">Routine: Cleanser morgens/abends & 8h Schlaf.</p>`;
       } else {
-        // Platzhalter Module
-        contentHTML = `<p class="text-sm text-slate-400 italic">${modDef.desc}</p><span class="inline-block px-3 py-1 bg-slate-800 text-slate-400 text-xs rounded-full">Platzhalter Modul</span>`;
+        contentHTML = `<p class="text-sm text-slate-400 italic">${modDef.desc}</p><span class="inline-block px-3 py-1 bg-slate-900 text-slate-500 text-xs rounded-full border border-slate-800">Platzhalter</span>`;
       }
 
       return `
@@ -371,86 +425,108 @@
       `;
     }
 
-    // 1. WMS NOTENSYSTEM ENGINE
+    // ---------------- WMS NOTENSYSTEM ENGINE ----------------
+    function roundToHalfGrade(val) {
+      return Math.round(val * 2) / 2;
+    }
+
     function renderWMSGradesContent() {
       let html = `
         <div class="space-y-4">
           <div class="flex justify-between items-center">
             <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Semester-Übersicht</span>
-            <button onclick="addSemester()" class="text-xs bg-blue-600/30 text-blue-400 border border-blue-500/30 px-3 py-1.5 rounded-xl font-bold hover:bg-blue-600 hover:text-white transition">+ Neues Semester</button>
+            <button onclick="openSemesterModal()" class="text-xs bg-blue-600/20 text-blue-400 border border-blue-500/30 px-3 py-1.5 rounded-xl font-bold hover:bg-blue-600 hover:text-white transition">+ Neues Semester</button>
           </div>
       `;
 
       if (!currentUser.semesters || currentUser.semesters.length === 0) {
-        html += `<p class="text-xs text-slate-500">Noch keine Semester angelegt. Klicke auf "+ Neues Semester".</p></div>`;
+        html += `<p class="text-xs text-slate-500 italic">Noch kein Semester angelegt. Klicke oben auf "+ Neues Semester".</p></div>`;
         return html;
       }
 
       currentUser.semesters.forEach((sem, semIdx) => {
         let subjectsHTML = '';
         let totalSubjectGrades = 0;
-        let subjectCount = 0;
+        let validSubjectsCount = 0;
         let ungenuegendCount = 0;
 
-        sem.subjects.forEach((sub, subIdx) => {
-          let examSum = 0;
-          let examCount = 0;
+        if (sem.subjects && sem.subjects.length > 0) {
+          sem.subjects.forEach((sub, subIdx) => {
+            let examSum = 0;
+            let examCount = 0;
 
-          sub.exams.forEach(ex => {
-            const rawGrade = 1 + 5 * (ex.achieved / ex.max);
-            const roundedGrade = roundToHalfGrade(rawGrade);
-            examSum += roundedGrade;
-            examCount++;
+            if (sub.exams && sub.exams.length > 0) {
+              sub.exams.forEach(ex => {
+                const rawGrade = 1 + 5 * (ex.achieved / ex.max);
+                const roundedGrade = roundToHalfGrade(rawGrade);
+                examSum += roundedGrade;
+                examCount++;
+              });
+            }
+
+            // Fachdurchschnitt berechnen & runden
+            const subAvg = examCount > 0 ? roundToHalfGrade(examSum / examCount) : null;
+            
+            if (subAvg !== null) {
+              totalSubjectGrades += subAvg;
+              validSubjectsCount++;
+              if (subAvg < 4.0) ungenuegendCount++;
+            }
+
+            subjectsHTML += `
+              <div class="bg-slate-900/60 p-3 rounded-2xl border border-slate-800 space-y-2">
+                <div class="flex justify-between items-center">
+                  <span class="font-bold text-sm text-slate-200">${sub.name}</span>
+                  <span class="text-sm font-black ${subAvg !== null ? (subAvg < 4.0 ? 'text-rose-400' : 'text-emerald-400') : 'text-slate-500'}">
+                    ${subAvg !== null ? subAvg.toFixed(1) : '--'}
+                  </span>
+                </div>
+
+                ${sub.exams && sub.exams.length > 0 ? `
+                  <div class="text-xs text-slate-400 space-y-1">
+                    ${sub.exams.map(ex => {
+                      const g = roundToHalfGrade(1 + 5 * (ex.achieved / ex.max));
+                      return `<div class="flex justify-between bg-slate-950/80 px-2 py-1 rounded-lg">
+                        <span>${ex.title || 'Prüfung'}: ${ex.achieved}/${ex.max} Pkt.</span>
+                        <span class="font-bold text-slate-200">${g.toFixed(1)}</span>
+                      </div>`;
+                    }).join('')}
+                  </div>
+                ` : `<p class="text-[11px] text-slate-500 italic">Keine Prüfungen eingetragen</p>`}
+
+                <button onclick="openExamModal(${semIdx}, ${subIdx})" class="w-full text-center text-xs text-blue-400 hover:underline py-1">+ Note eintragen</button>
+              </div>
+            `;
           });
+        }
 
-          const subAvg = examCount > 0 ? roundToHalfGrade(examSum / examCount) : null;
-          if (subAvg !== null) {
-            totalSubjectGrades += subAvg;
-            subjectCount++;
-            if (subAvg < 4.0) ungenuegendCount++;
-          }
-
-          subjectsHTML += `
-            <div class="bg-slate-800/40 p-3 rounded-2xl border border-slate-700/40 space-y-2">
-              <div class="flex justify-between items-center">
-                <span class="font-bold text-sm text-slate-200">${sub.name}</span>
-                <span class="text-sm font-black ${subAvg < 4.0 ? 'text-rose-400' : 'text-emerald-400'}">${subAvg !== null ? subAvg.toFixed(1) : '--'}</span>
-              </div>
-              <div class="text-xs text-slate-400 space-y-1">
-                ${sub.exams.map((ex, exIdx) => {
-                  const g = roundToHalfGrade(1 + 5 * (ex.achieved / ex.max));
-                  return `<div class="flex justify-between bg-slate-800/80 p-1.5 rounded-lg"><span>${ex.achieved}/${ex.max} Pkt.</span><span class="font-bold">${g.toFixed(1)}</span></div>`;
-                }).join('')}
-              </div>
-              <button onclick="addExam(${semIdx}, ${subIdx})" class="w-full text-center text-xs text-blue-400 hover:underline py-1">+ Prüfung hinzufügen</button>
-            </div>
-          `;
-        });
-
-        const semAvg = subjectCount > 0 ? roundToHalfGrade(totalSubjectGrades / subjectCount) : null;
+        // Semesterdurchschnitt berechnen & runden
+        const semAvg = validSubjectsCount > 0 ? roundToHalfGrade(totalSubjectGrades / validSubjectsCount) : null;
+        
+        // WMS Bestehensregel
         const isPassed = semAvg !== null && semAvg >= 4.0 && ungenuegendCount <= 2;
 
         html += `
-          <div class="bg-slate-900/80 p-4 rounded-2xl border border-slate-800 space-y-3">
+          <div class="bg-slate-950/80 p-4 rounded-2xl border border-slate-800 space-y-3">
             <div class="flex justify-between items-center border-b border-slate-800 pb-2">
               <h4 class="font-bold text-white text-base">${sem.name}</h4>
-              <button onclick="addSubject(${semIdx})" class="text-xs text-blue-400 hover:underline">+ Fach</button>
+              <button onclick="openSubjectModal(${semIdx})" class="text-xs bg-slate-800 hover:bg-slate-700 text-blue-400 px-2 py-1 rounded-lg transition">+ Fach</button>
             </div>
 
-            <div class="space-y-2">${subjectsHTML}</div>
+            <div class="space-y-2">${subjectsHTML || '<p class="text-xs text-slate-500 italic">Noch keine Fächer in diesem Semester.</p>'}</div>
 
             ${semAvg !== null ? `
-              <div class="pt-2 border-t border-slate-800 space-y-1 text-xs">
+              <div class="pt-3 border-t border-slate-800 space-y-1.5 text-xs">
                 <div class="flex justify-between font-bold">
-                  <span>Semesterschnitt:</span>
-                  <span class="${semAvg < 4.0 ? 'text-rose-400' : 'text-emerald-400'}">${semAvg.toFixed(1)}</span>
+                  <span class="text-slate-300">Semesterdurchschnitt:</span>
+                  <span class="${semAvg < 4.0 ? 'text-rose-400' : 'text-emerald-400'} text-sm">${semAvg.toFixed(1)}</span>
                 </div>
                 <div class="flex justify-between text-slate-400">
-                  <span>Ungenügende Fächer:</span>
-                  <span class="${ungenuegendCount > 2 ? 'text-rose-400 font-bold' : ''}">${ungenuegendCount}</span>
+                  <span>Ungenügende Fächer (&lt; 4.0):</span>
+                  <span class="${ungenuegendCount > 2 ? 'text-rose-400 font-bold' : 'text-slate-300'}">${ungenuegendCount}</span>
                 </div>
-                <div class="mt-2 p-2 rounded-xl font-bold text-center ${isPassed ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-rose-500/20 text-rose-400 border border-rose-500/30'}">
-                  ${isPassed ? '✓ WMS Semester Bestanden' : '✗ Nicht Bestanden (Schnitt < 4.0 oder >2 ungenügend)'}
+                <div class="mt-2 p-2 rounded-xl font-bold text-center text-xs ${isPassed ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-rose-500/20 text-rose-400 border border-rose-500/30'}">
+                  ${isPassed ? '✓ Semester Bestanden' : '✗ Nicht Bestanden (Schnitt < 4.0 oder >2 ungenügend)'}
                 </div>
               </div>
             ` : ''}
@@ -462,49 +538,77 @@
       return html;
     }
 
-    function roundToHalfGrade(val) {
-      return Math.round(val * 2) / 2;
+    // MODAL DIALOG CONTROLLERS
+    function openSemesterModal() {
+      document.getElementById('new-semester-name').value = '';
+      document.getElementById('modal-add-semester').classList.remove('hidden');
     }
 
-    function addSemester() {
-      const name = prompt('Semester Name (z. B. 2. Semester 2026):', '1. Semester');
-      if (!name) return;
+    function saveSemester() {
+      const name = document.getElementById('new-semester-name').value.trim();
+      if (!name) return alert('Bitte gib einen Semester-Namen ein!');
+
       if (!currentUser.semesters) currentUser.semesters = [];
       currentUser.semesters.push({ name: name, subjects: [] });
+
       saveUserData();
       renderDashboard();
+      closeModal('modal-add-semester');
     }
 
-    function addSubject(semIdx) {
-      const name = prompt('Fach Name (z. B. Mathematik, Wirtschaft):');
-      if (!name) return;
-      currentUser.semesters[semIdx].subjects.push({ name: name, exams: [] });
+    function openSubjectModal(semIdx) {
+      activeSemIdx = semIdx;
+      document.getElementById('new-subject-name').value = '';
+      document.getElementById('modal-add-subject').classList.remove('hidden');
+    }
+
+    function saveSubject() {
+      const name = document.getElementById('new-subject-name').value.trim();
+      if (!name) return alert('Bitte gib einen Fach-Namen ein!');
+
+      currentUser.semesters[activeSemIdx].subjects.push({ name: name, exams: [] });
+
       saveUserData();
       renderDashboard();
+      closeModal('modal-add-subject');
     }
 
-    function addExam(semIdx, subIdx) {
-      const achieved = parseFloat(prompt('Erreichte Punkte:'));
-      const max = parseFloat(prompt('Maximale Punkte:'));
-      if (isNaN(achieved) || isNaN(max) || max <= 0) return;
+    function openExamModal(semIdx, subIdx) {
+      activeSemIdx = semIdx;
+      activeSubIdx = subIdx;
+      document.getElementById('new-exam-title').value = '';
+      document.getElementById('new-exam-achieved').value = '';
+      document.getElementById('new-exam-max').value = '';
+      document.getElementById('modal-add-exam').classList.remove('hidden');
+    }
 
-      currentUser.semesters[semIdx].subjects[subIdx].exams.push({ achieved, max });
+    function saveExam() {
+      const title = document.getElementById('new-exam-title').value.trim() || 'Prüfung';
+      const achieved = parseFloat(document.getElementById('new-exam-achieved').value);
+      const max = parseFloat(document.getElementById('new-exam-max').value);
+
+      if (isNaN(achieved) || isNaN(max) || max <= 0) {
+        return alert('Bitte gültige Punkte eingeben!');
+      }
+
+      currentUser.semesters[activeSemIdx].subjects[activeSubIdx].exams.push({ title, achieved, max });
+
       saveUserData();
       renderDashboard();
+      closeModal('modal-add-exam');
     }
 
-    // 2. BUDGET MODULE
+    // BUDGET ENGINE
     function renderBudgetContent() {
       return `
         <div class="space-y-3 text-sm">
-          <p class="text-xs text-slate-400">Einnahmen & Ausgaben Übersicht</p>
           <div class="flex gap-2">
-            <input type="text" id="budget-desc" placeholder="Grund" class="flex-1 bg-slate-800 p-2 rounded-xl text-xs text-white">
-            <input type="number" id="budget-amt" placeholder="CHF" class="w-20 bg-slate-800 p-2 rounded-xl text-xs text-white">
-            <button onclick="addBudgetItem()" class="bg-emerald-600 px-3 rounded-xl font-bold text-xs">+</button>
+            <input type="text" id="budget-desc" placeholder="Einnahme/Ausgabe" class="flex-1 bg-slate-900 border border-slate-800 p-2 rounded-xl text-xs text-white">
+            <input type="number" id="budget-amt" placeholder="CHF" class="w-20 bg-slate-900 border border-slate-800 p-2 rounded-xl text-xs text-white">
+            <button onclick="addBudgetItem()" class="bg-emerald-600 px-3 rounded-xl font-bold text-xs hover:bg-emerald-500 transition">+</button>
           </div>
           <ul class="space-y-1 text-xs max-h-36 overflow-y-auto">
-            ${(currentUser.budget || []).map(b => `<li class="flex justify-between bg-slate-800/50 p-2 rounded-lg"><span>${b.desc}</span><span class="font-bold text-emerald-400">+${b.amt} CHF</span></li>`).join('')}
+            ${(currentUser.budget || []).map(b => `<li class="flex justify-between bg-slate-900/60 p-2 rounded-lg border border-slate-800"><span>${b.desc}</span><span class="font-bold text-emerald-400">+${b.amt} CHF</span></li>`).join('')}
           </ul>
         </div>
       `;
@@ -521,21 +625,7 @@
       renderDashboard();
     }
 
-    // OTHER MODULES RENDERING
-    function renderFitnessContent() {
-      return `<p class="text-xs text-slate-400">Zielgewicht: ${currentUser.profile.weight} kg. Eiweißziel: ${(currentUser.profile.weight * 2)}g/Tag.</p>`;
-    }
-    function renderFootballContent() {
-      return `<p class="text-xs text-slate-400">Promotion-Plan aktiv. Fokus: Ausdauer & Match-Zweikampf.</p>`;
-    }
-    function renderSocialMediaContent() {
-      return `<p class="text-xs text-slate-400">Wachstums-Tracker: 1-2 Videos pro Tag posten.</p>`;
-    }
-    function renderLifestyleContent() {
-      return `<p class="text-xs text-slate-400">Routine: Cleanser morgens/abends & 8h Schlaf.</p>`;
-    }
-
-    // MODAL CONTROL & MODULE MANAGER
+    // MODULE MANAGER
     function openAddModuleModal() {
       const list = document.getElementById('available-modules-list');
       list.innerHTML = '';
@@ -543,7 +633,7 @@
       MODULE_DEFINITIONS.forEach(m => {
         const isActive = currentUser.activeModules.includes(m.id);
         const item = document.createElement('div');
-        item.className = "p-3 bg-slate-800/60 border border-slate-700/60 rounded-2xl flex items-center justify-between";
+        item.className = "p-3 bg-slate-900 border border-slate-800 rounded-2xl flex items-center justify-between";
         item.innerHTML = `
           <div class="flex items-center gap-3">
             <i data-lucide="${m.icon}" class="text-blue-400"></i>
@@ -580,6 +670,7 @@
       renderDashboard();
     }
 
+    // PROFILE & FILE UPLOAD
     function openProfileModal() {
       const p = currentUser.profile;
       document.getElementById('edit-profile-pic').value = p.pic || '';
@@ -593,6 +684,19 @@
       document.getElementById('edit-profile-bio').value = p.bio || '';
 
       document.getElementById('modal-profile').classList.remove('hidden');
+    }
+
+    function handleFileUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const base64Image = e.target.result;
+        document.getElementById('edit-profile-pic').value = base64Image;
+        document.getElementById('edit-profile-img-preview').src = base64Image;
+      };
+      reader.readAsDataURL(file);
     }
 
     function updateProfilePicPreview(url) {
