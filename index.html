@@ -6,6 +6,7 @@
   <title>MYLife – Personal Dashboard & Growth</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     .glass {
       background: rgba(15, 23, 42, 0.75);
@@ -130,7 +131,7 @@
     </div>
   </div>
 
-  <!-- MODAL: NEUES FACH (EFZ / BM SEPARATION) -->
+  <!-- MODAL: NEUES FACH -->
   <div id="modal-add-subject" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
     <div class="glass w-full max-w-md p-6 rounded-3xl border border-slate-800 space-y-4">
       <div class="flex items-center justify-between border-b border-slate-800 pb-3">
@@ -230,6 +231,11 @@
         </div>
 
         <div>
+          <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Zielgewicht (kg)</label>
+          <input type="number" id="edit-profile-target-weight" class="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-sm text-white" placeholder="75">
+        </div>
+
+        <div>
           <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Hauptziel im Leben</label>
           <input type="text" id="edit-profile-goal" class="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-sm text-white">
         </div>
@@ -256,13 +262,25 @@
     let currentUser = null;
     let activeSemIdx = null;
     let activeSubIdx = null;
+    let weightChartInstance = null;
 
     const DEFAULT_AVATAR = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100';
 
+    const TARGETS = {
+      kcal: 2500,
+      protein: 150,
+      carbs: 300,
+      fat: 80,
+      sugarMax: 40,
+      saltMax: 6,
+      water: 3.0
+    };
+
     const MODULE_DEFINITIONS = [
       { id: 'wms_grades', name: 'WMS Notensystem', icon: 'graduation-cap', desc: 'Semester, EFZ/BM Fächer, Minuspunkte-Check & Bestehensregeln' },
+      { id: 'nutrition', name: 'Ernährung & Gesundheit', icon: 'apple', desc: 'Nährwert-Tracker, Health-Score, Protein-Empfehlungen & Gewichtsverlauf' },
       { id: 'budget', name: 'Budget & Finanzen', icon: 'wallet', desc: 'Monatliche Einnahmen & Ausgaben in CHF' },
-      { id: 'fitness', name: 'Fitness & Ernährung', icon: 'dumbbell', desc: 'Gewichtsziele, Protein & Krafttraining' },
+      { id: 'fitness', name: 'Fitness & Routine', icon: 'dumbbell', desc: 'Workout-Tracker & Krafttraining' },
       { id: 'football', name: 'Fußball-Promotion', icon: 'trophy', desc: 'Ligen-Entwicklung & Match-Analysen' },
       { id: 'social_media', name: 'Social Media Creator', icon: 'share-2', desc: 'TikTok, Instagram & Shorts Follower-Ziele' },
       { id: 'lifestyle', name: 'Hygiene & Wachstum', icon: 'sparkles', desc: 'Hautpflege-Routine & Körperhaltung' },
@@ -317,15 +335,18 @@
           school: school,
           age: 17,
           weight: 68,
-          height: 182,
+          targetWeight: 75,
+          height: 180,
           goal: 'WMS (BM & EFZ) erfolgreich abschliessen',
           motto: 'Jeden Tag 1% besser!',
           bio: 'Mein persönliches Dashboard.',
           pic: DEFAULT_AVATAR
         },
-        activeModules: ['wms_grades', 'budget', 'fitness'],
+        activeModules: ['wms_grades', 'nutrition', 'budget'],
         semesters: [],
-        budget: []
+        budget: [],
+        weightHistory: [],
+        nutritionLogs: []
       };
 
       saveUserData();
@@ -399,6 +420,10 @@
       });
 
       lucide.createIcons();
+
+      if (currentUser.activeModules.includes('nutrition')) {
+        initWeightChart();
+      }
     }
 
     function getModuleHTML(modId) {
@@ -407,10 +432,12 @@
 
       if (modId === 'wms_grades') {
         contentHTML = renderWMSGradesContent();
+      } else if (modId === 'nutrition') {
+        contentHTML = renderNutritionContent();
       } else if (modId === 'budget') {
         contentHTML = renderBudgetContent();
       } else if (modId === 'fitness') {
-        contentHTML = `<p class="text-xs text-slate-400">Zielgewicht: ${currentUser.profile.weight} kg. Eiweißziel: ${(currentUser.profile.weight * 2)}g/Tag.</p>`;
+        contentHTML = `<p class="text-xs text-slate-400">Zielgewicht: ${currentUser.profile.targetWeight || 75} kg. Protein: ${(TARGETS.protein)}g/Tag.</p>`;
       } else if (modId === 'football') {
         contentHTML = `<p class="text-xs text-slate-400">Promotion-Plan aktiv. Fokus: Ausdauer & Match-Zweikampf.</p>`;
       } else if (modId === 'social_media') {
@@ -433,6 +460,238 @@
           <div>${contentHTML}</div>
         </div>
       `;
+    }
+
+    // ---------------- ERNÄHRUNG & GESUNDHEIT ENGINE ----------------
+    function getTodayString() {
+      const today = new Date();
+      const yyyy = today.getFullYear();
+      const mm = String(today.getMonth() + 1).padStart(2, '0');
+      const dd = String(today.getDate()).padStart(2, '0');
+      return `${yyyy}-${mm}-${dd}`;
+    }
+
+    function renderNutritionContent() {
+      const today = getTodayString();
+      const targetWeight = currentUser.profile.targetWeight || 75;
+
+      return `
+        <div class="space-y-4">
+          <p class="text-xs text-slate-400">Profil: ${currentUser.profile.age || 17} Jahre | ${currentUser.profile.height || 180} cm | Ziel: ${targetWeight} kg</p>
+          
+          <!-- FORMULAR NÄHRWERTE -->
+          <div class="bg-slate-900/80 p-3.5 rounded-2xl border border-slate-800 space-y-2">
+            <span class="text-[10px] font-bold uppercase text-slate-400 block">Tageswerte Eintragen</span>
+            <div class="grid grid-cols-2 gap-2">
+              <div>
+                <label class="block text-[10px] text-slate-400">Datum</label>
+                <input type="date" id="nutr-date" value="${today}" class="w-full bg-slate-950 border border-slate-700 p-1.5 rounded-xl text-xs text-white">
+              </div>
+              <div>
+                <label class="block text-[10px] text-slate-400">Kalorien (kcal)</label>
+                <input type="number" id="nutr-kcal" placeholder="Ziel: ${TARGETS.kcal}" class="w-full bg-slate-950 border border-slate-700 p-1.5 rounded-xl text-xs text-white">
+              </div>
+            </div>
+
+            <div class="grid grid-cols-3 gap-2">
+              <div>
+                <label class="block text-[10px] text-slate-400">Protein (g)</label>
+                <input type="number" id="nutr-protein" placeholder="${TARGETS.protein}g" class="w-full bg-slate-950 border border-slate-700 p-1.5 rounded-xl text-xs text-white">
+              </div>
+              <div>
+                <label class="block text-[10px] text-slate-400">Carbs (g)</label>
+                <input type="number" id="nutr-carbs" placeholder="${TARGETS.carbs}g" class="w-full bg-slate-950 border border-slate-700 p-1.5 rounded-xl text-xs text-white">
+              </div>
+              <div>
+                <label class="block text-[10px] text-slate-400">Fett (g)</label>
+                <input type="number" id="nutr-fat" placeholder="${TARGETS.fat}g" class="w-full bg-slate-950 border border-slate-700 p-1.5 rounded-xl text-xs text-white">
+              </div>
+            </div>
+
+            <div class="grid grid-cols-3 gap-2">
+              <div>
+                <label class="block text-[10px] text-slate-400">Zucker (g)</label>
+                <input type="number" id="nutr-sugar" placeholder="max ${TARGETS.sugarMax}g" class="w-full bg-slate-950 border border-slate-700 p-1.5 rounded-xl text-xs text-white">
+              </div>
+              <div>
+                <label class="block text-[10px] text-slate-400">Salz (g)</label>
+                <input type="number" id="nutr-salt" placeholder="max ${TARGETS.saltMax}g" class="w-full bg-slate-950 border border-slate-700 p-1.5 rounded-xl text-xs text-white">
+              </div>
+              <div>
+                <label class="block text-[10px] text-slate-400">Wasser (L)</label>
+                <input type="number" step="0.1" id="nutr-water" placeholder="${TARGETS.water}L" class="w-full bg-slate-950 border border-slate-700 p-1.5 rounded-xl text-xs text-white">
+              </div>
+            </div>
+
+            <button onclick="analyzeAndSaveNutrition()" class="w-full py-2 bg-emerald-600 hover:bg-emerald-500 font-bold text-xs text-white rounded-xl transition mt-1">
+              Analyse Berechnen
+            </button>
+          </div>
+
+          <!-- HEALTH SCORE & STATUS -->
+          <div id="nutr-results" class="space-y-3">
+            <div class="bg-slate-950/90 p-3 rounded-2xl border border-slate-800 flex items-center justify-between">
+              <div>
+                <span class="text-[10px] font-bold uppercase text-slate-400 block">Health Score</span>
+                <span class="text-xs text-slate-400">Gesundheits-Bewertung</span>
+              </div>
+              <div id="health-score-badge" class="px-3 py-1 rounded-xl text-base font-black bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                <span id="health-score-val">100</span> / 100
+              </div>
+            </div>
+
+            <!-- COMPARISON LIST -->
+            <div id="nutr-status-list" class="grid grid-cols-2 gap-1.5 text-xs"></div>
+
+            <!-- RECOMMENDATIONS -->
+            <div id="protein-recs" class="hidden bg-amber-500/10 border border-amber-500/30 p-3 rounded-2xl text-xs space-y-1.5 text-amber-200">
+              <div class="flex items-center gap-1.5 font-bold text-amber-400">
+                <i data-lucide="alert-triangle" class="w-4 h-4"></i> Protein-Defizit erkannt!
+              </div>
+              <p class="text-[11px] text-amber-300/80">Empfohlene proteinreiche Lebensmittel für heute:</p>
+              <ul class="list-disc list-inside text-[11px] space-y-0.5 text-amber-200/90">
+                <li>Magerquark / Hüttenkäse (~30g Protein/Becher)</li>
+                <li>Hähnchenbrust / Putenbrust (~31g Protein/100g)</li>
+                <li>Linsen & Kichererbsen (~9g Protein/100g)</li>
+                <li>Eier / Eiklar (~6g Protein pro Ei)</li>
+                <li>Proteinpulver Shake (~25g Protein/Portion)</li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- GEWICHTSTRACKING ZEITSTRAHL -->
+          <div class="bg-slate-900/80 p-3.5 rounded-2xl border border-slate-800 space-y-3">
+            <span class="text-[10px] font-bold uppercase text-slate-400 block">Gewichtsverlauf (Ziel: ${targetWeight} kg)</span>
+            <div class="flex gap-2">
+              <input type="date" id="weight-date" value="${today}" class="bg-slate-950 border border-slate-700 p-1.5 rounded-xl text-xs text-white flex-1">
+              <input type="number" step="0.1" id="weight-val" placeholder="Gewicht in kg" class="bg-slate-950 border border-slate-700 p-1.5 rounded-xl text-xs text-white flex-1">
+              <button onclick="addWeightEntry()" class="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded-xl text-xs font-bold">Eintragen</button>
+            </div>
+            <div class="bg-slate-950/60 p-2 rounded-xl border border-slate-800/80">
+              <canvas id="weightChartCanvas" height="140"></canvas>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function analyzeAndSaveNutrition() {
+      const kcal = parseFloat(document.getElementById('nutr-kcal').value) || 0;
+      const protein = parseFloat(document.getElementById('nutr-protein').value) || 0;
+      const carbs = parseFloat(document.getElementById('nutr-carbs').value) || 0;
+      const fat = parseFloat(document.getElementById('nutr-fat').value) || 0;
+      const sugar = parseFloat(document.getElementById('nutr-sugar').value) || 0;
+      const salt = parseFloat(document.getElementById('nutr-salt').value) || 0;
+      const water = parseFloat(document.getElementById('nutr-water').value) || 0;
+
+      let score = 100;
+      const statusList = document.getElementById('nutr-status-list');
+      const recs = document.getElementById('protein-recs');
+
+      function makeBadge(label, val, target, unit, isMax = false) {
+        let isOk = isMax ? val <= target : val >= target;
+        if (!isOk) score -= 12;
+        const colorClass = isOk ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' : 'bg-rose-500/20 text-rose-400 border-rose-500/30';
+        return `
+          <div class="bg-slate-950 p-2 rounded-xl border border-slate-800 flex justify-between items-center">
+            <span class="text-slate-400">${label}:</span>
+            <span class="px-2 py-0.5 rounded-lg border font-bold text-[11px] ${colorClass}">
+              ${val}${unit} ${isOk ? '✓' : '✕'}
+            </span>
+          </div>
+        `;
+      }
+
+      statusList.innerHTML = `
+        ${makeBadge('Kcal', kcal, TARGETS.kcal - 200, '')}
+        ${makeBadge('Protein', protein, TARGETS.protein, 'g')}
+        ${makeBadge('Carbs', carbs, TARGETS.carbs - 50, 'g')}
+        ${makeBadge('Fett', fat, TARGETS.fat - 15, 'g')}
+        ${makeBadge('Zucker', sugar, TARGETS.sugarMax, 'g', true)}
+        ${makeBadge('Salz', salt, TARGETS.saltMax, 'g', true)}
+        ${makeBadge('Wasser', water, TARGETS.water, 'L')}
+      `;
+
+      if (protein < TARGETS.protein) {
+        recs.classList.remove('hidden');
+      } else {
+        recs.classList.add('hidden');
+      }
+
+      score = Math.max(0, score);
+      document.getElementById('health-score-val').innerText = score;
+      const badge = document.getElementById('health-score-badge');
+      if (score >= 80) {
+        badge.className = "px-3 py-1 rounded-xl text-base font-black bg-emerald-500/20 text-emerald-400 border border-emerald-500/30";
+      } else {
+        badge.className = "px-3 py-1 rounded-xl text-base font-black bg-rose-500/20 text-rose-400 border border-rose-500/30";
+      }
+    }
+
+    function initWeightChart() {
+      const canvas = document.getElementById('weightChartCanvas');
+      if (!canvas) return;
+
+      const history = currentUser.weightHistory || [];
+      const labels = history.map(h => h.date);
+      const dataVals = history.map(h => h.val);
+      const targetWeight = currentUser.profile.targetWeight || 75;
+      const targetVals = history.map(() => targetWeight);
+
+      if (weightChartInstance) {
+        weightChartInstance.destroy();
+      }
+
+      const ctx = canvas.getContext('2d');
+      weightChartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [
+            {
+              label: 'Gewicht (kg)',
+              data: dataVals,
+              borderColor: '#10b981',
+              backgroundColor: 'rgba(16, 185, 129, 0.1)',
+              fill: true,
+              tension: 0.3
+            },
+            {
+              label: 'Ziel (' + targetWeight + ' kg)',
+              data: targetVals,
+              borderColor: '#f43f5e',
+              borderDash: [5, 5],
+              pointRadius: 0
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          scales: {
+            y: { min: 50, max: 100, ticks: { color: '#94a3b8' } },
+            x: { ticks: { color: '#94a3b8' } }
+          },
+          plugins: {
+            legend: { labels: { color: '#94a3b8', boxWidth: 12 } }
+          }
+        }
+      });
+    }
+
+    function addWeightEntry() {
+      const date = document.getElementById('weight-date').value;
+      const val = parseFloat(document.getElementById('weight-val').value);
+
+      if (!date || isNaN(val) || val <= 0) {
+        return alert('Bitte gültiges Datum und Gewicht eintragen!');
+      }
+
+      if (!currentUser.weightHistory) currentUser.weightHistory = [];
+      currentUser.weightHistory.push({ date, val });
+      currentUser.profile.weight = val;
+
+      saveUserData();
+      renderDashboard();
     }
 
     // ---------------- WMS / EFZ / BM NOTENSYSTEM ENGINE ----------------
@@ -598,15 +857,7 @@
       renderDashboard();
     }
 
-    // ---------------- BUDGET ENGINE WITH STATS & DATE ----------------
-    function getTodayString() {
-      const today = new Date();
-      const yyyy = today.getFullYear();
-      const mm = String(today.getMonth() + 1).padStart(2, '0');
-      const dd = String(today.getDate()).padStart(2, '0');
-      return `${yyyy}-${mm}-${dd}`;
-    }
-
+    // ---------------- BUDGET ENGINE ----------------
     function renderBudgetContent() {
       const items = currentUser.budget || [];
       const todayStr = getTodayString();
@@ -853,6 +1104,7 @@
       document.getElementById('edit-profile-name').value = p.name || '';
       document.getElementById('edit-profile-age').value = p.age || '';
       document.getElementById('edit-profile-weight').value = p.weight || '';
+      document.getElementById('edit-profile-target-weight').value = p.targetWeight || 75;
       document.getElementById('edit-profile-height').value = p.height || '';
       document.getElementById('edit-profile-goal').value = p.goal || '';
       document.getElementById('edit-profile-motto').value = p.motto || '';
@@ -885,6 +1137,7 @@
         name: document.getElementById('edit-profile-name').value,
         age: parseFloat(document.getElementById('edit-profile-age').value),
         weight: parseFloat(document.getElementById('edit-profile-weight').value),
+        targetWeight: parseFloat(document.getElementById('edit-profile-target-weight').value) || 75,
         height: parseFloat(document.getElementById('edit-profile-height').value),
         goal: document.getElementById('edit-profile-goal').value,
         motto: document.getElementById('edit-profile-motto').value,
