@@ -114,75 +114,6 @@
     </div>
   </div>
 
-  <!-- MODAL: NEUES SEMESTER -->
-  <div id="modal-add-semester" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
-    <div class="glass w-full max-w-md p-6 rounded-3xl border border-slate-800 space-y-4">
-      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
-        <h3 class="text-lg font-bold text-white flex items-center gap-2">
-          <i data-lucide="folder-plus" class="text-blue-400"></i> Neues Semester
-        </h3>
-        <button onclick="closeModal('modal-add-semester')" class="text-slate-400 hover:text-white"><i data-lucide="x"></i></button>
-      </div>
-      <div>
-        <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Semester Name</label>
-        <input type="text" id="new-semester-name" placeholder="z. B. 1. Semester 2026" class="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-blue-500">
-      </div>
-      <button onclick="saveSemester()" class="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition">Erstellen</button>
-    </div>
-  </div>
-
-  <!-- MODAL: NEUES FACH -->
-  <div id="modal-add-subject" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
-    <div class="glass w-full max-w-md p-6 rounded-3xl border border-slate-800 space-y-4">
-      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
-        <h3 class="text-lg font-bold text-white flex items-center gap-2">
-          <i data-lucide="book-open" class="text-blue-400"></i> Neues Fach
-        </h3>
-        <button onclick="closeModal('modal-add-subject')" class="text-slate-400 hover:text-white"><i data-lucide="x"></i></button>
-      </div>
-      <div>
-        <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Fach Name</label>
-        <input type="text" id="new-subject-name" placeholder="z. B. Mathematik, Deutsch, W&R" class="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-blue-500">
-      </div>
-      <div>
-        <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Fach-Kategorie</label>
-        <select id="new-subject-type" class="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-blue-500">
-          <option value="BM">BM-Fach (Berufsmaturität: max. 2 ungenügende, max. 2.0 Minuspunkte)</option>
-          <option value="EFZ">EFZ-Fach (Eidg. Fähigkeitszeugnis: max. 1 ungenügende)</option>
-        </select>
-      </div>
-      <button onclick="saveSubject()" class="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition">Fach Hinzufügen</button>
-    </div>
-  </div>
-
-  <!-- MODAL: NEUE PRÜFUNG -->
-  <div id="modal-add-exam" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
-    <div class="glass w-full max-w-md p-6 rounded-3xl border border-slate-800 space-y-4">
-      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
-        <h3 class="text-lg font-bold text-white flex items-center gap-2">
-          <i data-lucide="file-text" class="text-blue-400"></i> Note / Prüfung eintragen
-        </h3>
-        <button onclick="closeModal('modal-add-exam')" class="text-slate-400 hover:text-white"><i data-lucide="x"></i></button>
-      </div>
-      <div>
-        <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Prüfungsbezeichnung (Optional)</label>
-        <input type="text" id="new-exam-title" placeholder="z.B. Test 1" class="w-full px-4 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-blue-500 mb-3 text-sm">
-      </div>
-      <div class="grid grid-cols-2 gap-3">
-        <div>
-          <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Erreichte Punkte</label>
-          <input type="number" step="0.5" id="new-exam-achieved" placeholder="45" class="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-blue-500">
-        </div>
-        <div>
-          <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Maximale Punkte</label>
-          <input type="number" step="0.5" id="new-exam-max" placeholder="50" class="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-blue-500">
-        </div>
-      </div>
-      <p class="text-xs text-slate-400">Formel: <code class="text-blue-400">1 + 5 * (Erreicht / Max)</code> (Gerundet auf 0.5)</p>
-      <button onclick="saveExam()" class="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition">Berechnen & Speichern</button>
-    </div>
-  </div>
-
   <!-- MODAL: STECKBRIEF / PROFIL -->
   <div id="modal-profile" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
     <div class="glass w-full max-w-xl p-6 rounded-3xl border border-slate-800 space-y-6 max-h-[90vh] overflow-y-auto">
@@ -198,11 +129,7 @@
           <img id="edit-profile-img-preview" src="" class="w-16 h-16 rounded-2xl object-cover bg-slate-800 border border-slate-700">
           <div class="flex-1 space-y-2">
             <div>
-              <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Profilbild hochladen</label>
-              <input type="file" accept="image/*" onchange="handleFileUpload(event)" class="text-xs text-slate-400 file:mr-2 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:bg-blue-600 file:text-white file:font-semibold hover:file:bg-blue-500 cursor-pointer">
-            </div>
-            <div>
-              <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Oder Profilbild URL</label>
+              <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Profilbild URL</label>
               <input type="text" id="edit-profile-pic" oninput="updateProfilePicPreview(this.value)" placeholder="https://..." class="w-full px-3 py-1.5 bg-slate-800 border border-slate-700 rounded-xl text-xs text-white">
             </div>
           </div>
@@ -219,37 +146,6 @@
           </div>
         </div>
 
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Gewicht (kg)</label>
-            <input type="number" id="edit-profile-weight" class="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-sm text-white">
-          </div>
-          <div>
-            <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Grösse (cm)</label>
-            <input type="number" id="edit-profile-height" class="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-sm text-white">
-          </div>
-        </div>
-
-        <div>
-          <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Zielgewicht (kg)</label>
-          <input type="number" id="edit-profile-target-weight" class="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-sm text-white" placeholder="75">
-        </div>
-
-        <div>
-          <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Hauptziel im Leben</label>
-          <input type="text" id="edit-profile-goal" class="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-sm text-white">
-        </div>
-
-        <div>
-          <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Motto</label>
-          <input type="text" id="edit-profile-motto" class="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-sm text-white italic">
-        </div>
-
-        <div>
-          <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Über mich</label>
-          <textarea id="edit-profile-bio" rows="3" class="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-sm text-white"></textarea>
-        </div>
-
         <div class="flex gap-2 pt-2">
           <button type="submit" class="flex-1 py-3 bg-blue-600 hover:bg-blue-500 font-bold text-white rounded-xl transition">Speichern</button>
           <button type="button" onclick="handleLogout()" class="px-4 py-3 bg-rose-600/20 text-rose-400 border border-rose-500/30 rounded-xl font-bold hover:bg-rose-600/30 transition">Abmelden</button>
@@ -260,33 +156,43 @@
 
   <script>
     let currentUser = null;
-    let activeSemIdx = null;
-    let activeSubIdx = null;
-    let weightChartInstance = null;
-
     const DEFAULT_AVATAR = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100';
 
-    const TARGETS = {
-      kcal: 2500,
-      protein: 150,
-      carbs: 300,
-      fat: 80,
-      sugarMax: 40,
-      saltMax: 6,
-      water: 3.0
+    // Übungskatalog mit durchschnittlichem Kalorienverbrauch pro 10 Wiederholungen
+    const EXERCISE_CATALOG = {
+      oberkoerper: {
+        arme: [
+          { name: 'Liegestütze', kcalPerRep: 0.5 },
+          { name: 'Pull-ups / Klimmzüge', kcalPerRep: 1.0 },
+          { name: 'Dips', kcalPerRep: 0.7 },
+          { name: 'Bizeps Curls', kcalPerRep: 0.4 }
+        ],
+        bauch_ruecken: [
+          { name: 'Crunches / Sit-ups', kcalPerRep: 0.3 },
+          { name: 'Plank (Sekunden statt Reps)', kcalPerRep: 0.15 },
+          { name: 'Leg Raises', kcalPerRep: 0.4 },
+          { name: 'Supermans', kcalPerRep: 0.3 }
+        ]
+      },
+      unterkoerper: {
+        huefte: [
+          { name: 'Glute Bridges / Beckenheben', kcalPerRep: 0.4 },
+          { name: 'Hip Thrusts', kcalPerRep: 0.6 },
+          { name: 'Kettlebell Swings', kcalPerRep: 0.8 }
+        ],
+        oberschenkel_waden: [
+          { name: 'Squats / Kniebeugen', kcalPerRep: 0.6 },
+          { name: 'Lunges / Ausfallschritte', kcalPerRep: 0.5 },
+          { name: 'Calf Raises / Wadenheben', kcalPerRep: 0.3 },
+          { name: 'Jump Squats', kcalPerRep: 0.9 }
+        ]
+      }
     };
 
     const MODULE_DEFINITIONS = [
-      { id: 'wms_grades', name: 'WMS Notensystem', icon: 'graduation-cap', desc: 'Semester, EFZ/BM Fächer, Minuspunkte-Check & Bestehensregeln' },
-      { id: 'nutrition', name: 'Ernährung & Gesundheit', icon: 'apple', desc: 'Nährwert-Tracker, Health-Score, Speicherung & Gewichtsverlauf' },
-      { id: 'budget', name: 'Budget & Finanzen', icon: 'wallet', desc: 'Monatliche Einnahmen & Ausgaben in CHF' },
-      { id: 'fitness', name: 'Fitness & Routine', icon: 'dumbbell', desc: 'Workout-Tracker & Krafttraining' },
-      { id: 'football', name: 'Fußball-Promotion', icon: 'trophy', desc: 'Ligen-Entwicklung & Match-Analysen' },
-      { id: 'social_media', name: 'Social Media Creator', icon: 'share-2', desc: 'TikTok, Instagram & Shorts Follower-Ziele' },
-      { id: 'lifestyle', name: 'Hygiene & Wachstum', icon: 'sparkles', desc: 'Hautpflege-Routine & Körperhaltung' },
-      { id: 'weather', name: 'Wetter (Vorbereitet)', icon: 'cloud-sun', desc: 'Platzhalter für zukünftiges Wetter-Widget' },
-      { id: 'calendar', name: 'Kalender (Vorbereitet)', icon: 'calendar', desc: 'Platzhalter für Termine & Tagesziele' },
-      { id: 'news', name: 'Welt-News (Vorbereitet)', icon: 'newspaper', desc: 'Platzhalter für Schlagzeilen' }
+      { id: 'fitness', name: 'Krafttraining & Routine', icon: 'dumbbell', desc: 'Ziel: Fit bleiben, Reps steigern & Kalorien-Analyse' },
+      { id: 'nutrition', name: 'Ernährung & Gesundheit', icon: 'apple', desc: 'Nährwert-Tracker & Health-Score' },
+      { id: 'wms_grades', name: 'WMS Notensystem', icon: 'graduation-cap', desc: 'Notenverwaltung & Bestehensregeln' }
     ];
 
     window.onload = function() {
@@ -309,44 +215,21 @@
     function showAuthTab(tab) {
       document.getElementById('form-login').classList.toggle('hidden', tab !== 'login');
       document.getElementById('form-register').classList.toggle('hidden', tab !== 'register');
-      document.getElementById('tab-login-btn').className = tab === 'login' ? 'flex-1 py-2 rounded-lg bg-blue-600 text-white transition' : 'flex-1 py-2 rounded-lg text-slate-400 hover:text-white transition';
-      document.getElementById('tab-register-btn').className = tab === 'register' ? 'flex-1 py-2 rounded-lg bg-emerald-600 text-white transition' : 'flex-1 py-2 rounded-lg text-slate-400 hover:text-white transition';
     }
 
     function handleRegister(e) {
       e.preventDefault();
       const name = document.getElementById('reg-name').value.trim();
-      const school = document.getElementById('reg-school').value;
       const pass = document.getElementById('reg-pass').value;
 
       if (!name || !pass) return;
 
-      const userKey = 'mylife_user_' + name.toLowerCase();
-      if (localStorage.getItem(userKey)) {
-        alert('Benutzername existiert bereits!');
-        return;
-      }
-
       currentUser = {
         username: name.toLowerCase(),
         password: pass,
-        profile: {
-          name: name,
-          school: school,
-          age: 17,
-          weight: 68,
-          targetWeight: 75,
-          height: 180,
-          goal: 'WMS (BM & EFZ) erfolgreich abschliessen',
-          motto: 'Jeden Tag 1% besser!',
-          bio: 'Mein persönliches Dashboard.',
-          pic: DEFAULT_AVATAR
-        },
-        activeModules: ['wms_grades', 'nutrition', 'budget'],
-        semesters: [],
-        budget: [],
-        weightHistory: [],
-        nutritionLogs: []
+        profile: { name: name, pic: DEFAULT_AVATAR },
+        activeModules: ['fitness', 'nutrition'],
+        fitnessLogs: []
       };
 
       saveUserData();
@@ -360,16 +243,10 @@
       const pass = document.getElementById('login-pass').value;
 
       const userData = localStorage.getItem('mylife_user_' + name);
-      if (!userData) {
-        alert('Benutzer nicht gefunden!');
-        return;
-      }
+      if (!userData) return alert('Benutzer nicht gefunden!');
 
       const user = JSON.parse(userData);
-      if (user.password !== pass) {
-        alert('Falsches Passwort!');
-        return;
-      }
+      if (user.password !== pass) return alert('Falsches Passwort!');
 
       currentUser = user;
       localStorage.setItem('mylife_active_user', currentUser.username);
@@ -402,10 +279,9 @@
     }
 
     function updateNavProfile() {
-      const userPic = (currentUser.profile && currentUser.profile.pic && currentUser.profile.pic.trim() !== '') ? currentUser.profile.pic : DEFAULT_AVATAR;
       document.getElementById('user-greeting').innerText = 'Hallo, ' + currentUser.profile.name;
       document.getElementById('nav-username').innerText = currentUser.profile.name;
-      document.getElementById('nav-avatar').src = userPic;
+      document.getElementById('nav-avatar').src = currentUser.profile.pic || DEFAULT_AVATAR;
     }
 
     function renderDashboard() {
@@ -421,33 +297,15 @@
 
       lucide.createIcons();
 
-      if (currentUser.activeModules.includes('nutrition')) {
-        initWeightChart();
-        renderNutritionLogsHistory();
+      if (currentUser.activeModules.includes('fitness')) {
+        updateSubCatOptions();
+        renderFitnessLogs();
       }
     }
 
     function getModuleHTML(modId) {
       const modDef = MODULE_DEFINITIONS.find(m => m.id === modId);
-      let contentHTML = '';
-
-      if (modId === 'wms_grades') {
-        contentHTML = renderWMSGradesContent();
-      } else if (modId === 'nutrition') {
-        contentHTML = renderNutritionContent();
-      } else if (modId === 'budget') {
-        contentHTML = renderBudgetContent();
-      } else if (modId === 'fitness') {
-        contentHTML = `<p class="text-xs text-slate-400">Zielgewicht: ${currentUser.profile.targetWeight || 75} kg. Protein: ${(TARGETS.protein)}g/Tag.</p>`;
-      } else if (modId === 'football') {
-        contentHTML = `<p class="text-xs text-slate-400">Promotion-Plan aktiv. Fokus: Ausdauer & Match-Zweikampf.</p>`;
-      } else if (modId === 'social_media') {
-        contentHTML = `<p class="text-xs text-slate-400">Wachstums-Tracker: 1-2 Videos pro Tag posten.</p>`;
-      } else if (modId === 'lifestyle') {
-        contentHTML = `<p class="text-xs text-slate-400">Routine: Cleanser morgens/abends & 8h Schlaf.</p>`;
-      } else {
-        contentHTML = `<p class="text-sm text-slate-400 italic">${modDef.desc}</p><span class="inline-block px-3 py-1 bg-slate-900 text-slate-500 text-xs rounded-full border border-slate-800">Platzhalter</span>`;
-      }
+      let contentHTML = modId === 'fitness' ? renderFitnessContent() : `<p class="text-xs text-slate-400">${modDef.desc}</p>`;
 
       return `
         <div class="space-y-4">
@@ -463,285 +321,230 @@
       `;
     }
 
-    // ---------------- ERNÄHRUNG & GESUNDHEIT ENGINE ----------------
+    // ---------------- FITNESS MODUL LOGIK ----------------
     function getTodayString() {
       const today = new Date();
-      const yyyy = today.getFullYear();
-      const mm = String(today.getMonth() + 1).padStart(2, '0');
-      const dd = String(today.getDate()).padStart(2, '0');
-      return `${yyyy}-${mm}-${dd}`;
+      return today.toISOString().split('T')[0];
     }
 
-    function renderNutritionContent() {
+    function renderFitnessContent() {
       const today = getTodayString();
-      const targetWeight = currentUser.profile.targetWeight || 75;
 
       return `
         <div class="space-y-4">
-          <p class="text-xs text-slate-400">Profil: ${currentUser.profile.age || 17} Jahre | ${currentUser.profile.height || 180} cm | Ziel: ${targetWeight} kg</p>
-          
-          <!-- FORMULAR NÄHRWERTE -->
-          <div class="bg-slate-900/80 p-3.5 rounded-2xl border border-slate-800 space-y-2">
-            <span class="text-[10px] font-bold uppercase text-slate-400 block">Tageswerte Eintragen</span>
+          <div class="p-3 bg-blue-600/10 border border-blue-500/20 rounded-2xl flex items-center justify-between text-xs">
+            <div>
+              <span class="font-bold text-blue-400 block">Ziel: Fit bleiben & Wiederholungen steigern</span>
+              <span class="text-slate-400">Anwendung mit Kalorien- & Steigerungsanalyse</span>
+            </div>
+            <i data-lucide="target" class="w-5 h-5 text-blue-400"></i>
+          </div>
+
+          <!-- INPUT FORMULAR -->
+          <div class="bg-slate-900/80 p-3.5 rounded-2xl border border-slate-800 space-y-3">
+            <span class="text-[10px] font-bold uppercase text-slate-400 block">Neues Training eintragen</span>
+
             <div class="grid grid-cols-2 gap-2">
               <div>
-                <label class="block text-[10px] text-slate-400">Datum</label>
-                <input type="date" id="nutr-date" value="${today}" class="w-full bg-slate-950 border border-slate-700 p-1.5 rounded-xl text-xs text-white">
+                <label class="block text-[10px] text-slate-400 mb-1">Bereich</label>
+                <select id="fit-cat" onchange="updateSubCatOptions()" class="w-full bg-slate-950 border border-slate-700 p-2 rounded-xl text-xs text-white focus:outline-none focus:border-blue-500">
+                  <option value="oberkoerper">Oberkörper</option>
+                  <option value="unterkoerper">Unterkörper</option>
+                </select>
               </div>
               <div>
-                <label class="block text-[10px] text-slate-400">Kalorien (kcal)</label>
-                <input type="number" id="nutr-kcal" placeholder="Ziel: ${TARGETS.kcal}" class="w-full bg-slate-950 border border-slate-700 p-1.5 rounded-xl text-xs text-white">
+                <label class="block text-[10px] text-slate-400 mb-1">Muskelgruppe</label>
+                <select id="fit-subcat" onchange="updateExerciseOptions()" class="w-full bg-slate-950 border border-slate-700 p-2 rounded-xl text-xs text-white focus:outline-none focus:border-blue-500">
+                </select>
               </div>
             </div>
 
-            <div class="grid grid-cols-3 gap-2">
+            <div>
+              <label class="block text-[10px] text-slate-400 mb-1">Spezifische Übung</label>
+              <select id="fit-exercise" class="w-full bg-slate-950 border border-slate-700 p-2 rounded-xl text-xs text-white focus:outline-none focus:border-blue-500">
+              </select>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2">
               <div>
-                <label class="block text-[10px] text-slate-400">Protein (g)</label>
-                <input type="number" id="nutr-protein" placeholder="${TARGETS.protein}g" class="w-full bg-slate-950 border border-slate-700 p-1.5 rounded-xl text-xs text-white">
+                <label class="block text-[10px] text-slate-400 mb-1">Anzahl (Wiederholungen)</label>
+                <input type="number" id="fit-reps" placeholder="z. B. 30" class="w-full bg-slate-950 border border-slate-700 p-2 rounded-xl text-xs text-white focus:outline-none focus:border-blue-500">
               </div>
               <div>
-                <label class="block text-[10px] text-slate-400">Carbs (g)</label>
-                <input type="number" id="nutr-carbs" placeholder="${TARGETS.carbs}g" class="w-full bg-slate-950 border border-slate-700 p-1.5 rounded-xl text-xs text-white">
-              </div>
-              <div>
-                <label class="block text-[10px] text-slate-400">Fett (g)</label>
-                <input type="number" id="nutr-fat" placeholder="${TARGETS.fat}g" class="w-full bg-slate-950 border border-slate-700 p-1.5 rounded-xl text-xs text-white">
+                <label class="block text-[10px] text-slate-400 mb-1">Dauer (Minuten)</label>
+                <input type="number" id="fit-duration" placeholder="z. B. 20" class="w-full bg-slate-950 border border-slate-700 p-2 rounded-xl text-xs text-white focus:outline-none focus:border-blue-500">
               </div>
             </div>
 
-            <div class="grid grid-cols-3 gap-2">
+            <div class="grid grid-cols-2 gap-2">
               <div>
-                <label class="block text-[10px] text-slate-400">Zucker (g)</label>
-                <input type="number" id="nutr-sugar" placeholder="max ${TARGETS.sugarMax}g" class="w-full bg-slate-950 border border-slate-700 p-1.5 rounded-xl text-xs text-white">
+                <label class="block text-[10px] text-slate-400 mb-1">Geplante Zeit</label>
+                <input type="text" id="fit-planned" value="1 Stunde" class="w-full bg-slate-950/50 border border-slate-800 p-2 rounded-xl text-xs text-slate-400" readonly>
               </div>
               <div>
-                <label class="block text-[10px] text-slate-400">Salz (g)</label>
-                <input type="number" id="nutr-salt" placeholder="max ${TARGETS.saltMax}g" class="w-full bg-slate-950 border border-slate-700 p-1.5 rounded-xl text-xs text-white">
-              </div>
-              <div>
-                <label class="block text-[10px] text-slate-400">Wasser (L)</label>
-                <input type="number" step="0.1" id="nutr-water" placeholder="${TARGETS.water}L" class="w-full bg-slate-950 border border-slate-700 p-1.5 rounded-xl text-xs text-white">
+                <label class="block text-[10px] text-slate-400 mb-1">Datum</label>
+                <input type="date" id="fit-date" value="${today}" class="w-full bg-slate-950 border border-slate-700 p-1.5 rounded-xl text-xs text-white">
               </div>
             </div>
 
-            <button onclick="analyzeAndSaveNutrition()" class="w-full py-2 bg-emerald-600 hover:bg-emerald-500 font-bold text-xs text-white rounded-xl transition mt-1 flex items-center justify-center gap-1.5">
-              <i data-lucide="save" class="w-3.5 h-3.5"></i> Analyse Berechnen & Dauerhaft Speichern
+            <button onclick="saveFitnessLog()" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 font-bold text-xs text-white rounded-xl transition flex items-center justify-center gap-1.5">
+              <i data-lucide="plus-circle" class="w-4 h-4"></i> Workout Eintragen & Analysieren
             </button>
           </div>
 
-          <!-- HEALTH SCORE & STATUS -->
-          <div id="nutr-results" class="space-y-3">
-            <div class="bg-slate-950/90 p-3 rounded-2xl border border-slate-800 flex items-center justify-between">
-              <div>
-                <span class="text-[10px] font-bold uppercase text-slate-400 block">Health Score</span>
-                <span class="text-xs text-slate-400">Gesundheits-Bewertung</span>
-              </div>
-              <div id="health-score-badge" class="px-3 py-1 rounded-xl text-base font-black bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-                <span id="health-score-val">100</span> / 100
-              </div>
-            </div>
-
-            <!-- COMPARISON LIST -->
-            <div id="nutr-status-list" class="grid grid-cols-2 gap-1.5 text-xs"></div>
-
-            <!-- INTELLIGENTE EMPFEHLUNGEN -->
-            <div id="smart-recommendations" class="space-y-2"></div>
-          </div>
-
-          <!-- DIESER BEREICH SPEICHERT DEINE TAGESHISTORIE DAUERHAFT -->
+          <!-- VERLAUF & ANALYSE -->
           <div class="bg-slate-900/80 p-3.5 rounded-2xl border border-slate-800 space-y-2.5">
-            <span class="text-[10px] font-bold uppercase text-slate-400 block">Gespeicherter Gesundheits-Verlauf</span>
-            <div id="nutrition-history-list" class="space-y-2 max-h-48 overflow-y-auto pr-1"></div>
-          </div>
-
-          <!-- LEBENSMITTEL UEBERSICHT TABELLE -->
-          <div class="bg-slate-900/60 p-3 rounded-2xl border border-slate-800/80 space-y-2">
-            <span class="text-[10px] font-bold uppercase text-slate-400 block">Nährwert-Referenztabelle</span>
-            <div class="overflow-x-auto">
-              <table class="w-full text-left text-[11px] text-slate-300">
-                <thead class="bg-slate-950/80 text-[10px] uppercase text-slate-400">
-                  <tr>
-                    <th class="p-1.5">Lebensmittel</th>
-                    <th class="p-1.5">Prot.</th>
-                    <th class="p-1.5">Carbs</th>
-                    <th class="p-1.5">Fett</th>
-                    <th class="p-1.5">Gut für</th>
-                  </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-800/60">
-                  <tr><td class="p-1.5 font-medium text-white">Haferflocken 100g</td><td>~17g</td><td>~66g</td><td>~7g</td><td class="text-blue-400">Carbs + Kcal</td></tr>
-                  <tr><td class="p-1.5 font-medium text-white">Erdnussbutter 30g</td><td>~8g</td><td>~6g</td><td>~15g</td><td class="text-amber-400">Kcal + Fett</td></tr>
-                  <tr><td class="p-1.5 font-medium text-white">Milch 500ml</td><td>~17g</td><td>~24g</td><td>~15g</td><td class="text-emerald-400">Alle 3 Makros</td></tr>
-                  <tr><td class="p-1.5 font-medium text-white">Banane 1 Stk.</td><td>~1g</td><td>~28g</td><td>~0g</td><td class="text-yellow-400">Schnelle Carbs</td></tr>
-                  <tr><td class="p-1.5 font-medium text-white">Griech. Joghurt 200g</td><td>~19g</td><td>~8g</td><td>~5g</td><td class="text-indigo-400">Protein</td></tr>
-                  <tr><td class="p-1.5 font-medium text-white">Whey 30g</td><td>~24g</td><td>~3g</td><td>~2g</td><td class="text-indigo-400">Schnelles Protein</td></tr>
-                  <tr><td class="p-1.5 font-medium text-white">Eier 3 Stk.</td><td>~19g</td><td>~1g</td><td>~15g</td><td class="text-indigo-400">Protein + Fett</td></tr>
-                  <tr><td class="p-1.5 font-medium text-white">Nüsse 30g</td><td>~6g</td><td>~6g</td><td>~18g</td><td class="text-amber-400">Fett + Kcal</td></tr>
-                  <tr><td class="p-1.5 font-medium text-white">Reis gekocht 300g</td><td>~7g</td><td>~84g</td><td>~1g</td><td class="text-blue-400">Viele Carbs</td></tr>
-                  <tr><td class="p-1.5 font-medium text-white">Vollkornbrot 100g</td><td>~9g</td><td>~40g</td><td>~4g</td><td class="text-blue-400">Schnelle Mahlzeit</td></tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          <!-- GEWICHTSTRACKING ZEITSTRAHL -->
-          <div class="bg-slate-900/80 p-3.5 rounded-2xl border border-slate-800 space-y-3">
-            <span class="text-[10px] font-bold uppercase text-slate-400 block">Gewichtsverlauf (Ziel: ${targetWeight} kg)</span>
-            <div class="flex gap-2">
-              <input type="date" id="weight-date" value="${today}" class="bg-slate-950 border border-slate-700 p-1.5 rounded-xl text-xs text-white flex-1">
-              <input type="number" step="0.1" id="weight-val" placeholder="Gewicht in kg" class="bg-slate-950 border border-slate-700 p-1.5 rounded-xl text-xs text-white flex-1">
-              <button onclick="addWeightEntry()" class="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded-xl text-xs font-bold">Eintragen</button>
-            </div>
-            <div class="bg-slate-950/60 p-2 rounded-xl border border-slate-800/80">
-              <canvas id="weightChartCanvas" height="140"></canvas>
-            </div>
+            <span class="text-[10px] font-bold uppercase text-slate-400 block">Dauerhafte Analyse & Verlauf</span>
+            <div id="fitness-history-list" class="space-y-2 max-h-64 overflow-y-auto pr-1"></div>
           </div>
         </div>
       `;
     }
 
-    function analyzeAndSaveNutrition() {
-      const date = document.getElementById('nutr-date').value || getTodayString();
-      const kcal = parseFloat(document.getElementById('nutr-kcal').value) || 0;
-      const protein = parseFloat(document.getElementById('nutr-protein').value) || 0;
-      const carbs = parseFloat(document.getElementById('nutr-carbs').value) || 0;
-      const fat = parseFloat(document.getElementById('nutr-fat').value) || 0;
-      const sugar = parseFloat(document.getElementById('nutr-sugar').value) || 0;
-      const salt = parseFloat(document.getElementById('nutr-salt').value) || 0;
-      const water = parseFloat(document.getElementById('nutr-water').value) || 0;
+    function updateSubCatOptions() {
+      const cat = document.getElementById('fit-cat').value;
+      const subCatSelect = document.getElementById('fit-subcat');
+      if (!subCatSelect) return;
 
-      let score = 100;
-      const statusList = document.getElementById('nutr-status-list');
-      const recsContainer = document.getElementById('smart-recommendations');
-      recsContainer.innerHTML = '';
+      subCatSelect.innerHTML = cat === 'oberkoerper' 
+        ? `<option value="arme">Arme</option><option value="bauch_ruecken">Bauch & Rücken</option>`
+        : `<option value="huefte">Hüfte</option><option value="oberschenkel_waden">Oberschenkel & Waden</option>`;
 
-      function makeBadge(label, val, target, unit, isMax = false) {
-        let isOk = isMax ? val <= target : val >= target;
-        if (!isOk) score -= 12;
-        const colorClass = isOk ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' : 'bg-rose-500/20 text-rose-400 border-rose-500/30';
-        return `
-          <div class="bg-slate-950 p-2 rounded-xl border border-slate-800 flex justify-between items-center">
-            <span class="text-slate-400">${label}:</span>
-            <span class="px-2 py-0.5 rounded-lg border font-bold text-[11px] ${colorClass}">
-              ${val}${unit} ${isOk ? '✓' : '✕'}
-            </span>
-          </div>
-        `;
+      updateExerciseOptions();
+    }
+
+    function updateExerciseOptions() {
+      const cat = document.getElementById('fit-cat').value;
+      const subcat = document.getElementById('fit-subcat').value;
+      const exSelect = document.getElementById('fit-exercise');
+      if (!exSelect) return;
+
+      exSelect.innerHTML = '';
+      const list = EXERCISE_CATALOG[cat][subcat] || [];
+      list.forEach(item => {
+        exSelect.innerHTML += `<option value="${item.name}">${item.name}</option>`;
+      });
+    }
+
+    function getKcalPerRep(exerciseName) {
+      for (let cat in EXERCISE_CATALOG) {
+        for (let sub in EXERCISE_CATALOG[cat]) {
+          const found = EXERCISE_CATALOG[cat][sub].find(e => e.name === exerciseName);
+          if (found) return found.kcalPerRep;
+        }
+      }
+      return 0.5; // Standard-Wert
+    }
+
+    function saveFitnessLog() {
+      const cat = document.getElementById('fit-cat').value;
+      const subcat = document.getElementById('fit-subcat').value;
+      const exercise = document.getElementById('fit-exercise').value;
+      const reps = parseInt(document.getElementById('fit-reps').value) || 0;
+      const duration = parseInt(document.getElementById('fit-duration').value) || 0;
+      const date = document.getElementById('fit-date').value || getTodayString();
+
+      if (reps <= 0 || duration <= 0) {
+        return alert('Bitte gib eine gültige Anzahl an Wiederholungen und die benötigte Zeit an!');
       }
 
-      statusList.innerHTML = `
-        ${makeBadge('Kcal', kcal, TARGETS.kcal - 200, '')}
-        ${makeBadge('Protein', protein, TARGETS.protein, 'g')}
-        ${makeBadge('Carbs', carbs, TARGETS.carbs - 50, 'g')}
-        ${makeBadge('Fett', fat, TARGETS.fat - 15, 'g')}
-        ${makeBadge('Zucker', sugar, TARGETS.sugarMax, 'g', true)}
-        ${makeBadge('Salz', salt, TARGETS.saltMax, 'g', true)}
-        ${makeBadge('Wasser', water, TARGETS.water, 'L')}
-      `;
+      const kcalBurned = Math.round(reps * getKcalPerRep(exercise));
+      const speed = parseFloat((reps / duration).toFixed(2)); // Reps pro Minute
 
-      let recsList = [];
+      if (!currentUser.fitnessLogs) currentUser.fitnessLogs = [];
 
-      // 1. Kalorien Defizit
-      if (kcal < TARGETS.kcal - 200) {
-        recsList.push("Mehr essen (Erdnussbutter, Nüsse, Haferflocken) für Kcal-Ziel.");
-      }
-      // 2. Protein Defizit
-      if (protein < TARGETS.protein) {
-        recsList.push("Protein nachfüllen: Whey, Griechischer Joghurt, Eier, Milch.");
-      }
-      // 3. Kohlenhydrate Defizit
-      if (carbs < TARGETS.carbs - 50) {
-        recsList.push("Carbs erhöhen: Reis, Haferflocken, Vollkornbrot, Banane.");
-      }
-      // 4. Fett Defizit
-      if (fat < TARGETS.fat - 15) {
-        recsList.push("Fett nachfüllen: Nüsse, Erdnussbutter, Eier.");
-      }
-      // 5. Zucker zu hoch
-      if (sugar > TARGETS.sugarMax) {
-        recsList.push("Weniger Zucker: Süssgetränke & Snacks reduzieren.");
-      }
-      // 6. Salz zu hoch
-      if (salt > TARGETS.saltMax) {
-        recsList.push("Weniger Salz: Fertiggerichte & Knabbereien vermeiden.");
-      }
-      // 7. Wasser zu wenig
-      if (water < TARGETS.water) {
-        recsList.push("Mehr Wasser trinken für maximale Gesundheit & Leistung.");
-      }
-
-      recsContainer.innerHTML = recsList.map(r => `
-        <div class="bg-blue-500/10 border border-blue-500/30 p-2 rounded-xl text-xs text-blue-200 flex items-center gap-2">
-          <i data-lucide="info" class="w-4 h-4 text-blue-400"></i> ${r}
-        </div>
-      `).join('');
-
-      score = Math.max(0, score);
-      document.getElementById('health-score-val').innerText = score;
-      const badge = document.getElementById('health-score-badge');
-      if (score >= 80) {
-        badge.className = "px-3 py-1 rounded-xl text-base font-black bg-emerald-500/20 text-emerald-400 border border-emerald-500/30";
-      } else {
-        badge.className = "px-3 py-1 rounded-xl text-base font-black bg-rose-500/20 text-rose-400 border border-rose-500/30";
-      }
-
-      // DAUERHAFTES SPEICHERN IN DER DATENBANK
-      if (!currentUser.nutritionLogs) currentUser.nutritionLogs = [];
-
-      // Falls es fürs Datum schon einen Eintrag gibt, ersetzen
-      const existingIdx = currentUser.nutritionLogs.findIndex(l => l.date === date);
-      const logEntry = {
-        date, kcal, protein, carbs, fat, sugar, salt, water, score, recs: recsList
-      };
-
-      if (existingIdx >= 0) {
-        currentUser.nutritionLogs[existingIdx] = logEntry;
-      } else {
-        currentUser.nutritionLogs.push(logEntry);
-      }
+      currentUser.fitnessLogs.push({
+        id: Date.now(),
+        date,
+        cat,
+        subcat,
+        exercise,
+        reps,
+        duration,
+        kcalBurned,
+        speed
+      });
 
       saveUserData();
-      renderNutritionLogsHistory();
-      lucide.createIcons();
+      renderFitnessLogs();
+
+      document.getElementById('fit-reps').value = '';
+      document.getElementById('fit-duration').value = '';
     }
 
-    function renderNutritionLogsHistory() {
-      const container = document.getElementById('nutrition-history-list');
+    function renderFitnessLogs() {
+      const container = document.getElementById('fitness-history-list');
       if (!container) return;
 
-      const logs = currentUser.nutritionLogs || [];
+      const logs = currentUser.fitnessLogs || [];
       if (logs.length === 0) {
-        container.innerHTML = `<p class="text-xs text-slate-500 italic">Noch keine Tagesstände gespeichert.</p>`;
+        container.innerHTML = `<p class="text-xs text-slate-500 italic">Noch keine Workouts eingetragen.</p>`;
         return;
       }
 
+      // Anzeige chronologisch von neu nach alt
       container.innerHTML = logs.slice().reverse().map((log, origIdx) => {
         const actualIdx = logs.length - 1 - origIdx;
-        const isGood = log.score >= 80;
-        return `
-          <div class="bg-slate-950 p-2.5 rounded-xl border border-slate-800 space-y-1.5 text-xs">
-            <div class="flex items-center justify-between border-b border-slate-800/80 pb-1">
-              <div class="flex items-center gap-2">
-                <span class="font-bold text-slate-200">${log.date}</span>
-                <span class="px-2 py-0.5 rounded-md font-bold text-[10px] ${isGood ? 'bg-emerald-500/20 text-emerald-400' : 'bg-rose-500/20 text-rose-400'}">
-                  Score: ${log.score}/100
-                </span>
+        
+        // Finde vorherige Workouts der SELBEN Übung für die Steigerungs-Analyse
+        const previousLogs = logs.slice(0, actualIdx).filter(l => l.exercise === log.exercise);
+        const lastLog = previousLogs.length > 0 ? previousLogs[previousLogs.length - 1] : null;
+
+        let analysisHTML = '';
+        if (lastLog) {
+          const repsDiff = log.reps - lastLog.reps;
+          const speedDiff = parseFloat((log.speed - lastLog.speed).toFixed(2));
+
+          let repStatus = repsDiff > 0 
+            ? `<span class="text-emerald-400 font-bold">↑ +${repsDiff} Reps Steigerung</span>`
+            : repsDiff < 0 
+            ? `<span class="text-rose-400 font-bold">↓ ${repsDiff} Reps weniger</span>`
+            : `<span class="text-slate-400">0 Steigerung (Gleich zum Vortag)</span>`;
+
+          let speedStatus = speedDiff > 0 
+            ? `<span class="text-emerald-400">⚡ Schneller (${speedDiff} Reps/Min)</span>`
+            : speedDiff < 0 
+            ? `<span class="text-rose-400">🐢 Langsamer (${speedDiff} Reps/Min)</span>`
+            : `<span class="text-slate-400">Gleiches Tempo</span>`;
+
+          analysisHTML = `
+            <div class="mt-2 pt-2 border-t border-slate-800/80 text-[10px] space-y-1">
+              <div class="flex items-center justify-between">
+                <span class="text-slate-400">Vergleich zum letzten Mal:</span>
+                <div>${repStatus}</div>
               </div>
-              <button onclick="deleteNutritionLog(${actualIdx})" class="text-slate-600 hover:text-rose-400 transition"><i data-lucide="x" class="w-3.5 h-3.5"></i></button>
+              <div class="flex items-center justify-between">
+                <span class="text-slate-400">Geschwindigkeit:</span>
+                <div>${speedStatus}</div>
+              </div>
             </div>
-            
-            <div class="grid grid-cols-4 gap-1 text-[10px] text-slate-400">
-              <div>Kcal: <span class="text-white font-semibold">${log.kcal}</span></div>
-              <div>Prot: <span class="text-white font-semibold">${log.protein}g</span></div>
-              <div>Carbs: <span class="text-white font-semibold">${log.carbs}g</span></div>
-              <div>Wasser: <span class="text-white font-semibold">${log.water}L</span></div>
+          `;
+        } else {
+          analysisHTML = `
+            <div class="mt-2 pt-2 border-t border-slate-800/80 text-[10px] text-blue-400 flex items-center justify-between">
+              <span>Status: 1. Workout (Basiswert)</span>
+              <span class="font-bold">0 Steigerung</span>
+            </div>
+          `;
+        }
+
+        return `
+          <div class="bg-slate-950 p-3 rounded-xl border border-slate-800/80 space-y-1 text-xs">
+            <div class="flex items-center justify-between">
+              <span class="font-bold text-white">${log.exercise}</span>
+              <div class="flex items-center gap-2">
+                <span class="text-[10px] text-slate-500">${log.date}</span>
+                <button onclick="deleteFitnessLog(${actualIdx})" class="text-slate-600 hover:text-rose-400"><i data-lucide="x" class="w-3.5 h-3.5"></i></button>
+              </div>
             </div>
 
-            ${log.recs && log.recs.length > 0 ? `
-              <div class="text-[10px] text-amber-300/80 italic">
-                Hinweise: ${log.recs.join(' | ')}
-              </div>
-            ` : ''}
+            <div class="flex items-center gap-2 text-[11px] pt-1">
+              <span class="bg-blue-600/20 text-blue-400 border border-blue-500/30 px-2 py-0.5 rounded-lg font-bold">${log.reps} Reps</span>
+              <span class="bg-slate-900 text-slate-300 border border-slate-800 px-2 py-0.5 rounded-lg">${log.duration} Min.</span>
+              <span class="bg-amber-500/10 text-amber-400 border border-amber-500/20 px-2 py-0.5 rounded-lg font-semibold">🔥 ca. ${log.kcalBurned} kcal</span>
+            </div>
+
+            ${analysisHTML}
           </div>
         `;
       }).join('');
@@ -749,535 +552,25 @@
       lucide.createIcons();
     }
 
-    function deleteNutritionLog(idx) {
-      currentUser.nutritionLogs.splice(idx, 1);
+    function deleteFitnessLog(idx) {
+      currentUser.fitnessLogs.splice(idx, 1);
       saveUserData();
-      renderNutritionLogsHistory();
+      renderFitnessLogs();
     }
 
-    function initWeightChart() {
-      const canvas = document.getElementById('weightChartCanvas');
-      if (!canvas) return;
-
-      const history = currentUser.weightHistory || [];
-      const labels = history.map(h => h.date);
-      const dataVals = history.map(h => h.val);
-      const targetWeight = currentUser.profile.targetWeight || 75;
-      const targetVals = history.map(() => targetWeight);
-
-      if (weightChartInstance) {
-        weightChartInstance.destroy();
-      }
-
-      const ctx = canvas.getContext('2d');
-      weightChartInstance = new Chart(ctx, {
-        type: 'line',
-        data: {
-          labels: labels,
-          datasets: [
-            {
-              label: 'Gewicht (kg)',
-              data: dataVals,
-              borderColor: '#10b981',
-              backgroundColor: 'rgba(16, 185, 129, 0.1)',
-              fill: true,
-              tension: 0.3
-            },
-            {
-              label: 'Ziel (' + targetWeight + ' kg)',
-              data: targetVals,
-              borderColor: '#f43f5e',
-              borderDash: [5, 5],
-              pointRadius: 0
-            }
-          ]
-        },
-        options: {
-          responsive: true,
-          scales: {
-            y: { min: 50, max: 100, ticks: { color: '#94a3b8' } },
-            x: { ticks: { color: '#94a3b8' } }
-          },
-          plugins: {
-            legend: { labels: { color: '#94a3b8', boxWidth: 12 } }
-          }
-        }
-      });
-    }
-
-    function addWeightEntry() {
-      const date = document.getElementById('weight-date').value;
-      const val = parseFloat(document.getElementById('weight-val').value);
-
-      if (!date || isNaN(val) || val <= 0) {
-        return alert('Bitte gültiges Datum und Gewicht eintragen!');
-      }
-
-      if (!currentUser.weightHistory) currentUser.weightHistory = [];
-      currentUser.weightHistory.push({ date, val });
-      currentUser.profile.weight = val;
-
-      saveUserData();
-      renderDashboard();
-    }
-
-    // ---------------- WMS / EFZ / BM NOTENSYSTEM ENGINE ----------------
-    function roundToHalfGrade(val) {
-      return Math.round(val * 2) / 2;
-    }
-
-    function renderWMSGradesContent() {
-      let html = `
-        <div class="space-y-4">
-          <div class="flex justify-between items-center">
-            <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Semester-Übersicht</span>
-            <button onclick="openSemesterModal()" class="text-xs bg-blue-600/20 text-blue-400 border border-blue-500/30 px-3 py-1.5 rounded-xl font-bold hover:bg-blue-600 hover:text-white transition">+ Neues Semester</button>
-          </div>
-      `;
-
-      if (!currentUser.semesters || currentUser.semesters.length === 0) {
-        html += `<p class="text-xs text-slate-500 italic">Noch kein Semester angelegt. Klicke oben auf "+ Neues Semester".</p></div>`;
-        return html;
-      }
-
-      currentUser.semesters.forEach((sem, semIdx) => {
-        let subjectsHTML = '';
-        let totalSubjectGrades = 0;
-        let validSubjectsCount = 0;
-
-        let bmUngenuegendCount = 0;
-        let efzUngenuegendCount = 0;
-        let minuspunkteTotal = 0;
-
-        if (sem.subjects && sem.subjects.length > 0) {
-          sem.subjects.forEach((sub, subIdx) => {
-            let examSum = 0;
-            let examCount = 0;
-
-            if (sub.exams && sub.exams.length > 0) {
-              sub.exams.forEach(ex => {
-                const rawGrade = 1 + 5 * (ex.achieved / ex.max);
-                const roundedGrade = roundToHalfGrade(rawGrade);
-                examSum += roundedGrade;
-                examCount++;
-              });
-            }
-
-            const subAvg = examCount > 0 ? (examSum / examCount) : null;
-            const subType = sub.type || 'BM';
-
-            if (subAvg !== null) {
-              totalSubjectGrades += subAvg;
-              validSubjectsCount++;
-
-              if (subAvg < 4.0) {
-                const diff = 4.0 - subAvg;
-                minuspunkteTotal += diff;
-
-                if (subType === 'BM') bmUngenuegendCount++;
-                if (subType === 'EFZ') efzUngenuegendCount++;
-              }
-            }
-
-            subjectsHTML += `
-              <div class="bg-slate-900/60 p-3 rounded-2xl border border-slate-800 space-y-2">
-                <div class="flex justify-between items-center">
-                  <div class="flex items-center gap-2">
-                    <span class="font-bold text-sm text-slate-200">${sub.name}</span>
-                    <span class="text-[10px] px-1.5 py-0.5 rounded font-bold ${subType === 'BM' ? 'bg-indigo-600/30 text-indigo-400 border border-indigo-500/30' : 'bg-emerald-600/30 text-emerald-400 border border-emerald-500/30'}">${subType}</span>
-                  </div>
-                  <div class="flex items-center gap-2">
-                    <span class="text-sm font-black ${subAvg !== null ? (subAvg < 4.0 ? 'text-rose-400' : 'text-emerald-400') : 'text-slate-500'}">
-                      ${subAvg !== null ? subAvg.toFixed(2) : '--'}
-                    </span>
-                    <button onclick="deleteSubject(${semIdx}, ${subIdx})" class="text-slate-500 hover:text-rose-400 transition" title="Fach löschen"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
-                  </div>
-                </div>
-
-                ${sub.exams && sub.exams.length > 0 ? `
-                  <div class="text-xs text-slate-400 space-y-1">
-                    ${sub.exams.map((ex, exIdx) => {
-                      const g = roundToHalfGrade(1 + 5 * (ex.achieved / ex.max));
-                      return `<div class="flex justify-between items-center bg-slate-950/80 px-2 py-1 rounded-lg">
-                        <span>${ex.title || 'Prüfung'}: ${ex.achieved}/${ex.max} Pkt.</span>
-                        <div class="flex items-center gap-2">
-                          <span class="font-bold text-slate-200">${g.toFixed(1)}</span>
-                          <button onclick="deleteExam(${semIdx}, ${subIdx}, ${exIdx})" class="text-slate-600 hover:text-rose-400 transition"><i data-lucide="x" class="w-3 h-3"></i></button>
-                        </div>
-                      </div>`;
-                    }).join('')}
-                  </div>
-                ` : `<p class="text-[11px] text-slate-500 italic">Keine Prüfungen eingetragen</p>`}
-
-                <button onclick="openExamModal(${semIdx}, ${subIdx})" class="w-full text-center text-xs text-blue-400 hover:underline py-1">+ Note eintragen</button>
-              </div>
-            `;
-          });
-        }
-
-        const semAvg = validSubjectsCount > 0 ? (totalSubjectGrades / validSubjectsCount) : null;
-        
-        let failReasons = [];
-        if (semAvg !== null && semAvg < 4.0) failReasons.push(`Gesamtdurchschnitt unter 4.00 (Aktuell: ${semAvg.toFixed(2)})`);
-        if (bmUngenuegendCount > 2) failReasons.push(`Zu viele ungenügende BM-Fächer (Aktuell: ${bmUngenuegendCount}, max. 2 erlaubt)`);
-        if (efzUngenuegendCount > 1) failReasons.push(`Zu viele ungenügende EFZ-Fächer (Aktuell: ${efzUngenuegendCount}, max. 1 erlaubt)`);
-        if (minuspunkteTotal > 2.0) failReasons.push(`Zu viele Minuspunkte/Abweichungspunkte (Aktuell: -${minuspunkteTotal.toFixed(2)}, max. -2.0 erlaubt)`);
-
-        const isPassed = semAvg !== null && failReasons.length === 0;
-
-        html += `
-          <div class="bg-slate-950/80 p-4 rounded-2xl border border-slate-800 space-y-3">
-            <div class="flex justify-between items-center border-b border-slate-800 pb-2">
-              <h4 class="font-bold text-white text-base">${sem.name}</h4>
-              <button onclick="openSubjectModal(${semIdx})" class="text-xs bg-slate-800 hover:bg-slate-700 text-blue-400 px-2 py-1 rounded-lg transition">+ Fach</button>
-            </div>
-
-            <div class="space-y-2">${subjectsHTML || '<p class="text-xs text-slate-500 italic">Noch keine Fächer in diesem Semester.</p>'}</div>
-
-            ${semAvg !== null ? `
-              <div class="pt-3 border-t border-slate-800 space-y-1.5 text-xs">
-                <div class="flex justify-between font-bold">
-                  <span class="text-slate-300">Gesamtdurchschnitt:</span>
-                  <span class="${semAvg < 4.0 ? 'text-rose-400' : 'text-emerald-400'} text-sm">${semAvg.toFixed(2)}</span>
-                </div>
-                <div class="flex justify-between text-slate-400">
-                  <span>Minuspunkte (Abweichung &lt; 4.0):</span>
-                  <span class="${minuspunkteTotal > 2.0 ? 'text-rose-400 font-bold' : 'text-slate-300'}">-${minuspunkteTotal.toFixed(2)} / -2.0</span>
-                </div>
-                <div class="flex justify-between text-slate-400">
-                  <span>Ungenügende BM / EFZ Fächer:</span>
-                  <span class="text-slate-300">BM: ${bmUngenuegendCount}/2 \vert{} EFZ:${efzUngenuegendCount}/1</span>
-                </div>
-
-                <div class="mt-2 p-3 rounded-xl font-bold text-xs ${isPassed ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-rose-500/20 text-rose-400 border border-rose-500/30'}">
-                  ${isPassed ? `
-                    <div class="flex items-center gap-1.5 mb-1"><i data-lucide="check-circle-2" class="w-4 h-4"></i> Semester Bestanden!</div>
-                    <p class="font-normal text-[11px] text-emerald-300/80">Schnitt ist ≥ 4.00, max. Minuspunkte (-2.0) eingehalten und alle EFZ/BM Hürden erfüllt.</p>
-                  ` : `
-                    <div class="flex items-center gap-1.5 mb-1 text-rose-400"><i data-lucide="alert-triangle" class="w-4 h-4"></i> Nicht Bestanden</div>
-                    <ul class="font-normal text-[11px] text-rose-300/90 list-disc list-inside space-y-0.5">
-                      ${failReasons.map(r => `<li>${r}</li>`).join('')}
-                    </ul>
-                  `}
-                </div>
-              </div>
-            ` : ''}
-          </div>
-        `;
-      });
-
-      html += `</div>`;
-      return html;
-    }
-
-    function deleteSubject(semIdx, subIdx) {
-      if (confirm('Möchtest du dieses Fach wirklich löschen?')) {
-        currentUser.semesters[semIdx].subjects.splice(subIdx, 1);
-        saveUserData();
-        renderDashboard();
-      }
-    }
-
-    function deleteExam(semIdx, subIdx, exIdx) {
-      currentUser.semesters[semIdx].subjects[subIdx].exams.splice(exIdx, 1);
-      saveUserData();
-      renderDashboard();
-    }
-
-    // ---------------- BUDGET ENGINE ----------------
-    function renderBudgetContent() {
-      const items = currentUser.budget || [];
-      const todayStr = getTodayString();
-
-      let totalIncome = 0;
-      let totalExpense = 0;
-
-      items.forEach(item => {
-        if (item.type === 'income') {
-          totalIncome += item.amt;
-        } else {
-          totalExpense += item.amt;
-        }
-      });
-
-      const netBalance = totalIncome - totalExpense;
-      const expenseRatio = totalIncome > 0 ? Math.min(100, Math.round((totalExpense / totalIncome) * 100)) : 0;
-
-      return `
-        <div class="space-y-4">
-          <!-- FORMULAR -->
-          <div class="bg-slate-900/80 p-3.5 rounded-2xl border border-slate-800 space-y-2.5">
-            <div class="grid grid-cols-2 gap-2">
-              <div>
-                <label class="block text-[10px] font-bold uppercase text-slate-400 mb-1">Typ</label>
-                <select id="budget-type" class="w-full bg-slate-950 border border-slate-700 p-2 rounded-xl text-xs text-white focus:outline-none focus:border-blue-500">
-                  <option value="income">🟢 Einnahme (+)</option>
-                  <option value="expense">🔴 Ausgabe (-)</option>
-                </select>
-              </div>
-              <div>
-                <label class="block text-[10px] font-bold uppercase text-slate-400 mb-1">Datum</label>
-                <input type="date" id="budget-date" value="${todayStr}" class="w-full bg-slate-950 border border-slate-700 p-2 rounded-xl text-xs text-white focus:outline-none focus:border-blue-500">
-              </div>
-            </div>
-
-            <div class="grid grid-cols-3 gap-2">
-              <div class="col-span-2">
-                <label class="block text-[10px] font-bold uppercase text-slate-400 mb-1">Beschreibung</label>
-                <input type="text" id="budget-desc" placeholder="z. B. Lohn, Ausgang, Essen" class="w-full bg-slate-950 border border-slate-700 p-2 rounded-xl text-xs text-white focus:outline-none focus:border-blue-500">
-              </div>
-              <div>
-                <label class="block text-[10px] font-bold uppercase text-slate-400 mb-1">Betrag (CHF)</label>
-                <input type="number" step="0.05" id="budget-amt" placeholder="50.00" class="w-full bg-slate-950 border border-slate-700 p-2 rounded-xl text-xs text-white focus:outline-none focus:border-blue-500">
-              </div>
-            </div>
-
-            <button onclick="addBudgetItem()" class="w-full py-2 bg-blue-600 hover:bg-blue-500 font-bold text-xs text-white rounded-xl transition flex items-center justify-center gap-1">
-              <i data-lucide="plus" class="w-4 h-4"></i> Eintrag Hinzufügen
-            </button>
-          </div>
-
-          <!-- HISTORIE LISTE -->
-          <div>
-            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1 block">Letzte Transaktionen</span>
-            ${items.length === 0 ? `<p class="text-xs text-slate-500 italic">Noch keine Buchungen vorhanden.</p>` : `
-              <ul class="space-y-1.5 text-xs max-h-40 overflow-y-auto pr-1">
-                ${items.slice().reverse().map((b, origIdx) => {
-                  const actualIdx = items.length - 1 - origIdx;
-                  const isInc = b.type === 'income';
-                  return `
-                    <li class="flex items-center justify-between bg-slate-900/60 px-3 py-2 rounded-xl border border-slate-800/80">
-                      <div>
-                        <div class="font-semibold text-slate-200">${b.desc}</div>
-                        <div class="text-[10px] text-slate-500">${b.date || 'Heute'}</div>
-                      </div>
-                      <div class="flex items-center gap-2">
-                        <span class="font-bold ${isInc ? 'text-emerald-400' : 'text-rose-400'}">
-                          ${isInc ? '+' : '-'}${b.amt.toFixed(2)} CHF
-                        </span>
-                        <button onclick="deleteBudgetItem(${actualIdx})" class="text-slate-600 hover:text-rose-400 transition"><i data-lucide="x" class="w-3.5 h-3.5"></i></button>
-                      </div>
-                    </li>
-                  `;
-                }).join('')}
-              </ul>
-            `}
-          </div>
-
-          <!-- STATISTIK SECTION UNTEN -->
-          <div class="pt-3 border-t border-slate-800 space-y-2">
-            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Finanz-Statistik</span>
-            
-            <div class="grid grid-cols-2 gap-2 text-xs">
-              <div class="bg-slate-950/80 p-2.5 rounded-xl border border-slate-800/80">
-                <span class="text-[10px] text-slate-400 block">Einnahmen</span>
-                <span class="font-black text-emerald-400 text-sm">+${totalIncome.toFixed(2)} CHF</span>
-              </div>
-              <div class="bg-slate-950/80 p-2.5 rounded-xl border border-slate-800/80">
-                <span class="text-[10px] text-slate-400 block">Ausgaben</span>
-                <span class="font-black text-rose-400 text-sm">-${totalExpense.toFixed(2)} CHF</span>
-              </div>
-            </div>
-
-            <div class="bg-slate-950/90 p-3 rounded-xl border border-slate-800 flex justify-between items-center">
-              <div>
-                <span class="text-[10px] font-bold uppercase text-slate-400 block">Nettosaldo / Bilanz</span>
-                <span class="text-xs text-slate-400">Ausgabenquote: ${expenseRatio}%</span>
-              </div>
-              <span class="font-black text-base ${netBalance >= 0 ? 'text-emerald-400' : 'text-rose-400'}">
-                ${netBalance >= 0 ? '+' : ''}${netBalance.toFixed(2)} CHF
-              </span>
-            </div>
-          </div>
-        </div>
-      `;
-    }
-
-    function addBudgetItem() {
-      const type = document.getElementById('budget-type').value;
-      const date = document.getElementById('budget-date').value || getTodayString();
-      const desc = document.getElementById('budget-desc').value.trim();
-      const amt = parseFloat(document.getElementById('budget-amt').value);
-
-      if (!desc || isNaN(amt) || amt <= 0) {
-        return alert('Bitte gib eine gültige Beschreibung und einen Betrag ein!');
-      }
-
-      if (!currentUser.budget) currentUser.budget = [];
-      currentUser.budget.push({ type, date, desc, amt });
-
-      saveUserData();
-      renderDashboard();
-    }
-
-    function deleteBudgetItem(idx) {
-      currentUser.budget.splice(idx, 1);
-      saveUserData();
-      renderDashboard();
-    }
-
-    // MODAL DIALOG CONTROLLERS
-    function openSemesterModal() {
-      document.getElementById('new-semester-name').value = '';
-      document.getElementById('modal-add-semester').classList.remove('hidden');
-    }
-
-    function saveSemester() {
-      const name = document.getElementById('new-semester-name').value.trim();
-      if (!name) return alert('Bitte gib einen Semester-Namen ein!');
-
-      if (!currentUser.semesters) currentUser.semesters = [];
-      currentUser.semesters.push({ name: name, subjects: [] });
-
-      saveUserData();
-      renderDashboard();
-      closeModal('modal-add-semester');
-    }
-
-    function openSubjectModal(semIdx) {
-      activeSemIdx = semIdx;
-      document.getElementById('new-subject-name').value = '';
-      document.getElementById('modal-add-subject').classList.remove('hidden');
-    }
-
-    function saveSubject() {
-      const name = document.getElementById('new-subject-name').value.trim();
-      const type = document.getElementById('new-subject-type').value;
-      if (!name) return alert('Bitte gib einen Fach-Namen ein!');
-
-      currentUser.semesters[activeSemIdx].subjects.push({ name: name, type: type, exams: [] });
-
-      saveUserData();
-      renderDashboard();
-      closeModal('modal-add-subject');
-    }
-
-    function openExamModal(semIdx, subIdx) {
-      activeSemIdx = semIdx;
-      activeSubIdx = subIdx;
-      document.getElementById('new-exam-title').value = '';
-      document.getElementById('new-exam-achieved').value = '';
-      document.getElementById('new-exam-max').value = '';
-      document.getElementById('modal-add-exam').classList.remove('hidden');
-    }
-
-    function saveExam() {
-      const title = document.getElementById('new-exam-title').value.trim() || 'Prüfung';
-      const achieved = parseFloat(document.getElementById('new-exam-achieved').value);
-      const max = parseFloat(document.getElementById('new-exam-max').value);
-
-      if (isNaN(achieved) || isNaN(max) || max <= 0) {
-        return alert('Bitte gültige Punkte eingeben!');
-      }
-
-      currentUser.semesters[activeSemIdx].subjects[activeSubIdx].exams.push({ title, achieved, max });
-
-      saveUserData();
-      renderDashboard();
-      closeModal('modal-add-exam');
-    }
-
-    // MODULE MANAGER
+    // GENERAL APP UTILS
     function openAddModuleModal() {
-      const list = document.getElementById('available-modules-list');
-      list.innerHTML = '';
-
-      MODULE_DEFINITIONS.forEach(m => {
-        const isActive = currentUser.activeModules.includes(m.id);
-        const item = document.createElement('div');
-        item.className = "p-3 bg-slate-900 border border-slate-800 rounded-2xl flex items-center justify-between";
-        item.innerHTML = `
-          <div class="flex items-center gap-3">
-            <i data-lucide="${m.icon}" class="text-blue-400"></i>
-            <div>
-              <p class="font-bold text-sm text-white">${m.name}</p>
-              <p class="text-xs text-slate-400">${m.desc}</p>
-            </div>
-          </div>
-          <button onclick="toggleModule('${m.id}')" class="px-3 py-1.5 rounded-xl text-xs font-bold ${isActive ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30' : 'bg-blue-600 text-white'}">
-            ${isActive ? 'Entfernen' : 'Hinzufügen'}
-          </button>
-        `;
-        list.appendChild(item);
-      });
-
-      lucide.createIcons();
       document.getElementById('modal-add-module').classList.remove('hidden');
     }
 
-    function toggleModule(modId) {
-      if (currentUser.activeModules.includes(modId)) {
-        currentUser.activeModules = currentUser.activeModules.filter(id => id !== modId);
-      } else {
-        currentUser.activeModules.push(modId);
-      }
-      saveUserData();
-      renderDashboard();
-      openAddModuleModal();
-    }
-
-    function removeModule(modId) {
-      currentUser.activeModules = currentUser.activeModules.filter(id => id !== modId);
-      saveUserData();
-      renderDashboard();
-    }
-
-    // PROFILE & FILE UPLOAD
     function openProfileModal() {
-      const p = currentUser.profile || {};
-      const pic = p.pic || DEFAULT_AVATAR;
-      document.getElementById('edit-profile-pic').value = p.pic || '';
-      document.getElementById('edit-profile-img-preview').src = pic;
-      document.getElementById('edit-profile-name').value = p.name || '';
-      document.getElementById('edit-profile-age').value = p.age || '';
-      document.getElementById('edit-profile-weight').value = p.weight || '';
-      document.getElementById('edit-profile-target-weight').value = p.targetWeight || 75;
-      document.getElementById('edit-profile-height').value = p.height || '';
-      document.getElementById('edit-profile-goal').value = p.goal || '';
-      document.getElementById('edit-profile-motto').value = p.motto || '';
-      document.getElementById('edit-profile-bio').value = p.bio || '';
-
+      document.getElementById('edit-profile-name').value = currentUser.profile.name || '';
+      document.getElementById('edit-profile-pic').value = currentUser.profile.pic || '';
       document.getElementById('modal-profile').classList.remove('hidden');
     }
 
-    function handleFileUpload(event) {
-      const file = event.target.files[0];
-      if (!file) return;
-
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        const base64Image = e.target.result;
-        document.getElementById('edit-profile-pic').value = base64Image;
-        document.getElementById('edit-profile-img-preview').src = base64Image;
-      };
-      reader.readAsDataURL(file);
-    }
-
-    function updateProfilePicPreview(url) {
-      document.getElementById('edit-profile-img-preview').src = url || DEFAULT_AVATAR;
-    }
-
-    function saveProfile(e) {
-      e.preventDefault();
-      currentUser.profile = {
-        pic: document.getElementById('edit-profile-pic').value || DEFAULT_AVATAR,
-        name: document.getElementById('edit-profile-name').value,
-        age: parseFloat(document.getElementById('edit-profile-age').value),
-        weight: parseFloat(document.getElementById('edit-profile-weight').value),
-        targetWeight: parseFloat(document.getElementById('edit-profile-target-weight').value) || 75,
-        height: parseFloat(document.getElementById('edit-profile-height').value),
-        goal: document.getElementById('edit-profile-goal').value,
-        motto: document.getElementById('edit-profile-motto').value,
-        bio: document.getElementById('edit-profile-bio').value
-      };
-      saveUserData();
-      updateNavProfile();
-      renderDashboard();
-      closeModal('modal-profile');
-    }
-
-    function closeModal(modalId) {
-      document.getElementById(modalId).classList.add('hidden');
+    function closeModal(id) {
+      document.getElementById(id).classList.add('hidden');
     }
   </script>
 </body>
