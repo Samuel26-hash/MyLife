@@ -280,7 +280,7 @@
       { id: 'wms_grades', name: 'WMS Notensystem', icon: 'graduation-cap', desc: 'Semester, EFZ/BM Fächer, Minuspunkte-Check & Bestehensregeln' },
       { id: 'nutrition', name: 'Ernährung & Gesundheit', icon: 'apple', desc: 'Nährwert-Tracker, Health-Score, Intelligente Lebensmittel-Empfehlungen & Gewichtsverlauf' },
       { id: 'budget', name: 'Budget & Finanzen', icon: 'wallet', desc: 'Monatliche Einnahmen & Ausgaben in CHF' },
-      { id: 'fitness', name: 'Fitness & Routine', icon: 'dumbbell', desc: 'Workout-Tracker & Krafttraining' },
+      { id: 'fitness', name: 'Fitness & Routine', icon: 'dumbbell', desc: 'Workout-Tracker, Krafttraining & Trainingspläne' },
       { id: 'football', name: 'Fußball-Promotion', icon: 'trophy', desc: 'Ligen-Entwicklung & Match-Analysen' },
       { id: 'social_media', name: 'Social Media Creator', icon: 'share-2', desc: 'TikTok, Instagram & Shorts Follower-Ziele' },
       { id: 'lifestyle', name: 'Hygiene & Wachstum', icon: 'sparkles', desc: 'Hautpflege-Routine & Körperhaltung' },
@@ -342,11 +342,12 @@
           bio: 'Mein persönliches Dashboard.',
           pic: DEFAULT_AVATAR
         },
-        activeModules: ['wms_grades', 'nutrition', 'budget'],
+        activeModules: ['wms_grades', 'nutrition', 'budget', 'fitness'],
         semesters: [],
         budget: [],
         weightHistory: [],
-        nutritionLogs: []
+        nutritionLogs: [],
+        workoutHistory: []
       };
 
       saveUserData();
@@ -437,7 +438,7 @@
       } else if (modId === 'budget') {
         contentHTML = renderBudgetContent();
       } else if (modId === 'fitness') {
-        contentHTML = `<p class="text-xs text-slate-400">Zielgewicht: ${currentUser.profile.targetWeight || 75} kg. Protein: ${(TARGETS.protein)}g/Tag.</p>`;
+        contentHTML = renderFitnessContent();
       } else if (modId === 'football') {
         contentHTML = `<p class="text-xs text-slate-400">Promotion-Plan aktiv. Fokus: Ausdauer & Match-Zweikampf.</p>`;
       } else if (modId === 'social_media') {
@@ -460,6 +461,146 @@
           <div>${contentHTML}</div>
         </div>
       `;
+    }
+
+    // ---------------- FITNESS & KRAFTTRAINING ROUTINE ----------------
+    function renderFitnessContent() {
+      const history = currentUser.workoutHistory || [];
+      const todayStr = getTodayString();
+
+      return `
+        <div class="space-y-4">
+          <p class="text-xs text-slate-400">Zielgewicht: ${currentUser.profile.targetWeight || 75} kg | Muskelaufbau & Kraftsteigerung</p>
+          
+          <!-- WORKOUT PLAN AUSWAHL -->
+          <div class="bg-slate-900/80 p-3.5 rounded-2xl border border-slate-800 space-y-2">
+            <span class="text-[10px] font-bold uppercase text-slate-400 block">Trainingspläne & Routinen</span>
+            <div class="grid grid-cols-3 gap-1.5 text-center text-xs">
+              <button onclick="loadRoutine('PPL')" class="p-2 bg-slate-950 border border-slate-700/80 rounded-xl hover:border-blue-500 transition text-slate-300 hover:text-white font-medium">Push / Pull / Legs</button>
+              <button onclick="loadRoutine('GK')" class="p-2 bg-slate-950 border border-slate-700/80 rounded-xl hover:border-blue-500 transition text-slate-300 hover:text-white font-medium">Ganzkörper</button>
+              <button onclick="loadRoutine('OKUK')" class="p-2 bg-slate-950 border border-slate-700/80 rounded-xl hover:border-blue-500 transition text-slate-300 hover:text-white font-medium">OK / UK Split</button>
+            </div>
+          </div>
+
+          <!-- ROUTINE PROTKOLLIEREN -->
+          <div class="bg-slate-900/80 p-3.5 rounded-2xl border border-slate-800 space-y-2">
+            <span class="text-[10px] font-bold uppercase text-slate-400 block">Workout Eintragen</span>
+            <div class="grid grid-cols-2 gap-2">
+              <div>
+                <label class="block text-[10px] text-slate-400">Datum</label>
+                <input type="date" id="fit-date" value="${todayStr}" class="w-full bg-slate-950 border border-slate-700 p-1.5 rounded-xl text-xs text-white">
+              </div>
+              <div>
+                <label class="block text-[10px] text-slate-400">Übung / Routine</label>
+                <input type="text" id="fit-exercise" placeholder="z. B. Bankdrücken, Kniebeugen" class="w-full bg-slate-950 border border-slate-700 p-1.5 rounded-xl text-xs text-white">
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2">
+              <div>
+                <label class="block text-[10px] text-slate-400">Gewicht (kg)</label>
+                <input type="number" step="0.5" id="fit-weight" placeholder="z. B. 60" class="w-full bg-slate-950 border border-slate-700 p-1.5 rounded-xl text-xs text-white">
+              </div>
+              <div>
+                <label class="block text-[10px] text-slate-400">Sätze x Wdh.</label>
+                <input type="text" id="fit-sets" placeholder="z. B. 3 x 10" class="w-full bg-slate-950 border border-slate-700 p-1.5 rounded-xl text-xs text-white">
+              </div>
+            </div>
+
+            <button onclick="addWorkoutEntry()" class="w-full py-2 bg-blue-600 hover:bg-blue-500 font-bold text-xs text-white rounded-xl transition mt-1">
+              Workout Speichern
+            </button>
+          </div>
+
+          <!-- AKTIVER ROUTINE-LEITFADEN -->
+          <div id="routine-guide-container" class="bg-slate-900/60 p-3 rounded-2xl border border-slate-800 space-y-2 text-xs">
+            <span class="text-[10px] font-bold uppercase text-slate-400 block">Empfohlene Kraft-Routine (Push/Pull/Legs)</span>
+            <div class="space-y-1.5 text-slate-300 text-[11px]">
+              <div><strong class="text-blue-400">Push (Brust/Schulter/Trizeps):</strong> Bankdrücken, Schulterdrücken, Dips, Seitheben</div>
+              <div><strong class="text-emerald-400">Pull (Rücken/Bizeps):</strong> Klimmzüge/Latzug, Langhantelrudern, Bizepscurls</div>
+              <div><strong class="text-amber-400">Legs (Beine/Bauch):</strong> Kniebeugen, Kreuzheben, Ausfallschritte, Wadenheben</div>
+            </div>
+          </div>
+
+          <!-- WORKOUT VERLAUF -->
+          <div>
+            <span class="text-[10px] font-bold uppercase text-slate-400 mb-1 block">Trainings-Historie</span>
+            ${history.length === 0 ? `<p class="text-xs text-slate-500 italic">Noch keine Trainingseinheiten eingetragen.</p>` : `
+              <ul class="space-y-1.5 text-xs max-h-36 overflow-y-auto pr-1">
+                ${history.slice().reverse().map((w, idx) => {
+                  const actualIdx = history.length - 1 - idx;
+                  return `
+                    <li class="flex items-center justify-between bg-slate-900/60 px-3 py-2 rounded-xl border border-slate-800/80">
+                      <div>
+                        <div class="font-bold text-slate-200">${w.exercise}</div>
+                        <div class="text-[10px] text-slate-500">${w.date}</div>
+                      </div>
+                      <div class="flex items-center gap-2">
+                        <span class="font-semibold text-blue-400">${w.weight} kg (${w.sets})</span>
+                        <button onclick="deleteWorkoutEntry(${actualIdx})" class="text-slate-600 hover:text-rose-400 transition"><i data-lucide="x" class="w-3.5 h-3.5"></i></button>
+                      </div>
+                    </li>
+                  `;
+                }).join('')}
+              </ul>
+            `}
+          </div>
+        </div>
+      `;
+    }
+
+    function loadRoutine(type) {
+      const container = document.getElementById('routine-guide-container');
+      if (!container) return;
+
+      if (type === 'PPL') {
+        container.innerHTML = `
+          <span class="text-[10px] font-bold uppercase text-slate-400 block">Push / Pull / Legs Routine</span>
+          <div class="space-y-1.5 text-slate-300 text-[11px]">
+            <div><strong class="text-blue-400">Push Day:</strong> Bankdrücken 4x8, Schulterdrücken 3x10, Seitheben 4x12, Trizeps drücken 3x12</div>
+            <div><strong class="text-emerald-400">Pull Day:</strong> Klimmzüge 4xMax, Langhantelrudern 4x8, Facepulls 3x15, Hammer Curls 3x10</div>
+            <div><strong class="text-amber-400">Legs Day:</strong> Kniebeugen 4x8, Rumänisches Kreuzheben 3x10, Ausfallschritte 3x12, Wadenheben 4x15</div>
+          </div>
+        `;
+      } else if (type === 'GK') {
+        container.innerHTML = `
+          <span class="text-[10px] font-bold uppercase text-slate-400 block">Ganzkörper-Routine (3x pro Woche)</span>
+          <div class="space-y-1.5 text-slate-300 text-[11px]">
+            <div><strong class="text-indigo-400">Übungen:</strong> Kniebeugen 3x8, Flachbankdrücken 3x8, Latzug/Klimmzüge 3x10, Schulterdrücken 3x10, Planks 3x60s</div>
+          </div>
+        `;
+      } else if (type === 'OKUK') {
+        container.innerHTML = `
+          <span class="text-[10px] font-bold uppercase text-slate-400 block">Oberkörper / Unterkörper Split</span>
+          <div class="space-y-1.5 text-slate-300 text-[11px]">
+            <div><strong class="text-blue-400">Oberkörper:</strong> Bankdrücken 4x8, Rudern 4x8, Schrägbank LH 3x10, Latzug 3x10, Arm-Superset 3x12</div>
+            <div><strong class="text-amber-400">Unterkörper:</strong> Kniebeugen 4x8, Beinpresse 3x10, Beinbeuger 3x12, Waden 4x15, Bauch 3x15</div>
+          </div>
+        `;
+      }
+    }
+
+    function addWorkoutEntry() {
+      const date = document.getElementById('fit-date').value || getTodayString();
+      const exercise = document.getElementById('fit-exercise').value.trim();
+      const weight = parseFloat(document.getElementById('fit-weight').value) || 0;
+      const sets = document.getElementById('fit-sets').value.trim();
+
+      if (!exercise || !sets) {
+        return alert('Bitte gib eine Übung und Sätze/Wiederholungen ein!');
+      }
+
+      if (!currentUser.workoutHistory) currentUser.workoutHistory = [];
+      currentUser.workoutHistory.push({ date, exercise, weight, sets });
+
+      saveUserData();
+      renderDashboard();
+    }
+
+    function deleteWorkoutEntry(idx) {
+      currentUser.workoutHistory.splice(idx, 1);
+      saveUserData();
+      renderDashboard();
     }
 
     // ---------------- ERNÄHRUNG & GESUNDHEIT ENGINE ----------------
@@ -631,10 +772,8 @@
         ${makeBadge('Wasser', water, TARGETS.water, 'L')}
       `;
 
-      // SPECIFIC RECOMMENDATIONS ENGINE
       let recsHTML = '';
 
-      // 1. Kalorien Defizit
       if (kcal < TARGETS.kcal - 200) {
         recsHTML += `
           <div class="bg-amber-500/10 border border-amber-500/30 p-3 rounded-2xl text-xs space-y-1 text-amber-200">
@@ -646,7 +785,6 @@
         `;
       }
 
-      // 2. Protein Defizit
       if (protein < TARGETS.protein) {
         recsHTML += `
           <div class="bg-indigo-500/10 border border-indigo-500/30 p-3 rounded-2xl text-xs space-y-1 text-indigo-200">
@@ -665,7 +803,6 @@
         `;
       }
 
-      // 3. Kohlenhydrate Defizit
       if (carbs < TARGETS.carbs - 50) {
         recsHTML += `
           <div class="bg-blue-500/10 border border-blue-500/30 p-3 rounded-2xl text-xs space-y-1 text-blue-200">
@@ -683,7 +820,6 @@
         `;
       }
 
-      // 4. Fett Defizit
       if (fat < TARGETS.fat - 15) {
         recsHTML += `
           <div class="bg-amber-500/10 border border-amber-500/30 p-3 rounded-2xl text-xs space-y-1 text-amber-200">
@@ -701,7 +837,6 @@
         `;
       }
 
-      // 5. Zucker zu hoch
       if (sugar > TARGETS.sugarMax) {
         recsHTML += `
           <div class="bg-rose-500/10 border border-rose-500/30 p-3 rounded-2xl text-xs space-y-1 text-rose-200">
@@ -713,7 +848,6 @@
         `;
       }
 
-      // 6. Salz zu hoch
       if (salt > TARGETS.saltMax) {
         recsHTML += `
           <div class="bg-rose-500/10 border border-rose-500/30 p-3 rounded-2xl text-xs space-y-1 text-rose-200">
@@ -725,7 +859,6 @@
         `;
       }
 
-      // 7. Wasser zu wenig
       if (water < TARGETS.water) {
         recsHTML += `
           <div class="bg-cyan-500/10 border border-cyan-500/30 p-3 rounded-2xl text-xs space-y-1 text-cyan-200">
