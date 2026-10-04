@@ -6,7 +6,6 @@
   <title>MYLife – Personal Dashboard & Growth</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     .glass {
       background: rgba(15, 23, 42, 0.75);
@@ -37,11 +36,11 @@
       <form id="form-login" onsubmit="handleLogin(event)" class="space-y-4">
         <div>
           <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Benutzername</label>
-          <input type="text" id="login-user" required class="w-full px-4 py-3 bg-slate-900/60 border border-slate-700/60 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition">
+          <input type="text" id="login-user" required class="w-full px-4 py-3 bg-slate-900/60 border border-slate-700/60 rounded-xl text-white focus:outline-none focus:border-blue-500 transition">
         </div>
         <div>
           <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Passwort</label>
-          <input type="password" id="login-pass" required class="w-full px-4 py-3 bg-slate-900/60 border border-slate-700/60 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition">
+          <input type="password" id="login-pass" required class="w-full px-4 py-3 bg-slate-900/60 border border-slate-700/60 rounded-xl text-white focus:outline-none focus:border-blue-500 transition">
         </div>
         <button type="submit" class="w-full py-3.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl shadow-lg shadow-blue-600/30 transition">Anmelden</button>
       </form>
@@ -50,18 +49,11 @@
       <form id="form-register" onsubmit="handleRegister(event)" class="space-y-4 hidden">
         <div>
           <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Name / Benutzername</label>
-          <input type="text" id="reg-name" required class="w-full px-4 py-3 bg-slate-900/60 border border-slate-700/60 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition">
-        </div>
-        <div>
-          <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Schule / Schulsystem</label>
-          <select id="reg-school" class="w-full px-4 py-3 bg-slate-900/60 border border-slate-700/60 rounded-xl text-white focus:outline-none focus:border-blue-500 transition">
-            <option value="WMS">WMS (Wirtschaftsmittelschule EFZ/BM)</option>
-            <option value="Andere">Andere Schule</option>
-          </select>
+          <input type="text" id="reg-name" required class="w-full px-4 py-3 bg-slate-900/60 border border-slate-700/60 rounded-xl text-white focus:outline-none focus:border-blue-500 transition">
         </div>
         <div>
           <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Passwort festlegen</label>
-          <input type="password" id="reg-pass" required class="w-full px-4 py-3 bg-slate-900/60 border border-slate-700/60 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition">
+          <input type="password" id="reg-pass" required class="w-full px-4 py-3 bg-slate-900/60 border border-slate-700/60 rounded-xl text-white focus:outline-none focus:border-blue-500 transition">
         </div>
         <button type="submit" class="w-full py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl shadow-lg shadow-emerald-600/30 transition">Account Erstellen</button>
       </form>
@@ -82,17 +74,7 @@
           </div>
         </div>
 
-        <div class="flex items-center gap-3">
-          <button onclick="openAddModuleModal()" class="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-xl text-sm font-semibold transition shadow-lg shadow-blue-600/20">
-            <i data-lucide="plus" class="w-4 h-4"></i>
-            <span class="hidden sm:inline">Modul hinzufügen</span>
-          </button>
-          
-          <button onclick="openProfileModal()" class="flex items-center gap-2 p-1.5 bg-slate-900 border border-slate-800 rounded-xl hover:border-blue-500 transition">
-            <img id="nav-avatar" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100" class="w-8 h-8 rounded-lg object-cover">
-            <span id="nav-username" class="text-sm font-medium text-slate-200 hidden md:inline">Profil</span>
-          </button>
-        </div>
+        <button onclick="handleLogout()" class="px-3 py-1.5 bg-rose-600/20 text-rose-400 border border-rose-500/30 rounded-xl text-xs font-bold hover:bg-rose-600/30 transition">Abmelden</button>
       </div>
     </header>
 
@@ -101,99 +83,39 @@
     </main>
   </div>
 
-  <!-- MODAL: MODULE VERWALTEN -->
-  <div id="modal-add-module" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
-    <div class="glass w-full max-w-xl p-6 rounded-3xl border border-slate-800 space-y-6">
-      <div class="flex items-center justify-between border-b border-slate-800 pb-4">
-        <h3 class="text-xl font-bold text-white flex items-center gap-2">
-          <i data-lucide="layout-grid" class="text-blue-400"></i> Module Verwalten
-        </h3>
-        <button onclick="closeModal('modal-add-module')" class="text-slate-400 hover:text-white"><i data-lucide="x"></i></button>
-      </div>
-      <div id="available-modules-list" class="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-96 overflow-y-auto p-1"></div>
-    </div>
-  </div>
-
-  <!-- MODAL: STECKBRIEF / PROFIL -->
-  <div id="modal-profile" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
-    <div class="glass w-full max-w-xl p-6 rounded-3xl border border-slate-800 space-y-6 max-h-[90vh] overflow-y-auto">
-      <div class="flex items-center justify-between border-b border-slate-800 pb-4">
-        <h3 class="text-xl font-bold text-white flex items-center gap-2">
-          <i data-lucide="user" class="text-blue-400"></i> Mein Steckbrief
-        </h3>
-        <button onclick="closeModal('modal-profile')" class="text-slate-400 hover:text-white"><i data-lucide="x"></i></button>
-      </div>
-
-      <form onsubmit="saveProfile(event)" class="space-y-4">
-        <div class="flex items-center gap-4 bg-slate-900/60 p-4 rounded-2xl border border-slate-800">
-          <img id="edit-profile-img-preview" src="" class="w-16 h-16 rounded-2xl object-cover bg-slate-800 border border-slate-700">
-          <div class="flex-1 space-y-2">
-            <div>
-              <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Profilbild URL</label>
-              <input type="text" id="edit-profile-pic" oninput="updateProfilePicPreview(this.value)" placeholder="https://..." class="w-full px-3 py-1.5 bg-slate-800 border border-slate-700 rounded-xl text-xs text-white">
-            </div>
-          </div>
-        </div>
-
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Name</label>
-            <input type="text" id="edit-profile-name" required class="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-sm text-white">
-          </div>
-          <div>
-            <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Alter</label>
-            <input type="number" id="edit-profile-age" class="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-sm text-white">
-          </div>
-        </div>
-
-        <div class="flex gap-2 pt-2">
-          <button type="submit" class="flex-1 py-3 bg-blue-600 hover:bg-blue-500 font-bold text-white rounded-xl transition">Speichern</button>
-          <button type="button" onclick="handleLogout()" class="px-4 py-3 bg-rose-600/20 text-rose-400 border border-rose-500/30 rounded-xl font-bold hover:bg-rose-600/30 transition">Abmelden</button>
-        </div>
-      </form>
-    </div>
-  </div>
-
   <script>
     let currentUser = null;
     const DEFAULT_AVATAR = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100';
 
-    // Übungskatalog mit durchschnittlichem Kalorienverbrauch pro 10 Wiederholungen
     const EXERCISE_CATALOG = {
       oberkoerper: {
         arme: [
-          { name: 'Liegestütze', kcalPerRep: 0.5 },
-          { name: 'Pull-ups / Klimmzüge', kcalPerRep: 1.0 },
-          { name: 'Dips', kcalPerRep: 0.7 },
-          { name: 'Bizeps Curls', kcalPerRep: 0.4 }
+          { id: 'liegestuetze', name: 'Liegestütze', kcalPerRep: 0.5 },
+          { id: 'pullups', name: 'Pull-ups / Klimmzüge', kcalPerRep: 1.0 },
+          { id: 'dips', name: 'Dips', kcalPerRep: 0.7 },
+          { id: 'curls', name: 'Bizeps Curls', kcalPerRep: 0.4 }
         ],
         bauch_ruecken: [
-          { name: 'Crunches / Sit-ups', kcalPerRep: 0.3 },
-          { name: 'Plank (Sekunden statt Reps)', kcalPerRep: 0.15 },
-          { name: 'Leg Raises', kcalPerRep: 0.4 },
-          { name: 'Supermans', kcalPerRep: 0.3 }
+          { id: 'crunches', name: 'Crunches / Sit-ups', kcalPerRep: 0.3 },
+          { id: 'plank', name: 'Plank (Sekunden)', kcalPerRep: 0.15 },
+          { id: 'legraises', name: 'Leg Raises', kcalPerRep: 0.4 },
+          { id: 'supermans', name: 'Supermans', kcalPerRep: 0.3 }
         ]
       },
       unterkoerper: {
         huefte: [
-          { name: 'Glute Bridges / Beckenheben', kcalPerRep: 0.4 },
-          { name: 'Hip Thrusts', kcalPerRep: 0.6 },
-          { name: 'Kettlebell Swings', kcalPerRep: 0.8 }
+          { id: 'glutebridge', name: 'Glute Bridges', kcalPerRep: 0.4 },
+          { id: 'hipthrust', name: 'Hip Thrusts', kcalPerRep: 0.6 },
+          { id: 'swings', name: 'Kettlebell Swings', kcalPerRep: 0.8 }
         ],
         oberschenkel_waden: [
-          { name: 'Squats / Kniebeugen', kcalPerRep: 0.6 },
-          { name: 'Lunges / Ausfallschritte', kcalPerRep: 0.5 },
-          { name: 'Calf Raises / Wadenheben', kcalPerRep: 0.3 },
-          { name: 'Jump Squats', kcalPerRep: 0.9 }
+          { id: 'squats', name: 'Squats / Kniebeugen', kcalPerRep: 0.6 },
+          { id: 'lunges', name: 'Lunges / Ausfallschritte', kcalPerRep: 0.5 },
+          { id: 'calfraises', name: 'Calf Raises / Wadenheben', kcalPerRep: 0.3 },
+          { id: 'jumpsquats', name: 'Jump Squats', kcalPerRep: 0.9 }
         ]
       }
     };
-
-    const MODULE_DEFINITIONS = [
-      { id: 'fitness', name: 'Krafttraining & Routine', icon: 'dumbbell', desc: 'Ziel: Fit bleiben, Reps steigern & Kalorien-Analyse' },
-      { id: 'nutrition', name: 'Ernährung & Gesundheit', icon: 'apple', desc: 'Nährwert-Tracker & Health-Score' },
-      { id: 'wms_grades', name: 'WMS Notensystem', icon: 'graduation-cap', desc: 'Notenverwaltung & Bestehensregeln' }
-    ];
 
     window.onload = function() {
       lucide.createIcons();
@@ -227,8 +149,7 @@
       currentUser = {
         username: name.toLowerCase(),
         password: pass,
-        profile: { name: name, pic: DEFAULT_AVATAR },
-        activeModules: ['fitness', 'nutrition'],
+        profile: { name: name },
         fitnessLogs: []
       };
 
@@ -256,7 +177,6 @@
     function handleLogout() {
       localStorage.removeItem('mylife_active_user');
       currentUser = null;
-      closeModal('modal-profile');
       showAuthScreen();
     }
 
@@ -274,128 +194,89 @@
     function showApp() {
       document.getElementById('auth-screen').classList.add('hidden');
       document.getElementById('app-screen').classList.remove('hidden');
-      updateNavProfile();
-      renderDashboard();
-    }
-
-    function updateNavProfile() {
       document.getElementById('user-greeting').innerText = 'Hallo, ' + currentUser.profile.name;
-      document.getElementById('nav-username').innerText = currentUser.profile.name;
-      document.getElementById('nav-avatar').src = currentUser.profile.pic || DEFAULT_AVATAR;
+      renderDashboard();
     }
 
     function renderDashboard() {
       const grid = document.getElementById('dashboard-grid');
-      grid.innerHTML = '';
-
-      currentUser.activeModules.forEach(modId => {
-        const card = document.createElement('div');
-        card.className = "glass rounded-3xl p-6 border border-slate-800 space-y-4 flex flex-col justify-between";
-        card.innerHTML = getModuleHTML(modId);
-        grid.appendChild(card);
-      });
-
-      lucide.createIcons();
-
-      if (currentUser.activeModules.includes('fitness')) {
-        updateSubCatOptions();
-        renderFitnessLogs();
-      }
-    }
-
-    function getModuleHTML(modId) {
-      const modDef = MODULE_DEFINITIONS.find(m => m.id === modId);
-      let contentHTML = modId === 'fitness' ? renderFitnessContent() : `<p class="text-xs text-slate-400">${modDef.desc}</p>`;
-
-      return `
-        <div class="space-y-4">
+      grid.innerHTML = `
+        <div class="glass rounded-3xl p-6 border border-slate-800 space-y-4 col-span-1 md:col-span-2 lg:col-span-3">
           <div class="flex items-center justify-between border-b border-slate-800 pb-3">
             <div class="flex items-center gap-2">
-              <i data-lucide="${modDef.icon}" class="text-blue-400 w-5 h-5"></i>
-              <h3 class="font-bold text-white text-lg">${modDef.name}</h3>
+              <i data-lucide="dumbbell" class="text-blue-400 w-6 h-6"></i>
+              <h3 class="font-bold text-white text-xl">Krafttraining & Multi-Routine</h3>
             </div>
-            <button onclick="removeModule('${modId}')" class="text-slate-500 hover:text-rose-400 text-xs transition"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+            <span class="text-xs text-blue-400 bg-blue-600/10 border border-blue-500/20 px-3 py-1 rounded-full font-medium">Ziel: Fit bleiben & Reps steigern</span>
           </div>
-          <div>${contentHTML}</div>
+          ${renderFitnessContent()}
         </div>
       `;
+
+      lucide.createIcons();
+      updateSubCatOptions();
+      renderFitnessLogs();
     }
 
-    // ---------------- FITNESS MODUL LOGIK ----------------
     function getTodayString() {
-      const today = new Date();
-      return today.toISOString().split('T')[0];
+      return new Date().toISOString().split('T')[0];
     }
 
     function renderFitnessContent() {
       const today = getTodayString();
 
       return `
-        <div class="space-y-4">
-          <div class="p-3 bg-blue-600/10 border border-blue-500/20 rounded-2xl flex items-center justify-between text-xs">
-            <div>
-              <span class="font-bold text-blue-400 block">Ziel: Fit bleiben & Wiederholungen steigern</span>
-              <span class="text-slate-400">Anwendung mit Kalorien- & Steigerungsanalyse</span>
-            </div>
-            <i data-lucide="target" class="w-5 h-5 text-blue-400"></i>
-          </div>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <!-- LINKS: MULTI-EINGABE -->
+          <div class="bg-slate-900/80 p-4 rounded-2xl border border-slate-800 space-y-4">
+            <span class="text-xs font-bold uppercase text-slate-400 block tracking-wider">Multi-Übung Eintragen</span>
 
-          <!-- INPUT FORMULAR -->
-          <div class="bg-slate-900/80 p-3.5 rounded-2xl border border-slate-800 space-y-3">
-            <span class="text-[10px] font-bold uppercase text-slate-400 block">Neues Training eintragen</span>
-
-            <div class="grid grid-cols-2 gap-2">
+            <div class="grid grid-cols-2 gap-3">
               <div>
                 <label class="block text-[10px] text-slate-400 mb-1">Bereich</label>
-                <select id="fit-cat" onchange="updateSubCatOptions()" class="w-full bg-slate-950 border border-slate-700 p-2 rounded-xl text-xs text-white focus:outline-none focus:border-blue-500">
+                <select id="fit-cat" onchange="updateSubCatOptions()" class="w-full bg-slate-950 border border-slate-700 p-2.5 rounded-xl text-xs text-white focus:outline-none focus:border-blue-500">
                   <option value="oberkoerper">Oberkörper</option>
                   <option value="unterkoerper">Unterkörper</option>
                 </select>
               </div>
               <div>
                 <label class="block text-[10px] text-slate-400 mb-1">Muskelgruppe</label>
-                <select id="fit-subcat" onchange="updateExerciseOptions()" class="w-full bg-slate-950 border border-slate-700 p-2 rounded-xl text-xs text-white focus:outline-none focus:border-blue-500">
+                <select id="fit-subcat" onchange="renderMultiExerciseList()" class="w-full bg-slate-950 border border-slate-700 p-2.5 rounded-xl text-xs text-white focus:outline-none focus:border-blue-500">
                 </select>
               </div>
             </div>
 
-            <div>
-              <label class="block text-[10px] text-slate-400 mb-1">Spezifische Übung</label>
-              <select id="fit-exercise" class="w-full bg-slate-950 border border-slate-700 p-2 rounded-xl text-xs text-white focus:outline-none focus:border-blue-500">
-              </select>
+            <!-- DYNAMISCHE LISTE MIT CHECKBOXEN -->
+            <div class="space-y-2">
+              <label class="block text-[10px] text-slate-400">Übungen auswählen & Reps eintragen:</label>
+              <div id="multi-exercise-list" class="space-y-2 bg-slate-950 p-3 rounded-xl border border-slate-800/80 max-h-56 overflow-y-auto">
+              </div>
             </div>
 
-            <div class="grid grid-cols-2 gap-2">
-              <div>
-                <label class="block text-[10px] text-slate-400 mb-1">Anzahl (Wiederholungen)</label>
-                <input type="number" id="fit-reps" placeholder="z. B. 30" class="w-full bg-slate-950 border border-slate-700 p-2 rounded-xl text-xs text-white focus:outline-none focus:border-blue-500">
-              </div>
+            <div class="grid grid-cols-3 gap-2">
               <div>
                 <label class="block text-[10px] text-slate-400 mb-1">Dauer (Minuten)</label>
-                <input type="number" id="fit-duration" placeholder="z. B. 20" class="w-full bg-slate-950 border border-slate-700 p-2 rounded-xl text-xs text-white focus:outline-none focus:border-blue-500">
+                <input type="number" id="fit-duration" placeholder="z. B. 30" class="w-full bg-slate-950 border border-slate-700 p-2 rounded-xl text-xs text-white focus:outline-none focus:border-blue-500">
               </div>
-            </div>
-
-            <div class="grid grid-cols-2 gap-2">
               <div>
-                <label class="block text-[10px] text-slate-400 mb-1">Geplante Zeit</label>
-                <input type="text" id="fit-planned" value="1 Stunde" class="w-full bg-slate-950/50 border border-slate-800 p-2 rounded-xl text-xs text-slate-400" readonly>
+                <label class="block text-[10px] text-slate-400 mb-1">Geplant</label>
+                <input type="text" value="1 Std." class="w-full bg-slate-950/50 border border-slate-800 p-2 rounded-xl text-xs text-slate-500" readonly>
               </div>
               <div>
                 <label class="block text-[10px] text-slate-400 mb-1">Datum</label>
-                <input type="date" id="fit-date" value="${today}" class="w-full bg-slate-950 border border-slate-700 p-1.5 rounded-xl text-xs text-white">
+                <input type="date" id="fit-date" value="${today}" class="w-full bg-slate-950 border border-slate-700 p-2 rounded-xl text-xs text-white">
               </div>
             </div>
 
-            <button onclick="saveFitnessLog()" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 font-bold text-xs text-white rounded-xl transition flex items-center justify-center gap-1.5">
-              <i data-lucide="plus-circle" class="w-4 h-4"></i> Workout Eintragen & Analysieren
+            <button onclick="saveMultiFitnessLog()" class="w-full py-3 bg-emerald-600 hover:bg-emerald-500 font-bold text-xs text-white rounded-xl transition flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/20">
+              <i data-lucide="check-circle-2" class="w-4 h-4"></i> Ausgewählte Übungen Speichern
             </button>
           </div>
 
-          <!-- VERLAUF & ANALYSE -->
-          <div class="bg-slate-900/80 p-3.5 rounded-2xl border border-slate-800 space-y-2.5">
-            <span class="text-[10px] font-bold uppercase text-slate-400 block">Dauerhafte Analyse & Verlauf</span>
-            <div id="fitness-history-list" class="space-y-2 max-h-64 overflow-y-auto pr-1"></div>
+          <!-- RECHTS: DYNAMISCHE ANALYSE -->
+          <div class="bg-slate-900/80 p-4 rounded-2xl border border-slate-800 space-y-3">
+            <span class="text-xs font-bold uppercase text-slate-400 block tracking-wider">Trainingsverlauf & Steigerung</span>
+            <div id="fitness-history-list" class="space-y-2.5 max-h-[420px] overflow-y-auto pr-1"></div>
           </div>
         </div>
       `;
@@ -410,65 +291,77 @@
         ? `<option value="arme">Arme</option><option value="bauch_ruecken">Bauch & Rücken</option>`
         : `<option value="huefte">Hüfte</option><option value="oberschenkel_waden">Oberschenkel & Waden</option>`;
 
-      updateExerciseOptions();
+      renderMultiExerciseList();
     }
 
-    function updateExerciseOptions() {
+    function renderMultiExerciseList() {
       const cat = document.getElementById('fit-cat').value;
       const subcat = document.getElementById('fit-subcat').value;
-      const exSelect = document.getElementById('fit-exercise');
-      if (!exSelect) return;
+      const container = document.getElementById('multi-exercise-list');
+      if (!container) return;
 
-      exSelect.innerHTML = '';
-      const list = EXERCISE_CATALOG[cat][subcat] || [];
-      list.forEach(item => {
-        exSelect.innerHTML += `<option value="${item.name}">${item.name}</option>`;
-      });
+      const exercises = EXERCISE_CATALOG[cat][subcat] || [];
+      
+      container.innerHTML = exercises.map(ex => `
+        <div class="flex items-center justify-between gap-3 bg-slate-900/90 p-2 rounded-lg border border-slate-800">
+          <label class="flex items-center gap-2.5 cursor-pointer text-xs text-slate-200 flex-1">
+            <input type="checkbox" id="chk-${ex.id}" class="w-4 h-4 rounded bg-slate-950 border-slate-700 text-blue-600 focus:ring-0 cursor-pointer">
+            <span class="font-medium">${ex.name}</span>
+          </label>
+          <div class="flex items-center gap-1.5 w-28">
+            <input type="number" id="rep-${ex.id}" placeholder="Anzahl" class="w-full bg-slate-950 border border-slate-700 px-2 py-1 rounded-lg text-xs text-white text-right focus:outline-none focus:border-blue-500">
+            <span class="text-[10px] text-slate-500">Reps</span>
+          </div>
+        </div>
+      `).join('');
     }
 
-    function getKcalPerRep(exerciseName) {
-      for (let cat in EXERCISE_CATALOG) {
-        for (let sub in EXERCISE_CATALOG[cat]) {
-          const found = EXERCISE_CATALOG[cat][sub].find(e => e.name === exerciseName);
-          if (found) return found.kcalPerRep;
-        }
-      }
-      return 0.5; // Standard-Wert
-    }
-
-    function saveFitnessLog() {
+    function saveMultiFitnessLog() {
       const cat = document.getElementById('fit-cat').value;
       const subcat = document.getElementById('fit-subcat').value;
-      const exercise = document.getElementById('fit-exercise').value;
-      const reps = parseInt(document.getElementById('fit-reps').value) || 0;
       const duration = parseInt(document.getElementById('fit-duration').value) || 0;
       const date = document.getElementById('fit-date').value || getTodayString();
 
-      if (reps <= 0 || duration <= 0) {
-        return alert('Bitte gib eine gültige Anzahl an Wiederholungen und die benötigte Zeit an!');
+      if (duration <= 0) {
+        return alert('Bitte gib die benötigte Zeit (Dauer in Minuten) an!');
       }
 
-      const kcalBurned = Math.round(reps * getKcalPerRep(exercise));
-      const speed = parseFloat((reps / duration).toFixed(2)); // Reps pro Minute
+      const exercises = EXERCISE_CATALOG[cat][subcat] || [];
+      const selectedWorkouts = [];
+
+      exercises.forEach(ex => {
+        const chk = document.getElementById(`chk-${ex.id}`);
+        const repInput = document.getElementById(`rep-${ex.id}`);
+
+        if (chk && chk.checked) {
+          const reps = parseInt(repInput.value) || 0;
+          if (reps > 0) {
+            selectedWorkouts.push({
+              exercise: ex.name,
+              reps: reps,
+              kcalBurned: Math.round(reps * ex.kcalPerRep)
+            });
+          }
+        }
+      });
+
+      if (selectedWorkouts.length === 0) {
+        return alert('Bitte wähle mindestens eine Übung aus und trage die Anzahl der Wiederholungen ein!');
+      }
 
       if (!currentUser.fitnessLogs) currentUser.fitnessLogs = [];
 
+      // Speichert das Multi-Workout als Paket
       currentUser.fitnessLogs.push({
         id: Date.now(),
         date,
-        cat,
-        subcat,
-        exercise,
-        reps,
         duration,
-        kcalBurned,
-        speed
+        workouts: selectedWorkouts
       });
 
       saveUserData();
       renderFitnessLogs();
-
-      document.getElementById('fit-reps').value = '';
+      renderMultiExerciseList();
       document.getElementById('fit-duration').value = '';
     }
 
@@ -482,69 +375,60 @@
         return;
       }
 
-      // Anzeige chronologisch von neu nach alt
       container.innerHTML = logs.slice().reverse().map((log, origIdx) => {
         const actualIdx = logs.length - 1 - origIdx;
-        
-        // Finde vorherige Workouts der SELBEN Übung für die Steigerungs-Analyse
-        const previousLogs = logs.slice(0, actualIdx).filter(l => l.exercise === log.exercise);
-        const lastLog = previousLogs.length > 0 ? previousLogs[previousLogs.length - 1] : null;
+        const totalKcal = log.workouts.reduce((sum, w) => sum + w.kcalBurned, 0);
 
-        let analysisHTML = '';
-        if (lastLog) {
-          const repsDiff = log.reps - lastLog.reps;
-          const speedDiff = parseFloat((log.speed - lastLog.speed).toFixed(2));
+        // Analyse für jede einzelne Übung im Set
+        const workoutItemsHTML = log.workouts.map(w => {
+          // Vorherigen Wert für die selbe Übung suchen
+          let prevReps = null;
+          for (let i = actualIdx - 1; i >= 0; i--) {
+            const found = logs[i].workouts.find(item => item.exercise === w.exercise);
+            if (found) {
+              prevReps = found.reps;
+              break;
+            }
+          }
 
-          let repStatus = repsDiff > 0 
-            ? `<span class="text-emerald-400 font-bold">↑ +${repsDiff} Reps Steigerung</span>`
-            : repsDiff < 0 
-            ? `<span class="text-rose-400 font-bold">↓ ${repsDiff} Reps weniger</span>`
-            : `<span class="text-slate-400">0 Steigerung (Gleich zum Vortag)</span>`;
+          let analysisBadge = '';
+          if (prevReps !== null) {
+            const diff = w.reps - prevReps;
+            if (diff > 0) analysisBadge = `<span class="text-emerald-400 font-bold">↑ +${diff} Steigerung</span>`;
+            else if (diff < 0) analysisBadge = `<span class="text-rose-400 font-bold">↓ ${diff} Reps</span>`;
+            else analysisBadge = `<span class="text-slate-400">0 Steigerung</span>`;
+          } else {
+            analysisBadge = `<span class="text-blue-400 italic">1. Mal (Basis)</span>`;
+          }
 
-          let speedStatus = speedDiff > 0 
-            ? `<span class="text-emerald-400">⚡ Schneller (${speedDiff} Reps/Min)</span>`
-            : speedDiff < 0 
-            ? `<span class="text-rose-400">🐢 Langsamer (${speedDiff} Reps/Min)</span>`
-            : `<span class="text-slate-400">Gleiches Tempo</span>`;
-
-          analysisHTML = `
-            <div class="mt-2 pt-2 border-t border-slate-800/80 text-[10px] space-y-1">
-              <div class="flex items-center justify-between">
-                <span class="text-slate-400">Vergleich zum letzten Mal:</span>
-                <div>${repStatus}</div>
-              </div>
-              <div class="flex items-center justify-between">
-                <span class="text-slate-400">Geschwindigkeit:</span>
-                <div>${speedStatus}</div>
+          return `
+            <div class="flex items-center justify-between text-xs bg-slate-900/60 p-2 rounded-lg border border-slate-800/60">
+              <span class="font-medium text-slate-200">${w.exercise}</span>
+              <div class="flex items-center gap-3">
+                <span class="font-bold text-blue-400">${w.reps} Reps</span>
+                <span class="text-[10px] text-amber-400">🔥 ${w.kcalBurned} kcal</span>
+                <div class="text-[10px] bg-slate-950 px-2 py-0.5 rounded border border-slate-800">${analysisBadge}</div>
               </div>
             </div>
           `;
-        } else {
-          analysisHTML = `
-            <div class="mt-2 pt-2 border-t border-slate-800/80 text-[10px] text-blue-400 flex items-center justify-between">
-              <span>Status: 1. Workout (Basiswert)</span>
-              <span class="font-bold">0 Steigerung</span>
-            </div>
-          `;
-        }
+        }).join('');
 
         return `
-          <div class="bg-slate-950 p-3 rounded-xl border border-slate-800/80 space-y-1 text-xs">
-            <div class="flex items-center justify-between">
-              <span class="font-bold text-white">${log.exercise}</span>
+          <div class="bg-slate-950 p-3.5 rounded-xl border border-slate-800 space-y-2.5">
+            <div class="flex items-center justify-between border-b border-slate-800/80 pb-2">
               <div class="flex items-center gap-2">
-                <span class="text-[10px] text-slate-500">${log.date}</span>
-                <button onclick="deleteFitnessLog(${actualIdx})" class="text-slate-600 hover:text-rose-400"><i data-lucide="x" class="w-3.5 h-3.5"></i></button>
+                <span class="text-xs font-bold text-white">${log.date}</span>
+                <span class="text-[10px] bg-blue-600/20 text-blue-400 px-2 py-0.5 rounded-full font-medium">${log.duration} Min. Dauer</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="text-xs font-bold text-amber-400">Gesamt: 🔥 ${totalKcal} kcal</span>
+                <button onclick="deleteFitnessLog(${actualIdx})" class="text-slate-600 hover:text-rose-400"><i data-lucide="x" class="w-4 h-4"></i></button>
               </div>
             </div>
 
-            <div class="flex items-center gap-2 text-[11px] pt-1">
-              <span class="bg-blue-600/20 text-blue-400 border border-blue-500/30 px-2 py-0.5 rounded-lg font-bold">${log.reps} Reps</span>
-              <span class="bg-slate-900 text-slate-300 border border-slate-800 px-2 py-0.5 rounded-lg">${log.duration} Min.</span>
-              <span class="bg-amber-500/10 text-amber-400 border border-amber-500/20 px-2 py-0.5 rounded-lg font-semibold">🔥 ca. ${log.kcalBurned} kcal</span>
+            <div class="space-y-1.5">
+              ${workoutItemsHTML}
             </div>
-
-            ${analysisHTML}
           </div>
         `;
       }).join('');
@@ -556,21 +440,6 @@
       currentUser.fitnessLogs.splice(idx, 1);
       saveUserData();
       renderFitnessLogs();
-    }
-
-    // GENERAL APP UTILS
-    function openAddModuleModal() {
-      document.getElementById('modal-add-module').classList.remove('hidden');
-    }
-
-    function openProfileModal() {
-      document.getElementById('edit-profile-name').value = currentUser.profile.name || '';
-      document.getElementById('edit-profile-pic').value = currentUser.profile.pic || '';
-      document.getElementById('modal-profile').classList.remove('hidden');
-    }
-
-    function closeModal(id) {
-      document.getElementById(id).classList.add('hidden');
     }
   </script>
 </body>
