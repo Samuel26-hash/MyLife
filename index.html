@@ -85,7 +85,6 @@
 
   <script>
     let currentUser = null;
-    const DEFAULT_AVATAR = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100';
 
     const EXERCISE_CATALOG = {
       oberkoerper: {
@@ -137,6 +136,8 @@
     function showAuthTab(tab) {
       document.getElementById('form-login').classList.toggle('hidden', tab !== 'login');
       document.getElementById('form-register').classList.toggle('hidden', tab !== 'register');
+      document.getElementById('tab-login-btn').className = tab === 'login' ? 'flex-1 py-2 rounded-lg bg-blue-600 text-white transition' : 'flex-1 py-2 rounded-lg text-slate-400 hover:text-white transition';
+      document.getElementById('tab-register-btn').className = tab === 'register' ? 'flex-1 py-2 rounded-lg bg-blue-600 text-white transition' : 'flex-1 py-2 rounded-lg text-slate-400 hover:text-white transition';
     }
 
     function handleRegister(e) {
@@ -351,7 +352,6 @@
 
       if (!currentUser.fitnessLogs) currentUser.fitnessLogs = [];
 
-      // Speichert das Multi-Workout als Paket
       currentUser.fitnessLogs.push({
         id: Date.now(),
         date,
@@ -379,9 +379,7 @@
         const actualIdx = logs.length - 1 - origIdx;
         const totalKcal = log.workouts.reduce((sum, w) => sum + w.kcalBurned, 0);
 
-        // Analyse für jede einzelne Übung im Set
         const workoutItemsHTML = log.workouts.map(w => {
-          // Vorherigen Wert für die selbe Übung suchen
           let prevReps = null;
           for (let i = actualIdx - 1; i >= 0; i--) {
             const found = logs[i].workouts.find(item => item.exercise === w.exercise);
