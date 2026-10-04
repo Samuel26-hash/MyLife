@@ -1,0 +1,3349 @@
+<!DOCTYPE html>
+<html lang="de" class="h-full bg-slate-950 text-slate-100">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>MYLife – Personal Dashboard & Growth</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    .glass {
+      background: rgba(15, 23, 42, 0.75);
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    /* iPhone: Eingabefelder unter 16px lösen automatisches Reinzoomen aus */
+    @media (max-width: 640px) {
+      input, select, textarea { font-size: 16px !important; }
+    }
+    .perf-sheet { max-height: 92vh; max-height: 92dvh; }
+    .pb-safe { padding-bottom: max(1rem, env(safe-area-inset-bottom)); }
+    #perf-modal-body { -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
+  </style>
+</head>
+<body class="h-full font-sans antialiased selection:bg-blue-500 selection:text-white">
+
+  <!-- AUTH SCREEN -->
+  <div id="auth-screen" class="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
+    <div class="glass w-full max-w-md p-8 rounded-3xl shadow-2xl space-y-6 border border-slate-800">
+      <div class="text-center space-y-2">
+        <div class="inline-flex p-3 bg-blue-600/20 text-blue-400 rounded-2xl mb-2">
+          <i data-lucide="sparkles" class="w-8 h-8"></i>
+        </div>
+        <h1 class="text-3xl font-black tracking-tight text-white">MYLife</h1>
+        <p class="text-slate-400 text-sm">Dein persönliches Entwicklungs-Dashboard</p>
+      </div>
+
+      <div class="flex p-1 bg-slate-900/80 rounded-xl text-sm font-medium border border-slate-800">
+        <button id="tab-login-btn" onclick="showAuthTab('login')" class="flex-1 py-2 rounded-lg bg-blue-600 text-white transition">Anmelden</button>
+        <button id="tab-register-btn" onclick="showAuthTab('register')" class="flex-1 py-2 rounded-lg text-slate-400 hover:text-white transition">Registrieren</button>
+      </div>
+
+      <!-- Form Login -->
+      <form id="form-login" onsubmit="handleLogin(event)" class="space-y-4">
+        <div>
+          <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Benutzername</label>
+          <input type="text" id="login-user" required class="w-full px-4 py-3 bg-slate-900/60 border border-slate-700/60 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Passwort</label>
+          <input type="password" id="login-pass" required class="w-full px-4 py-3 bg-slate-900/60 border border-slate-700/60 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition">
+        </div>
+        <button type="submit" class="w-full py-3.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl shadow-lg shadow-blue-600/30 transition">Anmelden</button>
+      </form>
+
+      <!-- Form Register -->
+      <form id="form-register" onsubmit="handleRegister(event)" class="space-y-4 hidden">
+        <div>
+          <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Name / Benutzername</label>
+          <input type="text" id="reg-name" required class="w-full px-4 py-3 bg-slate-900/60 border border-slate-700/60 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Schule / Schulsystem</label>
+          <select id="reg-school" class="w-full px-4 py-3 bg-slate-900/60 border border-slate-700/60 rounded-xl text-white focus:outline-none focus:border-blue-500 transition">
+            <option value="WMS">WMS (Wirtschaftsmittelschule EFZ/BM)</option>
+            <option value="Andere">Andere Schule</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Passwort festlegen</label>
+          <input type="password" id="reg-pass" required class="w-full px-4 py-3 bg-slate-900/60 border border-slate-700/60 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition">
+        </div>
+        <button type="submit" class="w-full py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl shadow-lg shadow-emerald-600/30 transition">Account Erstellen</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- MAIN APP SCREEN -->
+  <div id="app-screen" class="hidden min-h-screen flex flex-col">
+    <header class="glass sticky top-0 z-40 border-b border-slate-800">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="p-2 bg-blue-600/20 text-blue-400 rounded-xl">
+            <i data-lucide="sparkles" class="w-6 h-6"></i>
+          </div>
+          <div>
+            <h1 class="text-xl font-bold tracking-wider text-white">MYLife</h1>
+            <p id="user-greeting" class="text-xs text-slate-400">Hallo</p>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-3">
+          <button onclick="openAddModuleModal()" class="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-xl text-sm font-semibold transition shadow-lg shadow-blue-600/20">
+            <i data-lucide="plus" class="w-4 h-4"></i>
+            <span class="hidden sm:inline">Modul hinzufügen</span>
+          </button>
+          
+          <button onclick="openProfileModal()" class="flex items-center gap-2 p-1.5 bg-slate-900 border border-slate-800 rounded-xl hover:border-blue-500 transition">
+            <img id="nav-avatar" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100" class="w-8 h-8 rounded-lg object-cover">
+            <span id="nav-username" class="text-sm font-medium text-slate-200 hidden md:inline">Profil</span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 space-y-6">
+      <div id="perf-overview"></div>
+      <div id="dashboard-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+    </main>
+  </div>
+
+  <!-- MODAL: PERFORMANCE (Fitness, Fußball, Social, Hygiene, Fotos) -->
+  <div id="modal-perf" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-end sm:items-center justify-center sm:p-4 hidden">
+    <div class="glass perf-sheet w-full sm:max-w-2xl rounded-t-3xl sm:rounded-3xl border border-slate-800 flex flex-col">
+      <div class="flex items-center justify-between border-b border-slate-800 px-5 py-4 shrink-0">
+        <h3 id="perf-modal-title" class="text-lg font-bold text-white flex items-center gap-2"></h3>
+        <button onclick="closePerfModal()" class="text-slate-400 hover:text-white p-1" aria-label="Schliessen"><i data-lucide="x"></i></button>
+      </div>
+      <div id="perf-modal-body" class="min-h-0 overflow-y-auto px-4 sm:px-5 pt-4 pb-safe"></div>
+    </div>
+  </div>
+
+  <!-- MODAL: MODULE VERWALTEN -->
+  <div id="modal-add-module" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="glass w-full max-w-xl p-6 rounded-3xl border border-slate-800 space-y-6">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-4">
+        <h3 class="text-xl font-bold text-white flex items-center gap-2">
+          <i data-lucide="layout-grid" class="text-blue-400"></i> Module Verwalten
+        </h3>
+        <button onclick="closeModal('modal-add-module')" class="text-slate-400 hover:text-white"><i data-lucide="x"></i></button>
+      </div>
+      <div id="available-modules-list" class="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-96 overflow-y-auto p-1"></div>
+    </div>
+  </div>
+
+  <!-- MODAL: NEUES SEMESTER -->
+  <div id="modal-add-semester" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="glass w-full max-w-md p-6 rounded-3xl border border-slate-800 space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <h3 class="text-lg font-bold text-white flex items-center gap-2">
+          <i data-lucide="folder-plus" class="text-blue-400"></i> Neues Semester
+        </h3>
+        <button onclick="closeModal('modal-add-semester')" class="text-slate-400 hover:text-white"><i data-lucide="x"></i></button>
+      </div>
+      <div>
+        <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Semester Name</label>
+        <input type="text" id="new-semester-name" placeholder="z. B. 1. Semester 2026" class="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-blue-500">
+      </div>
+      <button onclick="saveSemester()" class="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition">Erstellen</button>
+    </div>
+  </div>
+
+  <!-- MODAL: NEUES FACH -->
+  <div id="modal-add-subject" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="glass w-full max-w-md p-6 rounded-3xl border border-slate-800 space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <h3 class="text-lg font-bold text-white flex items-center gap-2">
+          <i data-lucide="book-open" class="text-blue-400"></i> Neues Fach
+        </h3>
+        <button onclick="closeModal('modal-add-subject')" class="text-slate-400 hover:text-white"><i data-lucide="x"></i></button>
+      </div>
+      <div>
+        <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Fach Name</label>
+        <input type="text" id="new-subject-name" placeholder="z. B. Mathematik, Deutsch, W&R" class="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-blue-500">
+      </div>
+      <div>
+        <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Fach-Kategorie</label>
+        <select id="new-subject-type" class="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-blue-500">
+          <option value="BM">BM-Fach (Berufsmaturität: max. 2 ungenügende, max. 2.0 Minuspunkte)</option>
+          <option value="EFZ">EFZ-Fach (Eidg. Fähigkeitszeugnis: max. 1 ungenügende)</option>
+        </select>
+      </div>
+      <button onclick="saveSubject()" class="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition">Fach Hinzufügen</button>
+    </div>
+  </div>
+
+  <!-- MODAL: NEUE PRÜFUNG -->
+  <div id="modal-add-exam" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="glass w-full max-w-md p-6 rounded-3xl border border-slate-800 space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <h3 class="text-lg font-bold text-white flex items-center gap-2">
+          <i data-lucide="file-text" class="text-blue-400"></i> Note / Prüfung eintragen
+        </h3>
+        <button onclick="closeModal('modal-add-exam')" class="text-slate-400 hover:text-white"><i data-lucide="x"></i></button>
+      </div>
+      <div>
+        <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Prüfungsbezeichnung (Optional)</label>
+        <input type="text" id="new-exam-title" placeholder="z.B. Test 1" class="w-full px-4 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-blue-500 mb-3 text-sm">
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Erreichte Punkte</label>
+          <input type="number" step="0.5" id="new-exam-achieved" placeholder="45" class="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-blue-500">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Maximale Punkte</label>
+          <input type="number" step="0.5" id="new-exam-max" placeholder="50" class="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-blue-500">
+        </div>
+      </div>
+      <p class="text-xs text-slate-400">Formel: <code class="text-blue-400">1 + 5 * (Erreicht / Max)</code> (Gerundet auf 0.5)</p>
+      <button onclick="saveExam()" class="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition">Berechnen & Speichern</button>
+    </div>
+  </div>
+
+  <!-- MODAL: STECKBRIEF / PROFIL -->
+  <div id="modal-profile" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="glass w-full max-w-xl p-6 rounded-3xl border border-slate-800 space-y-6 max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-4">
+        <h3 class="text-xl font-bold text-white flex items-center gap-2">
+          <i data-lucide="user" class="text-blue-400"></i> Mein Steckbrief
+        </h3>
+        <button onclick="closeModal('modal-profile')" class="text-slate-400 hover:text-white"><i data-lucide="x"></i></button>
+      </div>
+
+      <form onsubmit="saveProfile(event)" class="space-y-4">
+        <div class="flex items-center gap-4 bg-slate-900/60 p-4 rounded-2xl border border-slate-800">
+          <img id="edit-profile-img-preview" src="" class="w-16 h-16 rounded-2xl object-cover bg-slate-800 border border-slate-700">
+          <div class="flex-1 space-y-2">
+            <div>
+              <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Profilbild hochladen</label>
+              <input type="file" accept="image/*" onchange="handleFileUpload(event)" class="text-xs text-slate-400 file:mr-2 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:bg-blue-600 file:text-white file:font-semibold hover:file:bg-blue-500 cursor-pointer">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Oder Profilbild URL</label>
+              <input type="text" id="edit-profile-pic" oninput="updateProfilePicPreview(this.value)" placeholder="https://..." class="w-full px-3 py-1.5 bg-slate-800 border border-slate-700 rounded-xl text-xs text-white">
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Name</label>
+            <input type="text" id="edit-profile-name" required class="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-sm text-white">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Alter</label>
+            <input type="number" id="edit-profile-age" class="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-sm text-white">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Gewicht (kg)</label>
+            <input type="number" id="edit-profile-weight" class="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-sm text-white">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Grösse (cm)</label>
+            <input type="number" id="edit-profile-height" class="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-sm text-white">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Zielgewicht (kg)</label>
+          <input type="number" id="edit-profile-target-weight" class="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-sm text-white" placeholder="75">
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Hauptziel im Leben</label>
+          <input type="text" id="edit-profile-goal" class="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-sm text-white">
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Motto</label>
+          <input type="text" id="edit-profile-motto" class="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-sm text-white italic">
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Über mich</label>
+          <textarea id="edit-profile-bio" rows="3" class="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-sm text-white"></textarea>
+        </div>
+
+        <div class="bg-slate-900/60 p-4 rounded-2xl border border-slate-800 space-y-2">
+          <label class="block text-xs font-semibold uppercase text-slate-400">Datensicherung</label>
+          <p class="text-[11px] text-slate-500">Deine Daten liegen nur auf diesem Gerät. Exportiere regelmässig ein Backup (inkl. Fotos).</p>
+          <div class="flex gap-2">
+            <button type="button" onclick="exportBackup()" class="flex-1 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold rounded-xl transition">Backup exportieren</button>
+            <label class="flex-1 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold rounded-xl transition text-center cursor-pointer">Backup importieren
+              <input type="file" accept="application/json,.json" class="hidden" onchange="importBackup(event)">
+            </label>
+          </div>
+        </div>
+
+        <div class="flex gap-2 pt-2">
+          <button type="submit" class="flex-1 py-3 bg-blue-600 hover:bg-blue-500 font-bold text-white rounded-xl transition">Speichern</button>
+          <button type="button" onclick="handleLogout()" class="px-4 py-3 bg-rose-600/20 text-rose-400 border border-rose-500/30 rounded-xl font-bold hover:bg-rose-600/30 transition">Abmelden</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    let currentUser = null;
+    let activeSemIdx = null;
+    let activeSubIdx = null;
+    let weightChartInstance = null;
+
+    const DEFAULT_AVATAR = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100';
+
+    const TARGETS = {
+      kcal: 2500,
+      protein: 150,
+      carbs: 300,
+      fat: 80,
+      sugarMax: 40,
+      saltMax: 6,
+      water: 3.0
+    };
+
+    const MODULE_DEFINITIONS = [
+      { id: 'wms_grades', name: 'WMS Notensystem', icon: 'graduation-cap', desc: 'Semester, EFZ/BM Fächer, Minuspunkte-Check & Bestehensregeln' },
+      { id: 'nutrition', name: 'Ernährung & Gesundheit', icon: 'apple', desc: 'Nährwert-Tracker, Health-Score, Intelligente Lebensmittel-Empfehlungen & Gewichtsverlauf' },
+      { id: 'budget', name: 'Budget & Finanzen', icon: 'wallet', desc: 'Monatliche Einnahmen & Ausgaben in CHF' },
+      { id: 'fitness', name: 'Fitness & Routine', icon: 'dumbbell', desc: 'Trainings mit Übungen, Sätzen & Wdh. – automatischer Fortschrittsvergleich' },
+      { id: 'football', name: 'Fußball', icon: 'trophy', desc: 'Dribbling, Schuss, Pässe, Sprint & Matches – Analyse pro Kategorie' },
+      { id: 'social_media', name: 'Social Media Creator', icon: 'share-2', desc: 'TikTok, Instagram & YouTube – Posting-Ziel & Plattform-Analyse' },
+      { id: 'lifestyle', name: 'Hygiene & Aussehen', icon: 'sparkles', desc: 'Duschen, Nägel, Pflege & eigene Routinen mit Verlauf' },
+      { id: 'face_progress', name: 'Gesichtsentwicklung', icon: 'scan-face', desc: 'Foto-Tagebuch mit Vorher/Nachher-Vergleich' },
+      { id: 'weather', name: 'Wetter (Vorbereitet)', icon: 'cloud-sun', desc: 'Platzhalter für zukünftiges Wetter-Widget' },
+      { id: 'calendar', name: 'Kalender (Vorbereitet)', icon: 'calendar', desc: 'Platzhalter für Termine & Tagesziele' },
+      { id: 'news', name: 'Welt-News (Vorbereitet)', icon: 'newspaper', desc: 'Platzhalter für Schlagzeilen' }
+    ];
+
+    window.onload = function() {
+      lucide.createIcons();
+      checkAuthSession();
+    };
+
+    function checkAuthSession() {
+      const savedUser = localStorage.getItem('mylife_active_user');
+      if (savedUser) {
+        currentUser = JSON.parse(localStorage.getItem('mylife_user_' + savedUser));
+        if (currentUser) {
+          showApp();
+          return;
+        }
+      }
+      showAuthScreen();
+    }
+
+    function showAuthTab(tab) {
+      document.getElementById('form-login').classList.toggle('hidden', tab !== 'login');
+      document.getElementById('form-register').classList.toggle('hidden', tab !== 'register');
+      document.getElementById('tab-login-btn').className = tab === 'login' ? 'flex-1 py-2 rounded-lg bg-blue-600 text-white transition' : 'flex-1 py-2 rounded-lg text-slate-400 hover:text-white transition';
+      document.getElementById('tab-register-btn').className = tab === 'register' ? 'flex-1 py-2 rounded-lg bg-emerald-600 text-white transition' : 'flex-1 py-2 rounded-lg text-slate-400 hover:text-white transition';
+    }
+
+    function handleRegister(e) {
+      e.preventDefault();
+      const name = document.getElementById('reg-name').value.trim();
+      const school = document.getElementById('reg-school').value;
+      const pass = document.getElementById('reg-pass').value;
+
+      if (!name || !pass) return;
+
+      const userKey = 'mylife_user_' + name.toLowerCase();
+      if (localStorage.getItem(userKey)) {
+        alert('Benutzername existiert bereits!');
+        return;
+      }
+
+      currentUser = {
+        username: name.toLowerCase(),
+        password: pass,
+        profile: {
+          name: name,
+          school: school,
+          age: 17,
+          weight: 68,
+          targetWeight: 75,
+          height: 180,
+          goal: 'WMS (BM & EFZ) erfolgreich abschliessen',
+          motto: 'Jeden Tag 1% besser!',
+          bio: 'Mein persönliches Dashboard.',
+          pic: DEFAULT_AVATAR
+        },
+        activeModules: ['wms_grades', 'nutrition', 'budget'],
+        semesters: [],
+        budget: [],
+        weightHistory: [],
+        nutritionLogs: []
+      };
+
+      saveUserData();
+      localStorage.setItem('mylife_active_user', currentUser.username);
+      showApp();
+    }
+
+    function handleLogin(e) {
+      e.preventDefault();
+      const name = document.getElementById('login-user').value.trim().toLowerCase();
+      const pass = document.getElementById('login-pass').value;
+
+      const userData = localStorage.getItem('mylife_user_' + name);
+      if (!userData) {
+        alert('Benutzer nicht gefunden!');
+        return;
+      }
+
+      const user = JSON.parse(userData);
+      if (user.password !== pass) {
+        alert('Falsches Passwort!');
+        return;
+      }
+
+      currentUser = user;
+      localStorage.setItem('mylife_active_user', currentUser.username);
+      showApp();
+    }
+
+    function handleLogout() {
+      localStorage.removeItem('mylife_active_user');
+      currentUser = null;
+      closeModal('modal-profile');
+      showAuthScreen();
+    }
+
+    function saveUserData() {
+      if (currentUser) {
+        try {
+          localStorage.setItem('mylife_user_' + currentUser.username, JSON.stringify(currentUser));
+        } catch (e) {
+          alert('Speichern fehlgeschlagen: Der Speicher des Browsers ist voll. Exportiere ein Backup im Steckbrief und lösche alte Einträge.');
+        }
+      }
+    }
+
+    function showAuthScreen() {
+      document.getElementById('auth-screen').classList.remove('hidden');
+      document.getElementById('app-screen').classList.add('hidden');
+    }
+
+    function showApp() {
+      document.getElementById('auth-screen').classList.add('hidden');
+      document.getElementById('app-screen').classList.remove('hidden');
+      ensurePerfData();
+      updateNavProfile();
+      renderDashboard();
+    }
+
+    function updateNavProfile() {
+      const userPic = (currentUser.profile && currentUser.profile.pic && currentUser.profile.pic.trim() !== '') ? currentUser.profile.pic : DEFAULT_AVATAR;
+      document.getElementById('user-greeting').innerText = 'Hallo, ' + currentUser.profile.name;
+      document.getElementById('nav-username').innerText = currentUser.profile.name;
+      document.getElementById('nav-avatar').src = userPic;
+    }
+
+    function renderDashboard() {
+      const grid = document.getElementById('dashboard-grid');
+      grid.innerHTML = '';
+
+      currentUser.activeModules.forEach(modId => {
+        const card = document.createElement('div');
+        card.className = "glass rounded-3xl p-6 border border-slate-800 space-y-4 flex flex-col justify-between";
+        card.innerHTML = getModuleHTML(modId);
+        grid.appendChild(card);
+      });
+
+      renderPerfOverview();
+      lucide.createIcons();
+      hydratePhotos(document.getElementById('app-screen'));
+
+      if (currentUser.activeModules.includes('nutrition')) {
+        initWeightChart();
+      }
+    }
+
+    function getModuleHTML(modId) {
+      const modDef = MODULE_DEFINITIONS.find(m => m.id === modId);
+      if (!modDef) return '';
+      let contentHTML = '';
+
+      if (modId === 'wms_grades') {
+        contentHTML = renderWMSGradesContent();
+      } else if (modId === 'nutrition') {
+        contentHTML = renderNutritionContent();
+      } else if (modId === 'budget') {
+        contentHTML = renderBudgetContent();
+      } else if (modId === 'fitness') {
+        contentHTML = renderFitnessCard();
+      } else if (modId === 'football') {
+        contentHTML = renderFootballCard();
+      } else if (modId === 'social_media') {
+        contentHTML = renderSocialCard();
+      } else if (modId === 'lifestyle') {
+        contentHTML = renderHygieneCard();
+      } else if (modId === 'face_progress') {
+        contentHTML = renderFaceCard();
+      } else {
+        contentHTML = `<p class="text-sm text-slate-400 italic">${modDef.desc}</p><span class="inline-block px-3 py-1 bg-slate-900 text-slate-500 text-xs rounded-full border border-slate-800">Platzhalter</span>`;
+      }
+
+      return `
+        <div class="space-y-4">
+          <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+            <div class="flex items-center gap-2">
+              <i data-lucide="${modDef.icon}" class="text-blue-400 w-5 h-5"></i>
+              <h3 class="font-bold text-white text-lg">${modDef.name}</h3>
+            </div>
+            <button onclick="removeModule('${modId}')" class="text-slate-500 hover:text-rose-400 text-xs transition"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+          </div>
+          <div>${contentHTML}</div>
+        </div>
+      `;
+    }
+
+    // ---------------- ERNÄHRUNG & GESUNDHEIT ENGINE ----------------
+    function getTodayString() {
+      const today = new Date();
+      const yyyy = today.getFullYear();
+      const mm = String(today.getMonth() + 1).padStart(2, '0');
+      const dd = String(today.getDate()).padStart(2, '0');
+      return `${yyyy}-${mm}-${dd}`;
+    }
+
+    function renderNutritionContent() {
+      const today = getTodayString();
+      const targetWeight = currentUser.profile.targetWeight || 75;
+
+      return `
+        <div class="space-y-4">
+          <p class="text-xs text-slate-400">Profil: ${currentUser.profile.age || 17} Jahre | ${currentUser.profile.height || 180} cm | Ziel: ${targetWeight} kg</p>
+          
+          <!-- FORMULAR NÄHRWERTE -->
+          <div class="bg-slate-900/80 p-3.5 rounded-2xl border border-slate-800 space-y-2">
+            <span class="text-[10px] font-bold uppercase text-slate-400 block">Tageswerte Eintragen</span>
+            <div class="grid grid-cols-2 gap-2">
+              <div>
+                <label class="block text-[10px] text-slate-400">Datum</label>
+                <input type="date" id="nutr-date" value="${today}" class="w-full bg-slate-950 border border-slate-700 p-1.5 rounded-xl text-xs text-white">
+              </div>
+              <div>
+                <label class="block text-[10px] text-slate-400">Kalorien (kcal)</label>
+                <input type="number" id="nutr-kcal" placeholder="Ziel: ${TARGETS.kcal}" class="w-full bg-slate-950 border border-slate-700 p-1.5 rounded-xl text-xs text-white">
+              </div>
+            </div>
+
+            <div class="grid grid-cols-3 gap-2">
+              <div>
+                <label class="block text-[10px] text-slate-400">Protein (g)</label>
+                <input type="number" id="nutr-protein" placeholder="${TARGETS.protein}g" class="w-full bg-slate-950 border border-slate-700 p-1.5 rounded-xl text-xs text-white">
+              </div>
+              <div>
+                <label class="block text-[10px] text-slate-400">Carbs (g)</label>
+                <input type="number" id="nutr-carbs" placeholder="${TARGETS.carbs}g" class="w-full bg-slate-950 border border-slate-700 p-1.5 rounded-xl text-xs text-white">
+              </div>
+              <div>
+                <label class="block text-[10px] text-slate-400">Fett (g)</label>
+                <input type="number" id="nutr-fat" placeholder="${TARGETS.fat}g" class="w-full bg-slate-950 border border-slate-700 p-1.5 rounded-xl text-xs text-white">
+              </div>
+            </div>
+
+            <div class="grid grid-cols-3 gap-2">
+              <div>
+                <label class="block text-[10px] text-slate-400">Zucker (g)</label>
+                <input type="number" id="nutr-sugar" placeholder="max ${TARGETS.sugarMax}g" class="w-full bg-slate-950 border border-slate-700 p-1.5 rounded-xl text-xs text-white">
+              </div>
+              <div>
+                <label class="block text-[10px] text-slate-400">Salz (g)</label>
+                <input type="number" id="nutr-salt" placeholder="max ${TARGETS.saltMax}g" class="w-full bg-slate-950 border border-slate-700 p-1.5 rounded-xl text-xs text-white">
+              </div>
+              <div>
+                <label class="block text-[10px] text-slate-400">Wasser (L)</label>
+                <input type="number" step="0.1" id="nutr-water" placeholder="${TARGETS.water}L" class="w-full bg-slate-950 border border-slate-700 p-1.5 rounded-xl text-xs text-white">
+              </div>
+            </div>
+
+            <button onclick="analyzeAndSaveNutrition()" class="w-full py-2 bg-emerald-600 hover:bg-emerald-500 font-bold text-xs text-white rounded-xl transition mt-1">
+              Analyse Berechnen
+            </button>
+          </div>
+
+          <!-- HEALTH SCORE & STATUS -->
+          <div id="nutr-results" class="space-y-3">
+            <div class="bg-slate-950/90 p-3 rounded-2xl border border-slate-800 flex items-center justify-between">
+              <div>
+                <span class="text-[10px] font-bold uppercase text-slate-400 block">Health Score</span>
+                <span class="text-xs text-slate-400">Gesundheits-Bewertung</span>
+              </div>
+              <div id="health-score-badge" class="px-3 py-1 rounded-xl text-base font-black bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                <span id="health-score-val">100</span> / 100
+              </div>
+            </div>
+
+            <!-- COMPARISON LIST -->
+            <div id="nutr-status-list" class="grid grid-cols-2 gap-1.5 text-xs"></div>
+
+            <!-- INTELLIGENTE EMPFEHLUNGEN -->
+            <div id="smart-recommendations" class="space-y-2"></div>
+
+            <!-- LEBENSMITTEL UEBERSICHT TABELLE -->
+            <div class="bg-slate-900/60 p-3 rounded-2xl border border-slate-800/80 space-y-2">
+              <span class="text-[10px] font-bold uppercase text-slate-400 block">Nährwert-Referenztabelle</span>
+              <div class="overflow-x-auto">
+                <table class="w-full text-left text-[11px] text-slate-300">
+                  <thead class="bg-slate-950/80 text-[10px] uppercase text-slate-400">
+                    <tr>
+                      <th class="p-1.5">Lebensmittel</th>
+                      <th class="p-1.5">Prot.</th>
+                      <th class="p-1.5">Carbs</th>
+                      <th class="p-1.5">Fett</th>
+                      <th class="p-1.5">Gut für</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-slate-800/60">
+                    <tr><td class="p-1.5 font-medium text-white">Haferflocken 100g</td><td>~17g</td><td>~66g</td><td>~7g</td><td class="text-blue-400">Carbs + Kcal</td></tr>
+                    <tr><td class="p-1.5 font-medium text-white">Erdnussbutter 30g</td><td>~8g</td><td>~6g</td><td>~15g</td><td class="text-amber-400">Kcal + Fett</td></tr>
+                    <tr><td class="p-1.5 font-medium text-white">Milch 500ml</td><td>~17g</td><td>~24g</td><td>~15g</td><td class="text-emerald-400">Alle 3 Makros</td></tr>
+                    <tr><td class="p-1.5 font-medium text-white">Banane 1 Stk.</td><td>~1g</td><td>~28g</td><td>~0g</td><td class="text-yellow-400">Schnelle Carbs</td></tr>
+                    <tr><td class="p-1.5 font-medium text-white">Griech. Joghurt 200g</td><td>~19g</td><td>~8g</td><td>~5g</td><td class="text-indigo-400">Protein</td></tr>
+                    <tr><td class="p-1.5 font-medium text-white">Whey 30g</td><td>~24g</td><td>~3g</td><td>~2g</td><td class="text-indigo-400">Schnelles Protein</td></tr>
+                    <tr><td class="p-1.5 font-medium text-white">Eier 3 Stk.</td><td>~19g</td><td>~1g</td><td>~15g</td><td class="text-indigo-400">Protein + Fett</td></tr>
+                    <tr><td class="p-1.5 font-medium text-white">Nüsse 30g</td><td>~6g</td><td>~6g</td><td>~18g</td><td class="text-amber-400">Fett + Kcal</td></tr>
+                    <tr><td class="p-1.5 font-medium text-white">Reis gekocht 300g</td><td>~7g</td><td>~84g</td><td>~1g</td><td class="text-blue-400">Viele Carbs</td></tr>
+                    <tr><td class="p-1.5 font-medium text-white">Vollkornbrot 100g</td><td>~9g</td><td>~40g</td><td>~4g</td><td class="text-blue-400">Schnelle Mahlzeit</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- GEWICHTSTRACKING ZEITSTRAHL -->
+          <div class="bg-slate-900/80 p-3.5 rounded-2xl border border-slate-800 space-y-3">
+            <span class="text-[10px] font-bold uppercase text-slate-400 block">Gewichtsverlauf (Ziel: ${targetWeight} kg)</span>
+            <div class="flex gap-2">
+              <input type="date" id="weight-date" value="${today}" class="bg-slate-950 border border-slate-700 p-1.5 rounded-xl text-xs text-white flex-1">
+              <input type="number" step="0.1" id="weight-val" placeholder="Gewicht in kg" class="bg-slate-950 border border-slate-700 p-1.5 rounded-xl text-xs text-white flex-1">
+              <button onclick="addWeightEntry()" class="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded-xl text-xs font-bold">Eintragen</button>
+            </div>
+            <div class="bg-slate-950/60 p-2 rounded-xl border border-slate-800/80">
+              <canvas id="weightChartCanvas" height="140"></canvas>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function analyzeAndSaveNutrition() {
+      const kcal = parseFloat(document.getElementById('nutr-kcal').value) || 0;
+      const protein = parseFloat(document.getElementById('nutr-protein').value) || 0;
+      const carbs = parseFloat(document.getElementById('nutr-carbs').value) || 0;
+      const fat = parseFloat(document.getElementById('nutr-fat').value) || 0;
+      const sugar = parseFloat(document.getElementById('nutr-sugar').value) || 0;
+      const salt = parseFloat(document.getElementById('nutr-salt').value) || 0;
+      const water = parseFloat(document.getElementById('nutr-water').value) || 0;
+
+      let score = 100;
+      const statusList = document.getElementById('nutr-status-list');
+      const recsContainer = document.getElementById('smart-recommendations');
+      recsContainer.innerHTML = '';
+
+      function makeBadge(label, val, target, unit, isMax = false) {
+        let isOk = isMax ? val <= target : val >= target;
+        if (!isOk) score -= 12;
+        const colorClass = isOk ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' : 'bg-rose-500/20 text-rose-400 border-rose-500/30';
+        return `
+          <div class="bg-slate-950 p-2 rounded-xl border border-slate-800 flex justify-between items-center">
+            <span class="text-slate-400">${label}:</span>
+            <span class="px-2 py-0.5 rounded-lg border font-bold text-[11px] ${colorClass}">
+              ${val}${unit} ${isOk ? '✓' : '✕'}
+            </span>
+          </div>
+        `;
+      }
+
+      statusList.innerHTML = `
+        ${makeBadge('Kcal', kcal, TARGETS.kcal - 200, '')}
+        ${makeBadge('Protein', protein, TARGETS.protein, 'g')}
+        ${makeBadge('Carbs', carbs, TARGETS.carbs - 50, 'g')}
+        ${makeBadge('Fett', fat, TARGETS.fat - 15, 'g')}
+        ${makeBadge('Zucker', sugar, TARGETS.sugarMax, 'g', true)}
+        ${makeBadge('Salz', salt, TARGETS.saltMax, 'g', true)}
+        ${makeBadge('Wasser', water, TARGETS.water, 'L')}
+      `;
+
+      // SPECIFIC RECOMMENDATIONS ENGINE
+      let recsHTML = '';
+
+      // 1. Kalorien Defizit
+      if (kcal < TARGETS.kcal - 200) {
+        recsHTML += `
+          <div class="bg-amber-500/10 border border-amber-500/30 p-3 rounded-2xl text-xs space-y-1 text-amber-200">
+            <div class="flex items-center gap-1.5 font-bold text-amber-400">
+              <i data-lucide="flame" class="w-4 h-4"></i> Zu wenig Kalorien!
+            </div>
+            <p class="text-[11px] text-amber-300/90">Du musst heute mehr essen, um dein Ziel von ${TARGETS.kcal} kcal zu erreichen. Gute Kalorienbomben: <strong>Erdnussbutter, Nüsse, Haferflocken oder Vollkornbrot</strong>.</p>
+          </div>
+        `;
+      }
+
+      // 2. Protein Defizit
+      if (protein < TARGETS.protein) {
+        recsHTML += `
+          <div class="bg-indigo-500/10 border border-indigo-500/30 p-3 rounded-2xl text-xs space-y-1 text-indigo-200">
+            <div class="flex items-center gap-1.5 font-bold text-indigo-400">
+              <i data-lucide="dumbbell" class="w-4 h-4"></i> Protein-Defizit!
+            </div>
+            <p class="text-[11px] text-indigo-300/90">Empfohlene proteinreiche Lebensmittel:</p>
+            <ul class="list-disc list-inside text-[11px] space-y-0.5 text-indigo-200/90">
+              <li><strong>Whey 30g</strong> (~24g Protein)</li>
+              <li><strong>Griechischer Joghurt 200g</strong> (~19g Protein)</li>
+              <li><strong>Eier (3 Stück)</strong> (~19g Protein)</li>
+              <li><strong>Milch 500ml</strong> (~17g Protein)</li>
+              <li><strong>Haferflocken 100g</strong> (~17g Protein)</li>
+            </ul>
+          </div>
+        `;
+      }
+
+      // 3. Kohlenhydrate Defizit
+      if (carbs < TARGETS.carbs - 50) {
+        recsHTML += `
+          <div class="bg-blue-500/10 border border-blue-500/30 p-3 rounded-2xl text-xs space-y-1 text-blue-200">
+            <div class="flex items-center gap-1.5 font-bold text-blue-400">
+              <i data-lucide="zap" class="w-4 h-4"></i> Kohlenhydrate-Defizit!
+            </div>
+            <p class="text-[11px] text-blue-300/90">Empfohlene Kohlenhydrat-Lieferanten:</p>
+            <ul class="list-disc list-inside text-[11px] space-y-0.5 text-blue-200/90">
+              <li><strong>Gekochter Reis 300g</strong> (~84g Carbs)</li>
+              <li><strong>Haferflocken 100g</strong> (~66g Carbs)</li>
+              <li><strong>Vollkornbrot 100g</strong> (~40g Carbs)</li>
+              <li><strong>Banane (1 Stück)</strong> (~28g Carbs - schnelle Energie)</li>
+            </ul>
+          </div>
+        `;
+      }
+
+      // 4. Fett Defizit
+      if (fat < TARGETS.fat - 15) {
+        recsHTML += `
+          <div class="bg-amber-500/10 border border-amber-500/30 p-3 rounded-2xl text-xs space-y-1 text-amber-200">
+            <div class="flex items-center gap-1.5 font-bold text-amber-400">
+              <i data-lucide="shield" class="w-4 h-4"></i> Gesunde Fette nachfüllen!
+            </div>
+            <p class="text-[11px] text-amber-300/90">Empfohlene fettreiche Lebensmittel:</p>
+            <ul class="list-disc list-inside text-[11px] space-y-0.5 text-amber-200/90">
+              <li><strong>Nüsse 30g</strong> (~18g Fett)</li>
+              <li><strong>Erdnussbutter 30g</strong> (~15g Fett)</li>
+              <li><strong>Eier (3 Stück)</strong> (~15g Fett)</li>
+              <li><strong>Milch 500ml</strong> (~15g Fett)</li>
+            </ul>
+          </div>
+        `;
+      }
+
+      // 5. Zucker zu hoch
+      if (sugar > TARGETS.sugarMax) {
+        recsHTML += `
+          <div class="bg-rose-500/10 border border-rose-500/30 p-3 rounded-2xl text-xs space-y-1 text-rose-200">
+            <div class="flex items-center gap-1.5 font-bold text-rose-400">
+              <i data-lucide="alert-triangle" class="w-4 h-4"></i> Zu viel Zucker!
+            </div>
+            <p class="text-[11px] text-rose-300/90">Versuche für den Rest des Tages Süßgetränke, Süßigkeiten und verarbeitete Snacks zu reduzieren.</p>
+          </div>
+        `;
+      }
+
+      // 6. Salz zu hoch
+      if (salt > TARGETS.saltMax) {
+        recsHTML += `
+          <div class="bg-rose-500/10 border border-rose-500/30 p-3 rounded-2xl text-xs space-y-1 text-rose-200">
+            <div class="flex items-center gap-1.5 font-bold text-rose-400">
+              <i data-lucide="alert-triangle" class="w-4 h-4"></i> Zu viel Salz!
+            </div>
+            <p class="text-[11px] text-rose-300/90">Bitte reduziere den Konsum von stark gesalzenen Fertiggerichten, Chips oder Soßen.</p>
+          </div>
+        `;
+      }
+
+      // 7. Wasser zu wenig
+      if (water < TARGETS.water) {
+        recsHTML += `
+          <div class="bg-cyan-500/10 border border-cyan-500/30 p-3 rounded-2xl text-xs space-y-1 text-cyan-200">
+            <div class="flex items-center gap-1.5 font-bold text-cyan-400">
+              <i data-lucide="droplet" class="w-4 h-4"></i> Zu wenig Wasser getrunken!
+            </div>
+            <p class="text-[11px] text-cyan-300/90">Trinke noch mehr Wasser! Mindestens ${TARGETS.water} Liter pro Tag sichern maximale körperliche und mentale Leistungsfähigkeit.</p>
+          </div>
+        `;
+      }
+
+      recsContainer.innerHTML = recsHTML;
+      lucide.createIcons();
+
+      score = Math.max(0, score);
+      document.getElementById('health-score-val').innerText = score;
+      const badge = document.getElementById('health-score-badge');
+      if (score >= 80) {
+        badge.className = "px-3 py-1 rounded-xl text-base font-black bg-emerald-500/20 text-emerald-400 border border-emerald-500/30";
+      } else {
+        badge.className = "px-3 py-1 rounded-xl text-base font-black bg-rose-500/20 text-rose-400 border border-rose-500/30";
+      }
+    }
+
+    function initWeightChart() {
+      const canvas = document.getElementById('weightChartCanvas');
+      if (!canvas) return;
+
+      const history = currentUser.weightHistory || [];
+      const labels = history.map(h => h.date);
+      const dataVals = history.map(h => h.val);
+      const targetWeight = currentUser.profile.targetWeight || 75;
+      const targetVals = history.map(() => targetWeight);
+
+      if (weightChartInstance) {
+        weightChartInstance.destroy();
+      }
+
+      const ctx = canvas.getContext('2d');
+      weightChartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [
+            {
+              label: 'Gewicht (kg)',
+              data: dataVals,
+              borderColor: '#10b981',
+              backgroundColor: 'rgba(16, 185, 129, 0.1)',
+              fill: true,
+              tension: 0.3
+            },
+            {
+              label: 'Ziel (' + targetWeight + ' kg)',
+              data: targetVals,
+              borderColor: '#f43f5e',
+              borderDash: [5, 5],
+              pointRadius: 0
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          scales: {
+            y: { min: 50, max: 100, ticks: { color: '#94a3b8' } },
+            x: { ticks: { color: '#94a3b8' } }
+          },
+          plugins: {
+            legend: { labels: { color: '#94a3b8', boxWidth: 12 } }
+          }
+        }
+      });
+    }
+
+    function addWeightEntry() {
+      const date = document.getElementById('weight-date').value;
+      const val = parseFloat(document.getElementById('weight-val').value);
+
+      if (!date || isNaN(val) || val <= 0) {
+        return alert('Bitte gültiges Datum und Gewicht eintragen!');
+      }
+
+      if (!currentUser.weightHistory) currentUser.weightHistory = [];
+      currentUser.weightHistory.push({ date, val });
+      currentUser.profile.weight = val;
+
+      saveUserData();
+      renderDashboard();
+    }
+
+    // ---------------- WMS / EFZ / BM NOTENSYSTEM ENGINE ----------------
+    function roundToHalfGrade(val) {
+      return Math.round(val * 2) / 2;
+    }
+
+    function renderWMSGradesContent() {
+      let html = `
+        <div class="space-y-4">
+          <div class="flex justify-between items-center">
+            <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Semester-Übersicht</span>
+            <button onclick="openSemesterModal()" class="text-xs bg-blue-600/20 text-blue-400 border border-blue-500/30 px-3 py-1.5 rounded-xl font-bold hover:bg-blue-600 hover:text-white transition">+ Neues Semester</button>
+          </div>
+      `;
+
+      if (!currentUser.semesters || currentUser.semesters.length === 0) {
+        html += `<p class="text-xs text-slate-500 italic">Noch kein Semester angelegt. Klicke oben auf "+ Neues Semester".</p></div>`;
+        return html;
+      }
+
+      currentUser.semesters.forEach((sem, semIdx) => {
+        let subjectsHTML = '';
+        let totalSubjectGrades = 0;
+        let validSubjectsCount = 0;
+
+        let bmUngenuegendCount = 0;
+        let efzUngenuegendCount = 0;
+        let minuspunkteTotal = 0;
+
+        if (sem.subjects && sem.subjects.length > 0) {
+          sem.subjects.forEach((sub, subIdx) => {
+            let examSum = 0;
+            let examCount = 0;
+
+            if (sub.exams && sub.exams.length > 0) {
+              sub.exams.forEach(ex => {
+                const rawGrade = 1 + 5 * (ex.achieved / ex.max);
+                const roundedGrade = roundToHalfGrade(rawGrade);
+                examSum += roundedGrade;
+                examCount++;
+              });
+            }
+
+            const subAvg = examCount > 0 ? (examSum / examCount) : null;
+            const subType = sub.type || 'BM';
+
+            if (subAvg !== null) {
+              totalSubjectGrades += subAvg;
+              validSubjectsCount++;
+
+              if (subAvg < 4.0) {
+                const diff = 4.0 - subAvg;
+                minuspunkteTotal += diff;
+
+                if (subType === 'BM') bmUngenuegendCount++;
+                if (subType === 'EFZ') efzUngenuegendCount++;
+              }
+            }
+
+            subjectsHTML += `
+              <div class="bg-slate-900/60 p-3 rounded-2xl border border-slate-800 space-y-2">
+                <div class="flex justify-between items-center">
+                  <div class="flex items-center gap-2">
+                    <span class="font-bold text-sm text-slate-200">${sub.name}</span>
+                    <span class="text-[10px] px-1.5 py-0.5 rounded font-bold ${subType === 'BM' ? 'bg-indigo-600/30 text-indigo-400 border border-indigo-500/30' : 'bg-emerald-600/30 text-emerald-400 border border-emerald-500/30'}">${subType}</span>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <span class="text-sm font-black ${subAvg !== null ? (subAvg < 4.0 ? 'text-rose-400' : 'text-emerald-400') : 'text-slate-500'}">
+                      ${subAvg !== null ? subAvg.toFixed(2) : '--'}
+                    </span>
+                    <button onclick="deleteSubject(${semIdx}, ${subIdx})" class="text-slate-500 hover:text-rose-400 transition" title="Fach löschen"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+                  </div>
+                </div>
+
+                ${sub.exams && sub.exams.length > 0 ? `
+                  <div class="text-xs text-slate-400 space-y-1">
+                    ${sub.exams.map((ex, exIdx) => {
+                      const g = roundToHalfGrade(1 + 5 * (ex.achieved / ex.max));
+                      return `<div class="flex justify-between items-center bg-slate-950/80 px-2 py-1 rounded-lg">
+                        <span>${ex.title || 'Prüfung'}: ${ex.achieved}/${ex.max} Pkt.</span>
+                        <div class="flex items-center gap-2">
+                          <span class="font-bold text-slate-200">${g.toFixed(1)}</span>
+                          <button onclick="deleteExam(${semIdx}, ${subIdx}, ${exIdx})" class="text-slate-600 hover:text-rose-400 transition"><i data-lucide="x" class="w-3 h-3"></i></button>
+                        </div>
+                      </div>`;
+                    }).join('')}
+                  </div>
+                ` : `<p class="text-[11px] text-slate-500 italic">Keine Prüfungen eingetragen</p>`}
+
+                <button onclick="openExamModal(${semIdx}, ${subIdx})" class="w-full text-center text-xs text-blue-400 hover:underline py-1">+ Note eintragen</button>
+              </div>
+            `;
+          });
+        }
+
+        const semAvg = validSubjectsCount > 0 ? (totalSubjectGrades / validSubjectsCount) : null;
+        
+        let failReasons = [];
+        if (semAvg !== null && semAvg < 4.0) failReasons.push(`Gesamtdurchschnitt unter 4.00 (Aktuell: ${semAvg.toFixed(2)})`);
+        if (bmUngenuegendCount > 2) failReasons.push(`Zu viele ungenügende BM-Fächer (Aktuell: ${bmUngenuegendCount}, max. 2 erlaubt)`);
+        if (efzUngenuegendCount > 1) failReasons.push(`Zu viele ungenügende EFZ-Fächer (Aktuell: ${efzUngenuegendCount}, max. 1 erlaubt)`);
+        if (minuspunkteTotal > 2.0) failReasons.push(`Zu viele Minuspunkte/Abweichungspunkte (Aktuell: -${minuspunkteTotal.toFixed(2)}, max. -2.0 erlaubt)`);
+
+        const isPassed = semAvg !== null && failReasons.length === 0;
+
+        html += `
+          <div class="bg-slate-950/80 p-4 rounded-2xl border border-slate-800 space-y-3">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-2">
+              <h4 class="font-bold text-white text-base">${sem.name}</h4>
+              <button onclick="openSubjectModal(${semIdx})" class="text-xs bg-slate-800 hover:bg-slate-700 text-blue-400 px-2 py-1 rounded-lg transition">+ Fach</button>
+            </div>
+
+            <div class="space-y-2">${subjectsHTML || '<p class="text-xs text-slate-500 italic">Noch keine Fächer in diesem Semester.</p>'}</div>
+
+            ${semAvg !== null ? `
+              <div class="pt-3 border-t border-slate-800 space-y-1.5 text-xs">
+                <div class="flex justify-between font-bold">
+                  <span class="text-slate-300">Gesamtdurchschnitt:</span>
+                  <span class="${semAvg < 4.0 ? 'text-rose-400' : 'text-emerald-400'} text-sm">${semAvg.toFixed(2)}</span>
+                </div>
+                <div class="flex justify-between text-slate-400">
+                  <span>Minuspunkte (Abweichung &lt; 4.0):</span>
+                  <span class="${minuspunkteTotal > 2.0 ? 'text-rose-400 font-bold' : 'text-slate-300'}">-${minuspunkteTotal.toFixed(2)} / -2.0</span>
+                </div>
+                <div class="flex justify-between text-slate-400">
+                  <span>Ungenügende BM / EFZ Fächer:</span>
+                  <span class="text-slate-300">BM: ${bmUngenuegendCount}/2 | EFZ: ${efzUngenuegendCount}/1</span>
+                </div>
+
+                <div class="mt-2 p-3 rounded-xl font-bold text-xs ${isPassed ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-rose-500/20 text-rose-400 border border-rose-500/30'}">
+                  ${isPassed ? `
+                    <div class="flex items-center gap-1.5 mb-1"><i data-lucide="check-circle-2" class="w-4 h-4"></i> Semester Bestanden!</div>
+                    <p class="font-normal text-[11px] text-emerald-300/80">Schnitt ist ≥ 4.00, max. Minuspunkte (-2.0) eingehalten und alle EFZ/BM Hürden erfüllt.</p>
+                  ` : `
+                    <div class="flex items-center gap-1.5 mb-1 text-rose-400"><i data-lucide="alert-triangle" class="w-4 h-4"></i> Nicht Bestanden</div>
+                    <ul class="font-normal text-[11px] text-rose-300/90 list-disc list-inside space-y-0.5">
+                      ${failReasons.map(r => `<li>${r}</li>`).join('')}
+                    </ul>
+                  `}
+                </div>
+              </div>
+            ` : ''}
+          </div>
+        `;
+      });
+
+      html += `</div>`;
+      return html;
+    }
+
+    function deleteSubject(semIdx, subIdx) {
+      if (confirm('Möchtest du dieses Fach wirklich löschen?')) {
+        currentUser.semesters[semIdx].subjects.splice(subIdx, 1);
+        saveUserData();
+        renderDashboard();
+      }
+    }
+
+    function deleteExam(semIdx, subIdx, exIdx) {
+      currentUser.semesters[semIdx].subjects[subIdx].exams.splice(exIdx, 1);
+      saveUserData();
+      renderDashboard();
+    }
+
+    // ---------------- BUDGET ENGINE ----------------
+    function renderBudgetContent() {
+      const items = currentUser.budget || [];
+      const todayStr = getTodayString();
+
+      let totalIncome = 0;
+      let totalExpense = 0;
+
+      items.forEach(item => {
+        if (item.type === 'income') {
+          totalIncome += item.amt;
+        } else {
+          totalExpense += item.amt;
+        }
+      });
+
+      const netBalance = totalIncome - totalExpense;
+      const expenseRatio = totalIncome > 0 ? Math.min(100, Math.round((totalExpense / totalIncome) * 100)) : 0;
+
+      return `
+        <div class="space-y-4">
+          <!-- FORMULAR -->
+          <div class="bg-slate-900/80 p-3.5 rounded-2xl border border-slate-800 space-y-2.5">
+            <div class="grid grid-cols-2 gap-2">
+              <div>
+                <label class="block text-[10px] font-bold uppercase text-slate-400 mb-1">Typ</label>
+                <select id="budget-type" class="w-full bg-slate-950 border border-slate-700 p-2 rounded-xl text-xs text-white focus:outline-none focus:border-blue-500">
+                  <option value="income">🟢 Einnahme (+)</option>
+                  <option value="expense">🔴 Ausgabe (-)</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-[10px] font-bold uppercase text-slate-400 mb-1">Datum</label>
+                <input type="date" id="budget-date" value="${todayStr}" class="w-full bg-slate-950 border border-slate-700 p-2 rounded-xl text-xs text-white focus:outline-none focus:border-blue-500">
+              </div>
+            </div>
+
+            <div class="grid grid-cols-3 gap-2">
+              <div class="col-span-2">
+                <label class="block text-[10px] font-bold uppercase text-slate-400 mb-1">Beschreibung</label>
+                <input type="text" id="budget-desc" placeholder="z. B. Lohn, Ausgang, Essen" class="w-full bg-slate-950 border border-slate-700 p-2 rounded-xl text-xs text-white focus:outline-none focus:border-blue-500">
+              </div>
+              <div>
+                <label class="block text-[10px] font-bold uppercase text-slate-400 mb-1">Betrag (CHF)</label>
+                <input type="number" step="0.05" id="budget-amt" placeholder="50.00" class="w-full bg-slate-950 border border-slate-700 p-2 rounded-xl text-xs text-white focus:outline-none focus:border-blue-500">
+              </div>
+            </div>
+
+            <button onclick="addBudgetItem()" class="w-full py-2 bg-blue-600 hover:bg-blue-500 font-bold text-xs text-white rounded-xl transition flex items-center justify-center gap-1">
+              <i data-lucide="plus" class="w-4 h-4"></i> Eintrag Hinzufügen
+            </button>
+          </div>
+
+          <!-- HISTORIE LISTE -->
+          <div>
+            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1 block">Letzte Transaktionen</span>
+            ${items.length === 0 ? `<p class="text-xs text-slate-500 italic">Noch keine Buchungen vorhanden.</p>` : `
+              <ul class="space-y-1.5 text-xs max-h-40 overflow-y-auto pr-1">
+                ${items.slice().reverse().map((b, origIdx) => {
+                  const actualIdx = items.length - 1 - origIdx;
+                  const isInc = b.type === 'income';
+                  return `
+                    <li class="flex items-center justify-between bg-slate-900/60 px-3 py-2 rounded-xl border border-slate-800/80">
+                      <div>
+                        <div class="font-semibold text-slate-200">${b.desc}</div>
+                        <div class="text-[10px] text-slate-500">${b.date || 'Heute'}</div>
+                      </div>
+                      <div class="flex items-center gap-2">
+                        <span class="font-bold ${isInc ? 'text-emerald-400' : 'text-rose-400'}">
+                          ${isInc ? '+' : '-'}${b.amt.toFixed(2)} CHF
+                        </span>
+                        <button onclick="deleteBudgetItem(${actualIdx})" class="text-slate-600 hover:text-rose-400 transition"><i data-lucide="x" class="w-3.5 h-3.5"></i></button>
+                      </div>
+                    </li>
+                  `;
+                }).join('')}
+              </ul>
+            `}
+          </div>
+
+          <!-- STATISTIK SECTION UNTEN -->
+          <div class="pt-3 border-t border-slate-800 space-y-2">
+            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Finanz-Statistik</span>
+            
+            <div class="grid grid-cols-2 gap-2 text-xs">
+              <div class="bg-slate-950/80 p-2.5 rounded-xl border border-slate-800/80">
+                <span class="text-[10px] text-slate-400 block">Einnahmen</span>
+                <span class="font-black text-emerald-400 text-sm">+${totalIncome.toFixed(2)} CHF</span>
+              </div>
+              <div class="bg-slate-950/80 p-2.5 rounded-xl border border-slate-800/80">
+                <span class="text-[10px] text-slate-400 block">Ausgaben</span>
+                <span class="font-black text-rose-400 text-sm">-${totalExpense.toFixed(2)} CHF</span>
+              </div>
+            </div>
+
+            <div class="bg-slate-950/90 p-3 rounded-xl border border-slate-800 flex justify-between items-center">
+              <div>
+                <span class="text-[10px] font-bold uppercase text-slate-400 block">Nettosaldo / Bilanz</span>
+                <span class="text-xs text-slate-400">Ausgabenquote: ${expenseRatio}%</span>
+              </div>
+              <span class="font-black text-base ${netBalance >= 0 ? 'text-emerald-400' : 'text-rose-400'}">
+                ${netBalance >= 0 ? '+' : ''}${netBalance.toFixed(2)} CHF
+              </span>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function addBudgetItem() {
+      const type = document.getElementById('budget-type').value;
+      const date = document.getElementById('budget-date').value || getTodayString();
+      const desc = document.getElementById('budget-desc').value.trim();
+      const amt = parseFloat(document.getElementById('budget-amt').value);
+
+      if (!desc || isNaN(amt) || amt <= 0) {
+        return alert('Bitte gib eine gültige Beschreibung und einen Betrag ein!');
+      }
+
+      if (!currentUser.budget) currentUser.budget = [];
+      currentUser.budget.push({ type, date, desc, amt });
+
+      saveUserData();
+      renderDashboard();
+    }
+
+    function deleteBudgetItem(idx) {
+      currentUser.budget.splice(idx, 1);
+      saveUserData();
+      renderDashboard();
+    }
+
+    // MODAL DIALOG CONTROLLERS
+    function openSemesterModal() {
+      document.getElementById('new-semester-name').value = '';
+      document.getElementById('modal-add-semester').classList.remove('hidden');
+    }
+
+    function saveSemester() {
+      const name = document.getElementById('new-semester-name').value.trim();
+      if (!name) return alert('Bitte gib einen Semester-Namen ein!');
+
+      if (!currentUser.semesters) currentUser.semesters = [];
+      currentUser.semesters.push({ name: name, subjects: [] });
+
+      saveUserData();
+      renderDashboard();
+      closeModal('modal-add-semester');
+    }
+
+    function openSubjectModal(semIdx) {
+      activeSemIdx = semIdx;
+      document.getElementById('new-subject-name').value = '';
+      document.getElementById('modal-add-subject').classList.remove('hidden');
+    }
+
+    function saveSubject() {
+      const name = document.getElementById('new-subject-name').value.trim();
+      const type = document.getElementById('new-subject-type').value;
+      if (!name) return alert('Bitte gib einen Fach-Namen ein!');
+
+      currentUser.semesters[activeSemIdx].subjects.push({ name: name, type: type, exams: [] });
+
+      saveUserData();
+      renderDashboard();
+      closeModal('modal-add-subject');
+    }
+
+    function openExamModal(semIdx, subIdx) {
+      activeSemIdx = semIdx;
+      activeSubIdx = subIdx;
+      document.getElementById('new-exam-title').value = '';
+      document.getElementById('new-exam-achieved').value = '';
+      document.getElementById('new-exam-max').value = '';
+      document.getElementById('modal-add-exam').classList.remove('hidden');
+    }
+
+    function saveExam() {
+      const title = document.getElementById('new-exam-title').value.trim() || 'Prüfung';
+      const achieved = parseFloat(document.getElementById('new-exam-achieved').value);
+      const max = parseFloat(document.getElementById('new-exam-max').value);
+
+      if (isNaN(achieved) || isNaN(max) || max <= 0) {
+        return alert('Bitte gültige Punkte eingeben!');
+      }
+
+      currentUser.semesters[activeSemIdx].subjects[activeSubIdx].exams.push({ title, achieved, max });
+
+      saveUserData();
+      renderDashboard();
+      closeModal('modal-add-exam');
+    }
+
+    // MODULE MANAGER
+    function openAddModuleModal() {
+      const list = document.getElementById('available-modules-list');
+      list.innerHTML = '';
+
+      MODULE_DEFINITIONS.forEach(m => {
+        const isActive = currentUser.activeModules.includes(m.id);
+        const item = document.createElement('div');
+        item.className = "p-3 bg-slate-900 border border-slate-800 rounded-2xl flex items-center justify-between";
+        item.innerHTML = `
+          <div class="flex items-center gap-3">
+            <i data-lucide="${m.icon}" class="text-blue-400"></i>
+            <div>
+              <p class="font-bold text-sm text-white">${m.name}</p>
+              <p class="text-xs text-slate-400">${m.desc}</p>
+            </div>
+          </div>
+          <button onclick="toggleModule('${m.id}')" class="px-3 py-1.5 rounded-xl text-xs font-bold ${isActive ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30' : 'bg-blue-600 text-white'}">
+            ${isActive ? 'Entfernen' : 'Hinzufügen'}
+          </button>
+        `;
+        list.appendChild(item);
+      });
+
+      lucide.createIcons();
+      document.getElementById('modal-add-module').classList.remove('hidden');
+    }
+
+    function toggleModule(modId) {
+      if (currentUser.activeModules.includes(modId)) {
+        currentUser.activeModules = currentUser.activeModules.filter(id => id !== modId);
+      } else {
+        currentUser.activeModules.push(modId);
+      }
+      saveUserData();
+      renderDashboard();
+      openAddModuleModal();
+    }
+
+    function removeModule(modId) {
+      currentUser.activeModules = currentUser.activeModules.filter(id => id !== modId);
+      saveUserData();
+      renderDashboard();
+    }
+
+    // PROFILE & FILE UPLOAD
+    function openProfileModal() {
+      const p = currentUser.profile || {};
+      const pic = p.pic || DEFAULT_AVATAR;
+      document.getElementById('edit-profile-pic').value = p.pic || '';
+      document.getElementById('edit-profile-img-preview').src = pic;
+      document.getElementById('edit-profile-name').value = p.name || '';
+      document.getElementById('edit-profile-age').value = p.age || '';
+      document.getElementById('edit-profile-weight').value = p.weight || '';
+      document.getElementById('edit-profile-target-weight').value = p.targetWeight || 75;
+      document.getElementById('edit-profile-height').value = p.height || '';
+      document.getElementById('edit-profile-goal').value = p.goal || '';
+      document.getElementById('edit-profile-motto').value = p.motto || '';
+      document.getElementById('edit-profile-bio').value = p.bio || '';
+
+      document.getElementById('modal-profile').classList.remove('hidden');
+    }
+
+    function handleFileUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const base64Image = e.target.result;
+        document.getElementById('edit-profile-pic').value = base64Image;
+        document.getElementById('edit-profile-img-preview').src = base64Image;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function updateProfilePicPreview(url) {
+      document.getElementById('edit-profile-img-preview').src = url || DEFAULT_AVATAR;
+    }
+
+    function saveProfile(e) {
+      e.preventDefault();
+      currentUser.profile = {
+        pic: document.getElementById('edit-profile-pic').value || DEFAULT_AVATAR,
+        name: document.getElementById('edit-profile-name').value,
+        age: parseFloat(document.getElementById('edit-profile-age').value),
+        weight: parseFloat(document.getElementById('edit-profile-weight').value),
+        targetWeight: parseFloat(document.getElementById('edit-profile-target-weight').value) || 75,
+        height: parseFloat(document.getElementById('edit-profile-height').value),
+        goal: document.getElementById('edit-profile-goal').value,
+        motto: document.getElementById('edit-profile-motto').value,
+        bio: document.getElementById('edit-profile-bio').value
+      };
+      saveUserData();
+      updateNavProfile();
+      renderDashboard();
+      closeModal('modal-profile');
+    }
+
+    function closeModal(modalId) {
+      document.getElementById(modalId).classList.add('hidden');
+    }
+  </script>
+
+  <script>
+
+    // =====================================================================
+    // ==================  MYLIFE PERFORMANCE ENGINE  ======================
+    // Fitness, Fußball, Social Media, Hygiene & Aussehen, Gesichtsentwicklung
+    // Daten: currentUser.perf (localStorage) + Fotos in IndexedDB
+    // =====================================================================
+
+    // ---------- Allgemeine Helfer ----------
+    const INP = 'w-full bg-slate-950 border border-slate-700 px-3 py-2 rounded-xl text-sm text-white focus:outline-none focus:border-blue-500';
+    const LBL = 'block text-[10px] font-bold uppercase text-slate-400 mb-1';
+    const BOX = 'bg-slate-900/80 p-3.5 rounded-2xl border border-slate-800 space-y-3';
+    const BTN_PRIMARY = 'w-full py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition text-sm';
+    const BTN_GHOST = 'py-2 px-3 bg-slate-900 border border-slate-700 hover:border-blue-500 text-slate-200 font-semibold rounded-xl transition text-xs';
+
+    function chipCls(active, color = 'blue') {
+      const on = {
+        blue: 'bg-blue-600 text-white border-blue-500',
+        emerald: 'bg-emerald-600 text-white border-emerald-500',
+        pink: 'bg-pink-600 text-white border-pink-500'
+      }[color];
+      return 'px-3 py-2 rounded-xl border text-xs font-semibold transition ' +
+        (active ? on : 'bg-slate-900 text-slate-300 border-slate-700 hover:border-blue-500');
+    }
+
+    function esc(s) {
+      return String(s === null || s === undefined ? '' : s).replace(/[&<>"']/g, c =>
+        ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    }
+
+    // akzeptiert "18,4" und "18.4" (iPhone-Tastatur liefert oft Komma)
+    function num(v) {
+      if (v === null || v === undefined) return null;
+      const s = String(v).trim().replace(',', '.');
+      if (s === '') return null;
+      const n = parseFloat(s);
+      return isFinite(n) ? n : null;
+    }
+
+    function fmtN(n, d = 2) {
+      if (n === null || n === undefined || !isFinite(n)) return '–';
+      return Number(n).toLocaleString('de-DE', { maximumFractionDigits: d });
+    }
+
+    function fmtDate(iso) {
+      if (!iso) return '–';
+      const p = iso.split('-');
+      return `${p[2]}.${p[1]}.${p[0]}`;
+    }
+
+    function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+
+    function isoFromDate(dt) {
+      return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
+    }
+    function dateFromIso(iso) { const [y, m, d] = iso.split('-').map(Number); return new Date(y, m - 1, d); }
+    function addDays(iso, n) { const dt = dateFromIso(iso); dt.setDate(dt.getDate() + n); return isoFromDate(dt); }
+    function daysBetween(a, b) { return Math.round((dateFromIso(b) - dateFromIso(a)) / 86400000); }
+    function weekStart(iso) { const dt = dateFromIso(iso); const wd = (dt.getDay() + 6) % 7; dt.setDate(dt.getDate() - wd); return isoFromDate(dt); }
+    const WEEKDAYS = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
+
+    function sortChrono(arr) {
+      return (arr || []).slice().sort((a, b) =>
+        a.date === b.date ? (a.createdAt || 0) - (b.createdAt || 0) : (a.date < b.date ? -1 : 1));
+    }
+    function lastOf(arr) { const s = sortChrono(arr); return s.length ? s[s.length - 1] : null; }
+
+    // Vorheriger Eintrag (chronologisch vor "entry"), optional mit Filter
+    function previousOf(list, entry, predicate) {
+      const sorted = sortChrono(list);
+      const idx = sorted.findIndex(e => e.id === entry.id);
+      for (let i = (idx === -1 ? sorted.length : idx) - 1; i >= 0; i--) {
+        if (!predicate || predicate(sorted[i])) return sorted[i];
+      }
+      return null;
+    }
+
+    function mean(a) { return a.length ? a.reduce((s, x) => s + x, 0) / a.length : null; }
+    function rate(s, a) { return a ? (s / a) * 100 : null; }
+
+    // ---------- Vergleichs-System ----------
+    function cmpVal(cur, prev, higherBetter = true) {
+      if (cur === null || cur === undefined) return { status: 'none' };
+      if (prev === null || prev === undefined) return { status: 'first', cur };
+      const delta = cur - prev;
+      const status = Math.abs(delta) < 1e-9 ? 'same' : ((delta > 0) === higherBetter ? 'better' : 'worse');
+      const pct = prev !== 0 ? (delta / Math.abs(prev)) * 100 : null;
+      return { status, cur, prev, delta, pct };
+    }
+
+    const STATUS_UI = {
+      better: { e: '🟢', cls: 'text-emerald-400', bg: 'bg-emerald-500/10 border-emerald-500/30', word: 'Verbesserung' },
+      worse:  { e: '🔴', cls: 'text-rose-400',    bg: 'bg-rose-500/10 border-rose-500/30',       word: 'Verschlechterung' },
+      same:   { e: '🟡', cls: 'text-amber-300',   bg: 'bg-amber-500/10 border-amber-500/30',     word: 'Gleich geblieben' },
+      mixed:  { e: '🟡', cls: 'text-amber-300',   bg: 'bg-amber-500/10 border-amber-500/30',     word: 'Nicht direkt vergleichbar' },
+      first:  { e: '⚪', cls: 'text-slate-400',   bg: 'bg-slate-800/40 border-slate-700',        word: 'Erster Eintrag' },
+      none:   { e: '–',  cls: 'text-slate-500',   bg: 'bg-slate-800/40 border-slate-700',        word: 'Nicht trainiert' }
+    };
+
+    // opts: { d, unit, pct (bool), time (bool: "schneller/langsamer"), deltaUnit }
+    function cmpRow(label, c, opts = {}) {
+      if (!c || c.status === 'none') return '';
+      const d = opts.d === undefined ? 2 : opts.d;
+      const unit = opts.unit || '';
+      const ui = STATUS_UI[c.status];
+      let deltaTxt;
+      if (c.status === 'first') deltaTxt = 'Erster Wert';
+      else if (c.status === 'same') deltaTxt = 'Gleich';
+      else if (opts.time) deltaTxt = `${fmtN(Math.abs(c.delta), d)}${unit} ${c.delta < 0 ? 'schneller' : 'langsamer'}`;
+      else {
+        deltaTxt = `${c.delta > 0 ? '+' : '−'}${fmtN(Math.abs(c.delta), d)}${opts.deltaUnit || unit}`;
+        if (opts.pct && c.pct !== null) deltaTxt += ` (${c.pct > 0 ? '+' : '−'}${fmtN(Math.abs(c.pct), 1)} %)`;
+      }
+      return `
+        <div class="flex items-center justify-between gap-2 bg-slate-950/70 px-3 py-2 rounded-xl border border-slate-800 text-xs">
+          <div class="min-w-0">
+            <div class="text-slate-300 font-semibold truncate">${esc(label)}</div>
+            <div class="text-[11px] text-slate-500">${c.status === 'first' ? '' : `vorher ${fmtN(c.prev, d)}${unit} → `}jetzt <span class="text-slate-200 font-bold">${fmtN(c.cur, d)}${unit}</span></div>
+          </div>
+          <span class="shrink-0 px-2 py-1 rounded-lg border font-bold text-[11px] ${ui.bg} ${ui.cls}">${ui.e} ${deltaTxt}</span>
+        </div>`;
+    }
+
+    function verdict(statuses) {
+      const s = statuses.filter(x => x && x !== 'none');
+      if (!s.length) return 'none';
+      const real = s.filter(x => x !== 'first' && x !== 'mixed');
+      if (!real.length) return s.includes('mixed') ? 'mixed' : 'first';
+      const b = real.filter(x => x === 'better').length;
+      const w = real.filter(x => x === 'worse').length;
+      return b > w ? 'better' : (w > b ? 'worse' : 'same');
+    }
+
+    function verdictBadge(v, extra = '') {
+      const ui = STATUS_UI[v] || STATUS_UI.none;
+      return `<span class="inline-flex items-center gap-1 px-2 py-1 rounded-lg border text-[11px] font-bold ${ui.bg} ${ui.cls}">${ui.e} ${extra || ui.word}</span>`;
+    }
+
+    function firstNote() {
+      return `<p class="text-[11px] text-slate-400 italic bg-slate-950/60 border border-slate-800 rounded-xl px-3 py-2">Erster Eintrag – Vergleich ist ab dem nächsten Training möglich.</p>`;
+    }
+
+    function statTile(label, value, sub = '') {
+      return `<div class="bg-slate-950/80 p-2.5 rounded-xl border border-slate-800/80">
+        <span class="text-[10px] text-slate-400 block">${label}</span>
+        <span class="font-black text-white text-sm">${value}</span>
+        ${sub ? `<span class="text-[10px] text-slate-500 block">${sub}</span>` : ''}
+      </div>`;
+    }
+
+    // ---------- Daten-Struktur / Migration ----------
+    function defaultRoutines() {
+      return [
+        { id: 'shower', name: 'Duschen', icon: 'shower-head', kind: 'weekly', target: 4 },
+        { id: 'nails', name: 'Nägel schneiden', icon: 'scissors', kind: 'interval', days: 10 },
+        { id: 'cream', name: 'Körpercreme', icon: 'droplets', kind: 'daily', slots: ['Morgens', 'Abends'] }
+      ];
+    }
+
+    function ensurePerfData() {
+      const u = currentUser;
+      if (!u.perf) u.perf = {};
+      const p = u.perf;
+      if (!p.fitness) p.fitness = [];
+      if (!p.football) p.football = [];
+      if (!p.matches) p.matches = [];
+      if (!p.social) p.social = { goalPerDay: 1, posts: [] };
+      if (!p.social.posts) p.social.posts = [];
+      if (!p.hygiene) p.hygiene = { routines: defaultRoutines(), logs: [] };
+      if (!p.hygiene.logs) p.hygiene.logs = [];
+      if (!p.photos) p.photos = [];
+      if (!u.activeModules) u.activeModules = [];
+      // Einmalig: die Performance-Module aktivieren (danach entscheidest du selbst im Modul-Manager)
+      if (!u.perfSetupDone) {
+        ['fitness', 'football', 'social_media', 'lifestyle', 'face_progress'].forEach(id => {
+          if (!u.activeModules.includes(id)) u.activeModules.push(id);
+        });
+        u.perfSetupDone = true;
+        saveUserData();
+      }
+    }
+
+    // Entwürfe (z. B. halb eingetragene Schüsse) überleben Neuladen / App-Wechsel
+    function draftKey(kind) { return `mylife_draft_${currentUser.username}_${kind}`; }
+    function saveDraft(kind, obj) { try { localStorage.setItem(draftKey(kind), JSON.stringify(obj)); } catch (e) {} }
+    function loadDraft(kind) { try { return JSON.parse(localStorage.getItem(draftKey(kind))); } catch (e) { return null; } }
+    function clearDraft(kind) { localStorage.removeItem(draftKey(kind)); }
+
+    // ---------- Modal ----------
+    function openPerfModal(title, icon, bodyHTML) {
+      document.getElementById('perf-modal-title').innerHTML = `<i data-lucide="${icon}" class="text-blue-400 w-5 h-5"></i> <span>${esc(title)}</span>`;
+      const body = document.getElementById('perf-modal-body');
+      body.innerHTML = bodyHTML;
+      document.getElementById('modal-perf').classList.remove('hidden');
+      document.body.style.overflow = 'hidden';
+      body.scrollTop = 0;
+      lucide.createIcons();
+    }
+
+    function setPerfBody(html, keepScroll = false) {
+      const body = document.getElementById('perf-modal-body');
+      const top = body.scrollTop;
+      body.innerHTML = html;
+      body.scrollTop = keepScroll ? top : 0;
+      lucide.createIcons();
+      if (typeof hydratePhotos === 'function') hydratePhotos(body);
+    }
+
+    function closePerfModal() {
+      closeModal('modal-perf');
+      document.body.style.overflow = '';
+      renderDashboard();
+    }
+
+    // ---------- Dashboard-Überblick ----------
+    function renderPerfOverview() {
+      const el = document.getElementById('perf-overview');
+      if (!el) return;
+      const p = currentUser.perf;
+      const act = currentUser.activeModules;
+      const today = getTodayString();
+      const tiles = [];
+
+      const tile = (onclick, icon, title, main, sub) => `
+        <button onclick="${onclick}" class="glass text-left rounded-2xl p-3 border border-slate-800 hover:border-blue-500 transition min-w-0">
+          <div class="flex items-center gap-1.5 text-[11px] font-bold text-slate-400 mb-1"><i data-lucide="${icon}" class="w-3.5 h-3.5 text-blue-400"></i>${title}</div>
+          <div class="text-sm font-black text-white truncate">${main}</div>
+          <div class="text-[11px] text-slate-500 truncate">${sub}</div>
+        </button>`;
+
+      if (act.includes('fitness')) {
+        const last = lastOf(p.fitness);
+        if (last) {
+          const a = fitAnalyze(last);
+          tiles.push(tile('openFitnessHistory()', 'dumbbell', 'Fitness', `${last.duration} min ${FIT_TYPES[last.type] || ''}`,
+            `${fmtDate(last.date)} | 🟢 ${a.counts.better} 🔴 ${a.counts.worse} 🟡 ${a.counts.same}`));
+        } else tiles.push(tile('openFitnessForm()', 'dumbbell', 'Fitness', 'Kein Training', 'Erstes Training eintragen'));
+      }
+      if (act.includes('football')) {
+        const last = lastOf(p.football);
+        if (last) {
+          const a = fbAnalyze(last);
+          const em = ['dribbling', 'shots', 'passes', 'sprint'].map(k => (STATUS_UI[a[k].verdict] || STATUS_UI.none).e).join(' ');
+          tiles.push(tile('openFootballHistory()', 'trophy', 'Fußball', `Training ${fmtDate(last.date)}`, `Dri Sch Pas Spd: ${em}`));
+        } else tiles.push(tile('openFootballForm()', 'trophy', 'Fußball', 'Kein Training', 'Erste Einheit eintragen'));
+      }
+      if (act.includes('social_media')) {
+        const posted = p.social.posts.some(x => x.date === today);
+        const wk = p.social.posts.filter(x => daysBetween(x.date, today) >= 0 && daysBetween(x.date, today) < 7);
+        const fol = wk.reduce((s, x) => s + (x.followers || 0), 0);
+        tiles.push(tile('openSocialAnalysis()', 'share-2', 'Social Media', posted ? 'Heute gepostet ✅' : 'Noch nicht gepostet ❌', `7 Tage: ${fol >= 0 ? '+' : ''}${fmtN(fol, 0)} Follower`));
+      }
+      if (act.includes('lifestyle')) {
+        const sh = p.hygiene.routines.find(r => r.kind === 'weekly');
+        const main = sh ? `${sh.name} ${hygWeekCount(sh)}/${sh.target}` : 'Routinen';
+        const daily = p.hygiene.routines.filter(r => r.kind === 'daily');
+        const doneDaily = daily.filter(r => hygDailyDone(r, today) === 'full').length;
+        tiles.push(tile('openHygieneHistory()', 'sparkles', 'Hygiene', main + (sh && hygWeekCount(sh) >= sh.target ? ' ✅' : ''), `Pflege heute: ${doneDaily}/${daily.length}`));
+      }
+      if (act.includes('face_progress')) {
+        const last = lastOf(p.photos);
+        tiles.push(tile('openFaceGallery()', 'scan-face', 'Aussehen', last ? `Foto vom ${fmtDate(last.date)}` : 'Noch kein Foto',
+          last ? `vor ${daysBetween(last.date, today)} Tagen | ${p.photos.length} Fotos` : 'Erstes Foto hochladen'));
+      }
+
+      el.innerHTML = tiles.length ? `<div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">${tiles.join('')}</div>` : '';
+    }
+
+    // =====================================================================
+    // ============================  FITNESS  ==============================
+    // =====================================================================
+    const FIT_TYPES = { upper: 'Oberkörper', lower: 'Unterkörper', full: 'Ganzkörper' };
+    const FIT_MUSCLES = {
+      upper: ['Brust', 'Rücken', 'Schultern', 'Bizeps', 'Trizeps', 'Bauch'],
+      lower: ['Oberschenkel', 'Waden', 'Gesäß', 'Beine allgemein']
+    };
+    FIT_MUSCLES.full = FIT_MUSCLES.upper.concat(FIT_MUSCLES.lower);
+    const FIT_EXERCISES = {
+      'Brust': ['Liegestütze', 'Bankdrücken', 'Dips'],
+      'Rücken': ['Pull-ups / Klimmzüge', 'Rudern', 'Superman'],
+      'Schultern': ['Pike Push-ups', 'Schulterdrücken', 'Seitheben'],
+      'Bizeps': ['Bizeps-Curls', 'Chin-ups', 'Hammer-Curls'],
+      'Trizeps': ['Dips', 'Diamond Push-ups', 'Trizeps-Drücken'],
+      'Bauch': ['Sit-ups', 'Plank', 'Crunches', 'Beinheben', 'Russian Twist'],
+      'Oberschenkel': ['Squats', 'Lunges', 'Bulgarian Split Squats', 'Wall Sit'],
+      'Waden': ['Wadenheben', 'Seilspringen'],
+      'Gesäß': ['Hip Thrusts', 'Glute Bridge', 'Lunges'],
+      'Beine allgemein': ['Squats', 'Jump Squats', 'Lunges', 'Step-ups']
+    };
+    const FIT_TIMED = ['plank', 'wall sit', 'seilspringen', 'seitstütz'];
+    const FIT_MET = { light: 3.5, mid: 5.0, hard: 6.0 };
+    const FIT_INTENSITY = { light: 'Locker', mid: 'Mittel', hard: 'Intensiv' };
+
+    let fitDraft = null;
+
+    function exNorm(n) { return String(n || '').trim().toLowerCase(); }
+
+    function newFitDraft() {
+      return { date: getTodayString(), type: 'upper', muscles: [], exercises: [], duration: '', intensity: 'mid' };
+    }
+
+    function fitKcal(duration, intensity) {
+      const w = num(currentUser.profile && currentUser.profile.weight);
+      const weight = w && w > 0 ? w : 70;
+      const met = FIT_MET[intensity] || 5.0;
+      const d = num(duration);
+      if (!d || d <= 0) return null;
+      return { kcal: Math.round(met * weight * (d / 60)), weight, assumed: !(w && w > 0), met };
+    }
+
+    function lastExerciseValues(name) {
+      const key = exNorm(name);
+      const sorted = sortChrono(currentUser.perf.fitness).reverse();
+      for (const t of sorted) {
+        const ex = t.exercises.find(e => exNorm(e.name) === key);
+        if (ex) return ex;
+      }
+      return null;
+    }
+
+    function openFitnessForm() {
+      fitDraft = loadDraft('fitness') || newFitDraft();
+      openPerfModal('Training eintragen', 'dumbbell', '');
+      renderFitForm();
+    }
+
+    function fitPersist() { saveDraft('fitness', fitDraft); }
+
+    function renderFitForm() {
+      const d = fitDraft;
+      const muscles = FIT_MUSCLES[d.type];
+      // Vorschläge: zuerst passend zu gewählten Muskeln, sonst zur Trainingsart
+      const pool = (d.muscles.length ? d.muscles : muscles);
+      const sugg = [];
+      pool.forEach(m => (FIT_EXERCISES[m] || []).forEach(x => { if (!sugg.includes(x)) sugg.push(x); }));
+      const used = [];
+      sortChrono(currentUser.perf.fitness).reverse().forEach(t => t.exercises.forEach(e => {
+        if (!used.some(u => exNorm(u) === exNorm(e.name))) used.push(e.name);
+      }));
+      const allNames = used.concat(Object.values(FIT_EXERCISES).flat()).filter((x, i, a) => a.findIndex(y => exNorm(y) === exNorm(x)) === i);
+      const inDraft = d.exercises.map(e => exNorm(e.name));
+      const kc = fitKcal(d.duration, d.intensity);
+
+      const exRows = d.exercises.map((ex, i) => {
+        const lastV = ex.name ? lastExerciseValues(ex.name) : null;
+        const lastTxt = lastV ? (lastV.seconds !== null && lastV.seconds !== undefined
+          ? `${lastV.sets} × ${fmtN(lastV.seconds, 0)} s` : `${lastV.sets} × ${lastV.reps}${lastV.weight ? ` @ ${fmtN(lastV.weight, 1)} kg` : ''}`) : '';
+        return `
+        <div class="bg-slate-950/70 border border-slate-800 rounded-2xl p-3 space-y-2">
+          <div class="flex gap-2 items-center">
+            <input list="fit-ex-list" value="${esc(ex.name)}" placeholder="Übungsname" oninput="fitEx(${i},'name',this.value)" onchange="fitExNameChosen(${i})" class="${INP} font-semibold">
+            <button onclick="fitRemoveEx(${i})" class="p-2 text-slate-500 hover:text-rose-400" aria-label="Übung entfernen"><i data-lucide="x" class="w-4 h-4"></i></button>
+          </div>
+          <div class="flex gap-1.5">
+            <button onclick="fitSetTimed(${i},false)" class="${chipCls(!ex.timed)} !py-1">Wiederholungen</button>
+            <button onclick="fitSetTimed(${i},true)" class="${chipCls(ex.timed)} !py-1">Zeit</button>
+          </div>
+          <div class="grid grid-cols-3 gap-2">
+            <div><label class="${LBL}">Sätze</label><input inputmode="numeric" value="${esc(ex.sets)}" oninput="fitEx(${i},'sets',this.value)" class="${INP}"></div>
+            ${ex.timed
+              ? `<div><label class="${LBL}">Sek. / Satz</label><input inputmode="decimal" value="${esc(ex.seconds)}" oninput="fitEx(${i},'seconds',this.value)" class="${INP}"></div>`
+              : `<div><label class="${LBL}">Wdh. / Satz</label><input inputmode="numeric" value="${esc(ex.reps)}" oninput="fitEx(${i},'reps',this.value)" class="${INP}"></div>`}
+            <div><label class="${LBL}">Gewicht kg</label><input inputmode="decimal" value="${esc(ex.weight)}" placeholder="optional" oninput="fitEx(${i},'weight',this.value)" class="${INP}"></div>
+          </div>
+          ${lastTxt ? `<p class="text-[11px] text-slate-500">Letztes Mal: <span class="text-slate-300">${esc(lastTxt)}</span></p>` : ''}
+        </div>`;
+      }).join('');
+
+      setPerfBody(`
+        <div class="space-y-4">
+          <datalist id="fit-ex-list">${allNames.map(n => `<option value="${esc(n)}"></option>`).join('')}</datalist>
+
+          <div class="${BOX}">
+            <div class="grid grid-cols-2 gap-2">
+              <div><label class="${LBL}">Datum</label><input type="date" value="${d.date}" onchange="fitDraft.date=this.value;fitPersist()" class="${INP}"></div>
+              <div><label class="${LBL}">Trainingszeit (min)</label><input inputmode="numeric" value="${esc(d.duration)}" placeholder="z. B. 60" oninput="fitDraft.duration=this.value;fitPersist();fitUpdateKcal()" class="${INP}"></div>
+            </div>
+            <div>
+              <label class="${LBL}">Trainingsart</label>
+              <div class="flex flex-wrap gap-1.5">
+                ${Object.keys(FIT_TYPES).map(t => `<button onclick="fitSetType('${t}')" class="${chipCls(d.type === t)}">${FIT_TYPES[t]}</button>`).join('')}
+              </div>
+            </div>
+            <div>
+              <label class="${LBL}">Muskelbereiche</label>
+              <div class="flex flex-wrap gap-1.5">
+                ${muscles.map(m => `<button onclick="fitToggleMuscle('${m}')" class="${chipCls(d.muscles.includes(m), 'emerald')}">${m}</button>`).join('')}
+              </div>
+            </div>
+          </div>
+
+          <div class="space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold text-slate-300">Übungen (${d.exercises.length})</span>
+            </div>
+            ${exRows || `<p class="text-xs text-slate-500 italic">Noch keine Übung. Tippe unten auf einen Vorschlag oder auf „+ Übung hinzufügen“.</p>`}
+            <div class="flex flex-wrap gap-1.5">
+              ${(window._fitSugg = sugg.filter(s => !inDraft.includes(exNorm(s))).slice(0, 10)).map((s, si) => `<button onclick="fitQuickAdd(window._fitSugg[${si}])" class="px-2.5 py-1.5 rounded-xl border border-dashed border-slate-600 text-[11px] text-slate-300 hover:border-blue-500">+ ${esc(s)}</button>`).join('')}
+            </div>
+            <button onclick="fitAddEx()" class="w-full py-2.5 border border-blue-500/40 bg-blue-600/10 text-blue-300 rounded-xl text-sm font-bold hover:bg-blue-600/20 transition">+ Übung hinzufügen</button>
+          </div>
+
+          <div class="${BOX}">
+            <label class="${LBL}">Intensität (für Kalorien-Schätzung)</label>
+            <div class="flex gap-1.5">
+              ${Object.keys(FIT_INTENSITY).map(k => `<button onclick="fitDraft.intensity='${k}';fitPersist();renderFitForm()" class="${chipCls(d.intensity === k)}">${FIT_INTENSITY[k]}</button>`).join('')}
+            </div>
+            <div id="fit-kcal">${fitKcalHTML(kc)}</div>
+          </div>
+
+          <div class="flex gap-2 pb-2">
+            <button onclick="fitSave()" class="${BTN_PRIMARY} flex-1">Training speichern</button>
+            <button onclick="fitDiscard()" class="px-4 py-3 bg-rose-600/20 text-rose-400 border border-rose-500/30 rounded-xl font-bold text-sm">Verwerfen</button>
+          </div>
+        </div>`, true);
+    }
+
+    function fitKcalHTML(kc) {
+      if (!kc) return `<p class="text-[11px] text-slate-500">Trag die Trainingszeit ein, dann wird der Verbrauch geschätzt.</p>`;
+      return `<p class="text-sm text-white font-bold">≈ ${kc.kcal} kcal <span class="text-[11px] font-normal text-amber-300">(Schätzung)</span></p>
+        <p class="text-[11px] text-slate-500">Berechnet mit MET ${fmtN(kc.met, 1)} × ${fmtN(kc.weight, 1)} kg × Trainingszeit.
+        ${kc.assumed ? '<span class="text-amber-300">Kein Gewicht im Steckbrief – 70 kg angenommen.</span>' : ''} Ohne Puls- oder Geräte-Daten ist das nur ein Richtwert.</p>`;
+    }
+    function fitUpdateKcal() { const el = document.getElementById('fit-kcal'); if (el) el.innerHTML = fitKcalHTML(fitKcal(fitDraft.duration, fitDraft.intensity)); }
+
+    function fitSetType(t) { fitDraft.type = t; fitDraft.muscles = fitDraft.muscles.filter(m => FIT_MUSCLES[t].includes(m)); fitPersist(); renderFitForm(); }
+    function fitToggleMuscle(m) { const a = fitDraft.muscles; const i = a.indexOf(m); if (i >= 0) a.splice(i, 1); else a.push(m); fitPersist(); renderFitForm(); }
+    function fitEx(i, key, val) { fitDraft.exercises[i][key] = val; fitPersist(); }
+    function fitSetTimed(i, t) { fitDraft.exercises[i].timed = t; fitPersist(); renderFitForm(); }
+    function fitRemoveEx(i) { fitDraft.exercises.splice(i, 1); fitPersist(); renderFitForm(); }
+    function fitAddEx() { fitDraft.exercises.push({ name: '', timed: false, sets: '3', reps: '', weight: '', seconds: '' }); fitPersist(); renderFitForm(); }
+
+    function fitPrefill(ex) {
+      const lastV = lastExerciseValues(ex.name);
+      if (lastV) {
+        ex.timed = lastV.seconds !== null && lastV.seconds !== undefined;
+        ex.sets = String(lastV.sets || 3);
+        ex.reps = lastV.reps !== null && lastV.reps !== undefined ? String(lastV.reps) : '';
+        ex.seconds = ex.timed ? String(lastV.seconds) : '';
+        ex.weight = lastV.weight ? String(lastV.weight) : '';
+      } else if (FIT_TIMED.some(t => exNorm(ex.name).includes(t))) {
+        ex.timed = true; if (!ex.seconds) ex.seconds = '30';
+      }
+    }
+    function fitQuickAdd(name) {
+      const ex = { name, timed: false, sets: '3', reps: '', weight: '', seconds: '' };
+      fitPrefill(ex);
+      fitDraft.exercises.push(ex); fitPersist(); renderFitForm();
+    }
+    function fitExNameChosen(i) {
+      const ex = fitDraft.exercises[i];
+      if (ex.name && !ex.reps && !ex.seconds) { fitPrefill(ex); fitPersist(); renderFitForm(); }
+    }
+    function fitDiscard() {
+      if (!confirm('Eingaben verwerfen?')) return;
+      clearDraft('fitness'); fitDraft = newFitDraft(); renderFitForm();
+    }
+
+    function fitSave() {
+      const d = fitDraft;
+      const duration = num(d.duration);
+      if (!duration || duration <= 0) return alert('Bitte die Trainingszeit in Minuten eintragen.');
+      const exercises = [];
+      for (const ex of d.exercises) {
+        if (!ex.name.trim()) continue;
+        const sets = num(ex.sets);
+        const reps = ex.timed ? null : num(ex.reps);
+        const seconds = ex.timed ? num(ex.seconds) : null;
+        if (!sets || sets <= 0) return alert(`„${ex.name}“: Bitte Anzahl Sätze eintragen.`);
+        if (!ex.timed && (reps === null || reps < 0)) return alert(`„${ex.name}“: Bitte Wiederholungen pro Satz eintragen.`);
+        if (ex.timed && (!seconds || seconds <= 0)) return alert(`„${ex.name}“: Bitte Sekunden pro Satz eintragen.`);
+        const w = num(ex.weight);
+        exercises.push({ name: ex.name.trim(), sets, reps, seconds, weight: w && w > 0 ? w : null });
+      }
+      if (!exercises.length) return alert('Bitte mindestens eine Übung mit Namen eintragen.');
+      const kc = fitKcal(duration, d.intensity);
+      const entry = {
+        id: uid(), createdAt: Date.now(), date: d.date || getTodayString(), type: d.type, muscles: d.muscles.slice(),
+        exercises, duration, intensity: d.intensity, kcal: kc ? kc.kcal : null,
+        kcalBasis: kc ? { weight: kc.weight, assumed: kc.assumed, met: kc.met } : null
+      };
+      currentUser.perf.fitness.push(entry);
+      saveUserData();
+      clearDraft('fitness');
+      fitDraft = newFitDraft();
+      showFitnessAnalysis(entry.id, true);
+    }
+
+    // ----- Fitness-Analyse -----
+    function exPrimary(ex) {
+      const sets = ex.sets || 1;
+      if (ex.seconds !== null && ex.seconds !== undefined) return { timed: true, total: sets * ex.seconds };
+      const reps = ex.reps || 0;
+      return { timed: false, totalReps: sets * reps, volume: ex.weight ? sets * reps * ex.weight : null };
+    }
+
+    function exCompare(cur, prev) {
+      if (!prev) return { status: 'first', rows: [] };
+      const pc = exPrimary(cur), pp = exPrimary(prev);
+      const rows = [];
+      if (pc.timed !== pp.timed) return { status: 'mixed', rows, note: 'Einmal mit Zeit, einmal mit Wiederholungen eingetragen – nicht direkt vergleichbar.' };
+      const wc = cur.weight || 0, wp = prev.weight || 0;
+      if (wc || wp) rows.push(['Gewicht', cmpVal(wc, wp), { unit: ' kg', d: 1 }]);
+      rows.push(['Sätze', cmpVal(cur.sets, prev.sets), { d: 0 }]);
+      let primary, note = '';
+      if (pc.timed) {
+        rows.push(['Zeit pro Satz', cmpVal(cur.seconds, prev.seconds), { unit: ' s', d: 0 }]);
+        primary = cmpVal(pc.total, pp.total);
+        rows.push(['Gesamtzeit', primary, { unit: ' s', d: 0, pct: true }]);
+      } else {
+        rows.push(['Wdh. pro Satz', cmpVal(cur.reps, prev.reps), { d: 0 }]);
+        const tr = cmpVal(pc.totalReps, pp.totalReps);
+        rows.push(['Wiederholungen gesamt', tr, { d: 0, pct: true }]);
+        if (wc === wp) primary = tr;
+        else if (wc > 0 && wp > 0) {
+          primary = cmpVal(pc.volume, pp.volume);
+          rows.push(['Volumen (Sätze × Wdh. × kg)', primary, { unit: ' kg', d: 0, pct: true }]);
+          note = 'Gewicht geändert – bewertet über das Trainingsvolumen.';
+        } else if (wc > wp && pc.totalReps >= pp.totalReps) {
+          primary = { status: 'better' }; note = 'Zusatzgewicht bei gleich vielen oder mehr Wiederholungen.';
+        } else if (wc < wp && pc.totalReps <= pp.totalReps) {
+          primary = { status: 'worse' }; note = 'Ohne Zusatzgewicht und nicht mehr Wiederholungen.';
+        } else {
+          primary = { status: 'mixed' }; note = 'Gewicht geändert (mit/ohne Zusatzgewicht) – nur bedingt vergleichbar.';
+        }
+      }
+      return { status: primary.status, rows, note, primaryVal: pc.timed ? pc.total : pc.totalReps };
+    }
+
+    function fitAnalyze(entry) {
+      const all = currentUser.perf.fitness;
+      const prevSame = previousOf(all, entry, e => e.type === entry.type);
+      const prevSession = prevSame || previousOf(all, entry);
+      const sessionRows = [];
+      if (prevSession) {
+        const totReps = t => t.exercises.reduce((s, e) => s + (e.reps ? e.reps * e.sets : 0), 0);
+        const totSets = t => t.exercises.reduce((s, e) => s + (e.sets || 0), 0);
+        sessionRows.push(['Trainingszeit', cmpVal(entry.duration, prevSession.duration), { unit: ' min', d: 0, pct: true }]);
+        sessionRows.push(['Sätze gesamt', cmpVal(totSets(entry), totSets(prevSession)), { d: 0 }]);
+        sessionRows.push(['Wiederholungen gesamt', cmpVal(totReps(entry), totReps(prevSession)), { d: 0, pct: true }]);
+      }
+      const exResults = entry.exercises.map(ex => {
+        const key = exNorm(ex.name);
+        const prevT = previousOf(all, entry, t => t.exercises.some(e => exNorm(e.name) === key));
+        const prevEx = prevT ? prevT.exercises.find(e => exNorm(e.name) === key) : null;
+        const res = exCompare(ex, prevEx);
+        res.name = ex.name; res.ex = ex; res.prevDate = prevT ? prevT.date : null;
+        // Stagnation: wie oft hintereinander gleicher Hauptwert?
+        if (res.status === 'same') {
+          let streak = 1, cursor = prevT, val = res.primaryVal;
+          while (cursor) {
+            const pe = cursor.exercises.find(e => exNorm(e.name) === key);
+            const pv = exPrimary(pe);
+            if ((pv.timed ? pv.total : pv.totalReps) !== val) break;
+            streak++;
+            cursor = previousOf(all, cursor, t => t.exercises.some(e => exNorm(e.name) === key));
+          }
+          res.streak = streak;
+        }
+        return res;
+      });
+      const counts = { better: 0, worse: 0, same: 0, first: 0, mixed: 0 };
+      exResults.forEach(r => counts[r.status]++);
+      return { prevSession, sameType: !!prevSame, sessionRows, exResults, counts };
+    }
+
+    function showFitnessAnalysis(id, justSaved = false) {
+      const entry = currentUser.perf.fitness.find(e => e.id === id);
+      if (!entry) return;
+      const a = fitAnalyze(entry);
+      const c = a.counts;
+      let motivation;
+      if (!a.prevSession) motivation = 'Erstes Training gespeichert. Ab dem nächsten Training siehst du hier deinen Fortschritt.';
+      else if (c.better > 0 && c.worse === 0) motivation = `Stark! ${c.better} ${c.better === 1 ? 'Übung' : 'Übungen'} verbessert und nichts verschlechtert.`;
+      else if (c.better >= c.worse && c.better > 0) motivation = `Gute Einheit: ${c.better} besser, ${c.worse} schlechter. Bleib dran.`;
+      else if (c.worse > c.better) motivation = 'Heute lief weniger – passiert. Achte auf Schlaf, Essen und Pausen und hol es dir beim nächsten Mal zurück.';
+      else motivation = 'Konstant geblieben. Versuch beim nächsten Mal bei einer Übung 1–2 Wiederholungen mehr.';
+
+      const names = st => a.exResults.filter(r => r.status === st).map(r => esc(r.name)).join(', ');
+
+      const exBlocks = a.exResults.map(r => {
+        const ex = r.ex;
+        const val = ex.seconds !== null && ex.seconds !== undefined ? `${ex.sets} × ${fmtN(ex.seconds, 0)} s` : `${ex.sets} × ${ex.reps}${ex.weight ? ` @ ${fmtN(ex.weight, 1)} kg` : ''}`;
+        let extra = '';
+        if (r.status === 'same' && r.streak >= 2) extra = `Stagniert (${r.streak}× gleich)`;
+        return `
+          <div class="bg-slate-900/70 border border-slate-800 rounded-2xl p-3 space-y-2">
+            <div class="flex items-center justify-between gap-2">
+              <div class="min-w-0"><div class="font-bold text-white text-sm truncate">${esc(r.name)}</div><div class="text-[11px] text-slate-500">${val}${r.prevDate ? ` | Vergleich mit ${fmtDate(r.prevDate)}` : ''}</div></div>
+              ${verdictBadge(r.status, extra)}
+            </div>
+            ${r.status === 'first' ? '<p class="text-[11px] text-slate-500 italic">Erstes Mal eingetragen – Vergleich ab dem nächsten Mal.</p>' : ''}
+            ${r.rows.map(x => cmpRow(x[0], x[1], x[2])).join('')}
+            ${r.note ? `<p class="text-[11px] text-amber-300/80">${r.note}</p>` : ''}
+          </div>`;
+      }).join('');
+
+      openPerfModal(justSaved ? 'Training gespeichert' : 'Fitness-Analyse', 'bar-chart-3', `
+        <div class="space-y-4">
+          <div class="bg-blue-600/10 border border-blue-500/30 rounded-2xl p-3 text-sm text-blue-100">${motivation}</div>
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            ${statTile('Datum', fmtDate(entry.date), FIT_TYPES[entry.type])}
+            ${statTile('Trainingszeit', entry.duration + ' min')}
+            ${statTile('Übungen', entry.exercises.length, entry.muscles.join(', ') || '')}
+            ${statTile('Kalorien', entry.kcal ? '≈ ' + entry.kcal + ' kcal' : '–', 'Schätzung')}
+          </div>
+
+          ${a.prevSession ? `
+            <div class="space-y-2">
+              <span class="text-xs font-bold text-slate-300">Ganze Einheit vs. ${fmtDate(a.prevSession.date)} ${a.sameType ? `(${FIT_TYPES[entry.type]})` : '(letztes Training)'}</span>
+              ${a.sessionRows.map(x => cmpRow(x[0], x[1], x[2])).join('')}
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
+              <div class="${STATUS_UI.better.bg} border rounded-xl p-2.5"><b class="text-emerald-400">🟢 Verbessert</b><div class="text-slate-300 mt-1">${names('better') || '–'}</div></div>
+              <div class="${STATUS_UI.worse.bg} border rounded-xl p-2.5"><b class="text-rose-400">🔴 Schlechter</b><div class="text-slate-300 mt-1">${names('worse') || '–'}</div></div>
+              <div class="${STATUS_UI.same.bg} border rounded-xl p-2.5"><b class="text-amber-300">🟡 Stagniert</b><div class="text-slate-300 mt-1">${names('same') || '–'}</div></div>
+            </div>` : firstNote()}
+
+          <div class="space-y-2">
+            <span class="text-xs font-bold text-slate-300">Übungen im Detail</span>
+            ${exBlocks}
+          </div>
+          <div class="grid grid-cols-2 gap-2 pb-2">
+            <button onclick="openFitnessForm()" class="${BTN_GHOST}">Neues Training</button>
+            <button onclick="openFitnessHistory()" class="${BTN_GHOST}">Verlauf</button>
+          </div>
+        </div>`);
+    }
+
+    function openFitnessHistory() {
+      const list = sortChrono(currentUser.perf.fitness).reverse();
+      const html = list.length ? list.map(t => {
+        const a = fitAnalyze(t);
+        return `
+        <div class="bg-slate-900/70 border border-slate-800 rounded-2xl p-3 space-y-1.5">
+          <div class="flex justify-between items-start gap-2">
+            <div>
+              <div class="font-bold text-white text-sm">${fmtDate(t.date)} | ${FIT_TYPES[t.type]}</div>
+              <div class="text-[11px] text-slate-400">${t.duration} min | ${t.kcal ? '≈ ' + t.kcal + ' kcal' : ''} | 🟢 ${a.counts.better} 🔴 ${a.counts.worse} 🟡 ${a.counts.same}</div>
+            </div>
+            <button onclick="fitDelete('${t.id}')" class="text-slate-600 hover:text-rose-400 p-1" aria-label="Löschen"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+          </div>
+          <div class="text-[11px] text-slate-500">${t.exercises.map(e => esc(e.name)).join(', ')}</div>
+          <button onclick="showFitnessAnalysis('${t.id}')" class="text-xs text-blue-400 hover:underline">Analyse ansehen</button>
+        </div>`;
+      }).join('') : '<p class="text-sm text-slate-500 italic">Noch keine Trainings gespeichert.</p>';
+      openPerfModal('Fitness-Verlauf', 'history', `<div class="space-y-2">
+        <button onclick="openFitnessForm()" class="${BTN_PRIMARY}">+ Training eintragen</button>${html}</div>`);
+    }
+
+    function fitDelete(id) {
+      if (!confirm('Dieses Training löschen?')) return;
+      currentUser.perf.fitness = currentUser.perf.fitness.filter(t => t.id !== id);
+      saveUserData(); openFitnessHistory();
+    }
+
+    function renderFitnessCard() {
+      const p = currentUser.perf;
+      const last = lastOf(p.fitness);
+      const today = getTodayString();
+      const ws = weekStart(today);
+      const weekCount = p.fitness.filter(t => t.date >= ws && t.date <= addDays(ws, 6)).length;
+      let body;
+      if (!last) {
+        body = `<p class="text-xs text-slate-400">Noch kein Training. Trag dein erstes ein – ab dem zweiten siehst du deinen Fortschritt pro Übung.</p>`;
+      } else {
+        const a = fitAnalyze(last);
+        body = `
+          <div class="grid grid-cols-2 gap-2">
+            ${statTile('Letztes Training', fmtDate(last.date), FIT_TYPES[last.type])}
+            ${statTile('Trainingszeit', last.duration + ' min', last.kcal ? '≈ ' + last.kcal + ' kcal (Schätzung)' : '')}
+          </div>
+          <div class="text-[11px] text-slate-400"><span class="text-slate-300 font-semibold">Übungen:</span> ${last.exercises.map(e => esc(e.name)).join(', ')}</div>
+          <div class="flex flex-wrap gap-1.5">
+            ${a.prevSession ? `${verdictBadge('better', a.counts.better + ' besser')} ${verdictBadge('worse', a.counts.worse + ' schlechter')} ${verdictBadge('same', a.counts.same + ' gleich')}` : verdictBadge('first')}
+          </div>`;
+      }
+      return `
+        <div class="space-y-3">
+          <p class="text-xs text-slate-400">Diese Woche: <span class="text-white font-bold">${weekCount}</span> ${weekCount === 1 ? 'Training' : 'Trainings'}</p>
+          ${body}
+          <div class="grid grid-cols-2 gap-2">
+            <button onclick="openFitnessForm()" class="py-2 bg-blue-600 hover:bg-blue-500 font-bold text-xs text-white rounded-xl transition">+ Training</button>
+            <button onclick="${last ? `showFitnessAnalysis('${last.id}')` : 'openFitnessHistory()'}" class="${BTN_GHOST}">Analyse & Verlauf</button>
+          </div>
+        </div>`;
+    }
+
+    // =====================================================================
+    // ============================  FUSSBALL  =============================
+    // =====================================================================
+    const SHOT_TYPES = [
+      { id: 'stand16', name: '16 m – stehend' },
+      { id: 'penalty', name: '11 m – Elfmeter' },
+      { id: 'running', name: '16–11 m – laufend' }
+    ];
+    const ZONES = [
+      ['tl', 'oben links', 'OL'], ['tc', 'oben Mitte', 'OM'], ['tr', 'oben rechts', 'OR'],
+      ['ml', 'Mitte links', 'ML'], ['mc', 'Mitte', 'M'], ['mr', 'Mitte rechts', 'MR'],
+      ['bl', 'unten links', 'UL'], ['bc', 'unten Mitte', 'UM'], ['br', 'unten rechts', 'UR']
+    ];
+    const GOAL_ZONES = ZONES.map(z => z[0]);
+    const SHOTS_PER_SERIES = 16;
+    const FOOT = { R: 'Rechter Fuß', L: 'Linker Fuß' };
+    const PASS_TYPES = { long: 'Lange Pässe', short: 'Kurze Pässe (2–8 m)', curved: 'Geschnittene Pässe' };
+    const SPRINT_DISTS = [10, 20, 30, 40];
+    const SPRINT_VAR = { noBall: 'Ohne Ball', withBall: 'Mit Ball' };
+    const FB_SECTIONS = { dribbling: 'Dribbling', shots: 'Schuss', passes: 'Pässe', sprint: 'Geschwindigkeit' };
+
+    let fbDraft = null;
+
+    function newFbDraft() {
+      const emptyShots = {}; SHOT_TYPES.forEach(t => emptyShots[t.id] = { R: [], L: [] });
+      const emptySprint = v => { const o = {}; SPRINT_DISTS.forEach(d => o[d] = ['', '']); return o; };
+      return {
+        mode: 'training', date: getTodayString(), notes: '',
+        sections: { dribbling: false, shots: false, passes: false, sprint: false },
+        dribbling: { parcours: 'Standard', attempts: '15', success: '', times: ['', '', ''] },
+        shots: { type: 'stand16', foot: 'R', data: emptyShots },
+        passes: {
+          long: { attempts: '15', success: '', target: '', max: '', dists: '' },
+          short: { attempts: '15', success: '' },
+          curved: { attempts: '15', success: '' }
+        },
+        sprint: { variant: 'noBall', noBall: emptySprint(), withBall: emptySprint() },
+        match: { opponent: '', competition: 'Liga', teamGoals: '', oppGoals: '', minutes: '', position: '', goals: '', assists: '', shotsOnTarget: '', duelsWon: '', duelsTotal: '', ballLosses: '', rating: '', notes: '' }
+      };
+    }
+
+    function setPath(obj, path, val) {
+      const k = path.split('.');
+      let o = obj;
+      for (let i = 0; i < k.length - 1; i++) o = o[k[i]];
+      o[k[k.length - 1]] = val;
+    }
+
+    function openFootballForm(mode) {
+      fbDraft = loadDraft('football') || newFbDraft();
+      if (mode) fbDraft.mode = mode;
+      openPerfModal('Fußball eintragen', 'trophy', '');
+      renderFbForm();
+    }
+    function fbPersist() { saveDraft('football', fbDraft); }
+    function fbSet(path, val) { setPath(fbDraft, path, val); fbPersist(); fbLive(); }
+    function fbMode(m) { fbDraft.mode = m; fbPersist(); renderFbForm(); }
+    function fbToggle(sec) { fbDraft.sections[sec] = !fbDraft.sections[sec]; fbPersist(); renderFbForm(); }
+
+    function fbIn(path, val, opts = {}) {
+      return `<input ${opts.type ? `type="${opts.type}"` : `inputmode="${opts.mode || 'decimal'}"`} value="${esc(val)}" placeholder="${esc(opts.ph || '')}"
+        oninput="fbSet('${path}', this.value)" class="${INP} ${opts.cls || ''}">`;
+    }
+
+    function renderFbForm() {
+      const d = fbDraft;
+      const tabs = `
+        <div class="flex p-1 bg-slate-900/80 rounded-xl text-sm font-medium border border-slate-800">
+          <button onclick="fbMode('training')" class="flex-1 py-2 rounded-lg ${d.mode === 'training' ? 'bg-blue-600 text-white' : 'text-slate-400'}">Einzeltraining</button>
+          <button onclick="fbMode('match')" class="flex-1 py-2 rounded-lg ${d.mode === 'match' ? 'bg-blue-600 text-white' : 'text-slate-400'}">Match / Spiel</button>
+        </div>`;
+      if (d.mode === 'match') { setPerfBody(`<div class="space-y-4">${tabs}${renderMatchForm()}</div>`, true); return; }
+
+      const parcoursNames = [...new Set(currentUser.perf.football.filter(e => e.dribbling).map(e => e.dribbling.parcours))];
+
+      setPerfBody(`
+        <div class="space-y-4">
+          ${tabs}
+          <div class="${BOX}">
+            <div><label class="${LBL}">Datum</label><input type="date" value="${d.date}" onchange="fbDraft.date=this.value;fbPersist()" class="${INP}"></div>
+            <div>
+              <label class="${LBL}">Was hast du heute trainiert?</label>
+              <div class="grid grid-cols-2 gap-1.5">
+                ${Object.keys(FB_SECTIONS).map(k => `<button onclick="fbToggle('${k}')" class="${chipCls(d.sections[k], 'emerald')}">${d.sections[k] ? '✓ ' : '+ '}${FB_SECTIONS[k]}</button>`).join('')}
+              </div>
+            </div>
+          </div>
+
+          ${d.sections.dribbling ? `
+          <div class="${BOX}">
+            <h4 class="font-bold text-white text-sm flex items-center gap-2"><i data-lucide="route" class="w-4 h-4 text-blue-400"></i> Dribbling-Parcours</h4>
+            <datalist id="fb-parcours-list">${parcoursNames.map(n => `<option value="${esc(n)}"></option>`).join('')}</datalist>
+            <div><label class="${LBL}">Parcours (gleicher Name = wird verglichen)</label>
+              <input list="fb-parcours-list" value="${esc(d.dribbling.parcours)}" oninput="fbSet('dribbling.parcours', this.value)" class="${INP}"></div>
+            <div class="grid grid-cols-3 gap-2">
+              <div><label class="${LBL}">Versuche</label>${fbIn('dribbling.attempts', d.dribbling.attempts, { mode: 'numeric' })}</div>
+              <div><label class="${LBL}">Erfolgreich</label>${fbIn('dribbling.success', d.dribbling.success, { mode: 'numeric' })}</div>
+              <div><label class="${LBL}">Fehler</label><div id="fb-drib-err" class="px-3 py-2 rounded-xl bg-slate-950/60 border border-slate-800 text-sm text-slate-300">–</div></div>
+            </div>
+            <div>
+              <label class="${LBL}">Zeit pro Durchgang (Sekunden)</label>
+              <div class="grid grid-cols-3 gap-2">
+                ${d.dribbling.times.map((t, i) => `<div class="relative"><span class="absolute left-2 top-1 text-[9px] text-slate-500">#${i + 1}</span>${fbIn('dribbling.times.' + i, t, { cls: 'pt-3.5' })}</div>`).join('')}
+              </div>
+              <div class="flex gap-2 mt-2">
+                <button onclick="fbDraft.dribbling.times.push('');fbPersist();renderFbForm()" class="${BTN_GHOST}">+ Durchgang</button>
+                ${d.dribbling.times.length > 1 ? `<button onclick="fbDraft.dribbling.times.pop();fbPersist();renderFbForm()" class="${BTN_GHOST}">− Letzten entfernen</button>` : ''}
+              </div>
+            </div>
+            <div id="fb-drib-live" class="text-[11px] text-slate-400"></div>
+          </div>` : ''}
+
+          ${d.sections.shots ? renderShotInput() : ''}
+
+          ${d.sections.passes ? `
+          <div class="${BOX}">
+            <h4 class="font-bold text-white text-sm flex items-center gap-2"><i data-lucide="send" class="w-4 h-4 text-blue-400"></i> Passspiel</h4>
+            <p class="text-[11px] text-slate-500">Nur ausgefüllte Pass-Arten werden gespeichert.</p>
+            <div class="bg-slate-950/60 rounded-xl p-3 border border-slate-800 space-y-2">
+              <span class="text-xs font-bold text-slate-200">Lange Pässe</span>
+              <div class="grid grid-cols-2 gap-2">
+                <div><label class="${LBL}">Versuche</label>${fbIn('passes.long.attempts', d.passes.long.attempts, { mode: 'numeric' })}</div>
+                <div><label class="${LBL}">Ziel getroffen</label>${fbIn('passes.long.success', d.passes.long.success, { mode: 'numeric' })}</div>
+                <div><label class="${LBL}">Entfernung Ziel (m)</label>${fbIn('passes.long.target', d.passes.long.target)}</div>
+                <div><label class="${LBL}">Weitester Pass (m)</label>${fbIn('passes.long.max', d.passes.long.max)}</div>
+              </div>
+              <div><label class="${LBL}">Einzelne Distanzen (optional, mit Leerzeichen getrennt)</label>
+                <input inputmode="text" value="${esc(d.passes.long.dists)}" placeholder="z. B. 32 35 38 30" oninput="fbSet('passes.long.dists', this.value)" class="${INP}"></div>
+              <div id="fb-pass-long-live" class="text-[11px] text-slate-400"></div>
+            </div>
+            ${['short', 'curved'].map(k => `
+            <div class="bg-slate-950/60 rounded-xl p-3 border border-slate-800 space-y-2">
+              <span class="text-xs font-bold text-slate-200">${PASS_TYPES[k]} <span class="font-normal text-slate-500">– auf ein Zielobjekt</span></span>
+              <div class="grid grid-cols-3 gap-2">
+                <div><label class="${LBL}">Versuche</label>${fbIn(`passes.${k}.attempts`, d.passes[k].attempts, { mode: 'numeric' })}</div>
+                <div><label class="${LBL}">Erfolgreich</label>${fbIn(`passes.${k}.success`, d.passes[k].success, { mode: 'numeric' })}</div>
+                <div><label class="${LBL}">Fehlpässe</label><div id="fb-pass-${k}-err" class="px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-sm text-slate-300">–</div></div>
+              </div>
+              <div id="fb-pass-${k}-live" class="text-[11px] text-slate-400"></div>
+            </div>`).join('')}
+          </div>` : ''}
+
+          ${d.sections.sprint ? `
+          <div class="${BOX}">
+            <h4 class="font-bold text-white text-sm flex items-center gap-2"><i data-lucide="zap" class="w-4 h-4 text-blue-400"></i> Sprint-Test</h4>
+            <div class="flex gap-1.5">
+              ${Object.keys(SPRINT_VAR).map(v => `<button onclick="fbDraft.sprint.variant='${v}';fbPersist();renderFbForm()" class="${chipCls(d.sprint.variant === v)}">${SPRINT_VAR[v]}</button>`).join('')}
+            </div>
+            <p class="text-[11px] text-slate-500">Zeit in Sekunden, max. 2 Versuche. Die beste Zeit zählt. Beide Varianten werden gespeichert, wenn ausgefüllt.</p>
+            <div class="space-y-2">
+              <div class="grid grid-cols-[3rem_1fr_1fr_3.5rem] gap-2 text-[10px] font-bold uppercase text-slate-500 px-1"><span>Dist.</span><span>Versuch 1</span><span>Versuch 2</span><span>Beste</span></div>
+              ${SPRINT_DISTS.map(dist => `
+                <div class="grid grid-cols-[3rem_1fr_1fr_3.5rem] gap-2 items-center">
+                  <span class="text-sm font-bold text-white">${dist} m</span>
+                  ${fbIn(`sprint.${d.sprint.variant}.${dist}.0`, d.sprint[d.sprint.variant][dist][0], { ph: 's' })}
+                  ${fbIn(`sprint.${d.sprint.variant}.${dist}.1`, d.sprint[d.sprint.variant][dist][1], { ph: 's' })}
+                  <span id="fb-sprint-best-${dist}" class="text-sm font-black text-emerald-400 text-right">–</span>
+                </div>`).join('')}
+            </div>
+          </div>` : ''}
+
+          <div class="${BOX}">
+            <label class="${LBL}">Notizen (optional)</label>
+            <textarea rows="2" oninput="fbSet('notes', this.value)" class="${INP}" placeholder="Wie hast du dich gefühlt? Was willst du verbessern?">${esc(d.notes)}</textarea>
+          </div>
+
+          <div class="flex gap-2 pb-2">
+            <button onclick="fbSaveTraining()" class="${BTN_PRIMARY} flex-1">Training speichern</button>
+            <button onclick="fbDiscard()" class="px-4 py-3 bg-rose-600/20 text-rose-400 border border-rose-500/30 rounded-xl font-bold text-sm">Verwerfen</button>
+          </div>
+        </div>`, true);
+      fbLive();
+    }
+
+    function renderShotInput() {
+      const s = fbDraft.shots;
+      const series = s.data[s.type][s.foot];
+      const full = series.length >= SHOTS_PER_SERIES;
+      const cnt = z => series.filter(x => x === z).length;
+      const summary = (type, foot) => {
+        const arr = s.data[type][foot];
+        const g = arr.filter(x => GOAL_ZONES.includes(x)).length;
+        return arr.length ? `${g}/${arr.length}` : '0/16';
+      };
+      const chipColor = z => GOAL_ZONES.includes(z) ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
+        : (z === 'saved' ? 'bg-amber-500/20 text-amber-300 border-amber-500/40' : 'bg-rose-500/20 text-rose-300 border-rose-500/40');
+      const label = z => z === 'miss' ? '✕' : (z === 'saved' ? 'G' : ZONES.find(x => x[0] === z)[2]);
+
+      return `
+        <div class="${BOX}">
+          <h4 class="font-bold text-white text-sm flex items-center gap-2"><i data-lucide="target" class="w-4 h-4 text-blue-400"></i> Schuss-Training</h4>
+          <div class="flex flex-wrap gap-1.5">
+            ${SHOT_TYPES.map(t => `<button onclick="fbShotSel('type','${t.id}')" class="${chipCls(s.type === t.id)}">${t.name}
+              <span class="opacity-70 ml-1">R ${summary(t.id, 'R')} | L ${summary(t.id, 'L')}</span></button>`).join('')}
+          </div>
+          <div class="flex gap-1.5">
+            ${['R', 'L'].map(f => `<button onclick="fbShotSel('foot','${f}')" class="${chipCls(s.foot === f, 'emerald')} flex-1">${FOOT[f]}</button>`).join('')}
+          </div>
+          <div class="flex items-center justify-between text-xs">
+            <span class="text-slate-300">Schuss <b class="text-white">${Math.min(series.length + 1, SHOTS_PER_SERIES)}</b> von ${SHOTS_PER_SERIES} – tippe, wohin der Ball ging</span>
+            <span class="font-bold ${full ? 'text-emerald-400' : 'text-slate-400'}">${series.length}/${SHOTS_PER_SERIES}${full ? ' ✓' : ''}</span>
+          </div>
+          <div class="rounded-t-xl border-4 border-b-0 border-slate-200/80 p-1.5 bg-[repeating-linear-gradient(45deg,rgba(255,255,255,0.03)_0_6px,transparent_6px_12px)]">
+            <div class="grid grid-cols-3 gap-1.5">
+              ${ZONES.map(z => `<button ${full ? 'disabled' : ''} onclick="fbShot('${z[0]}')" class="h-14 rounded-lg bg-emerald-600/15 border border-emerald-500/30 text-emerald-200 text-[11px] font-semibold active:scale-95 transition disabled:opacity-40 flex flex-col items-center justify-center">
+                ${z[1]}${cnt(z[0]) ? `<span class="text-[10px] text-emerald-400 font-black">${cnt(z[0])}×</span>` : ''}</button>`).join('')}
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <button ${full ? 'disabled' : ''} onclick="fbShot('miss')" class="py-3 rounded-xl bg-rose-600/15 border border-rose-500/30 text-rose-300 text-sm font-bold active:scale-95 disabled:opacity-40">Daneben ${cnt('miss') ? `(${cnt('miss')})` : ''}</button>
+            <button ${full ? 'disabled' : ''} onclick="fbShot('saved')" class="py-3 rounded-xl bg-amber-600/15 border border-amber-500/30 text-amber-300 text-sm font-bold active:scale-95 disabled:opacity-40">Gehalten ${cnt('saved') ? `(${cnt('saved')})` : ''}</button>
+          </div>
+          ${series.length ? `
+            <div class="flex flex-wrap gap-1">${series.map((z, i) => `<span class="px-1.5 py-0.5 rounded-md border text-[10px] font-bold ${chipColor(z)}">${i + 1}:${label(z)}</span>`).join('')}</div>
+            <div class="flex items-center justify-between">
+              <span class="text-xs text-slate-300">Treffer: <b class="text-white">${series.filter(x => GOAL_ZONES.includes(x)).length}/${series.length}</b> (${fmtN(rate(series.filter(x => GOAL_ZONES.includes(x)).length, series.length), 2)} %)</span>
+              <button onclick="fbShotUndo()" class="${BTN_GHOST}">↶ Letzten Schuss löschen</button>
+            </div>` : ''}
+        </div>`;
+    }
+
+    function fbShotSel(key, val) { fbDraft.shots[key] = val; fbPersist(); renderFbForm(); }
+    function fbShot(zone) {
+      const s = fbDraft.shots;
+      const arr = s.data[s.type][s.foot];
+      if (arr.length >= SHOTS_PER_SERIES) return;
+      arr.push(zone);
+      // Serie voll → automatisch zum anderen Fuß wechseln, falls der noch leer ist
+      if (arr.length === SHOTS_PER_SERIES) {
+        const other = s.foot === 'R' ? 'L' : 'R';
+        if (s.data[s.type][other].length < SHOTS_PER_SERIES) s.foot = other;
+      }
+      fbPersist(); renderFbForm();
+    }
+    function fbShotUndo() { const s = fbDraft.shots; s.data[s.type][s.foot].pop(); fbPersist(); renderFbForm(); }
+
+    function fbLive() {
+      const d = fbDraft;
+      const set = (id, html) => { const el = document.getElementById(id); if (el) el.innerHTML = html; };
+      if (d.mode !== 'training') return;
+      const a = num(d.dribbling.attempts), s = num(d.dribbling.success);
+      set('fb-drib-err', a !== null && s !== null ? Math.max(0, a - s) : '–');
+      const times = d.dribbling.times.map(num).filter(x => x !== null && x > 0);
+      set('fb-drib-live', [
+        a && s !== null ? `Erfolgsquote <b class="text-white">${fmtN(rate(s, a), 1)} %</b>` : '',
+        times.length ? `Beste Zeit <b class="text-white">${fmtN(Math.min(...times), 2)} s</b> | Ø <b class="text-white">${fmtN(mean(times), 2)} s</b>` : ''
+      ].filter(Boolean).join(' | '));
+      const pl = d.passes.long;
+      const la = num(pl.attempts), ls = num(pl.success);
+      set('fb-pass-long-live', la && ls !== null ? `Erfolgsquote <b class="text-white">${fmtN(rate(ls, la), 1)} %</b> | Fehlpässe ${Math.max(0, la - ls)}` : '');
+      ['short', 'curved'].forEach(k => {
+        const pa = num(d.passes[k].attempts), ps = num(d.passes[k].success);
+        set(`fb-pass-${k}-err`, pa !== null && ps !== null ? Math.max(0, pa - ps) : '–');
+        set(`fb-pass-${k}-live`, pa && ps !== null ? `Erfolgsquote <b class="text-white">${fmtN(rate(ps, pa), 1)} %</b>` : '');
+      });
+      SPRINT_DISTS.forEach(dist => {
+        const v = d.sprint[d.sprint.variant][dist].map(num).filter(x => x !== null && x > 0);
+        set(`fb-sprint-best-${dist}`, v.length ? fmtN(Math.min(...v), 2) + ' s' : '–');
+      });
+    }
+
+    function fbDiscard() {
+      if (!confirm('Alle Eingaben dieser Einheit verwerfen?')) return;
+      clearDraft('football'); const mode = fbDraft.mode; fbDraft = newFbDraft(); fbDraft.mode = mode; renderFbForm();
+    }
+
+    function fbSaveTraining() {
+      const d = fbDraft;
+      const entry = { id: uid(), createdAt: Date.now(), date: d.date || getTodayString(), kind: 'training', notes: d.notes.trim() };
+      const errors = [];
+
+      if (d.sections.dribbling) {
+        const attempts = num(d.dribbling.attempts), success = num(d.dribbling.success);
+        const times = d.dribbling.times.map(num).filter(x => x !== null && x > 0);
+        if (attempts && success !== null) {
+          if (success > attempts) errors.push('Dribbling: mehr Erfolge als Versuche.');
+          entry.dribbling = { parcours: (d.dribbling.parcours || 'Standard').trim() || 'Standard', attempts, success, times };
+        } else if (times.length) {
+          entry.dribbling = { parcours: (d.dribbling.parcours || 'Standard').trim() || 'Standard', attempts: null, success: null, times };
+        }
+      }
+      if (d.sections.shots) {
+        const shots = {};
+        SHOT_TYPES.forEach(t => {
+          ['R', 'L'].forEach(f => {
+            const arr = d.shots.data[t.id][f];
+            if (arr.length) { shots[t.id] = shots[t.id] || {}; shots[t.id][f] = arr.slice(); }
+          });
+        });
+        if (Object.keys(shots).length) entry.shots = shots;
+      }
+      if (d.sections.passes) {
+        const passes = {};
+        Object.keys(PASS_TYPES).forEach(k => {
+          const p = d.passes[k];
+          const attempts = num(p.attempts), success = num(p.success);
+          if (attempts && success !== null) {
+            if (success > attempts) errors.push(`${PASS_TYPES[k]}: mehr Erfolge als Versuche.`);
+            passes[k] = { attempts, success };
+            if (k === 'long') {
+              passes[k].target = num(p.target);
+              const dists = String(p.dists || '').split(/[\s;]+/).map(num).filter(x => x !== null && x > 0);
+              passes[k].dists = dists;
+              const mx = num(p.max);
+              passes[k].max = mx !== null ? mx : (dists.length ? Math.max(...dists) : null);
+            }
+          }
+        });
+        if (Object.keys(passes).length) entry.passes = passes;
+      }
+      if (d.sections.sprint) {
+        const sprint = {};
+        Object.keys(SPRINT_VAR).forEach(v => {
+          SPRINT_DISTS.forEach(dist => {
+            const tries = d.sprint[v][dist].map(num).filter(x => x !== null && x > 0);
+            if (tries.length) { sprint[v] = sprint[v] || {}; sprint[v][dist] = { tries, best: Math.min(...tries) }; }
+          });
+        });
+        if (Object.keys(sprint).length) entry.sprint = sprint;
+      }
+      if (errors.length) return alert(errors.join('\n'));
+      if (!entry.dribbling && !entry.shots && !entry.passes && !entry.sprint) {
+        return alert('Bitte wähle oben mindestens einen Bereich und trag Werte ein.');
+      }
+      currentUser.perf.football.push(entry);
+      saveUserData();
+      clearDraft('football');
+      fbDraft = newFbDraft();
+      showFootballAnalysis(entry.id, true);
+    }
+
+    // ----- Fußball-Analyse -----
+    function shotStats(arr) {
+      const goals = arr.filter(x => GOAL_ZONES.includes(x)).length;
+      return { n: arr.length, goals, saved: arr.filter(x => x === 'saved').length, miss: arr.filter(x => x === 'miss').length, rate: rate(goals, arr.length) };
+    }
+
+    function fbAnalyze(entry) {
+      const all = currentUser.perf.football;
+      const out = {};
+
+      // Dribbling – nur mit gleichem Parcours vergleichen
+      if (entry.dribbling) {
+        const dr = entry.dribbling;
+        const prev = previousOf(all, entry, e => e.dribbling && e.dribbling.parcours.toLowerCase() === dr.parcours.toLowerCase());
+        const pd = prev ? prev.dribbling : null;
+        const cur = { rate: dr.attempts ? rate(dr.success, dr.attempts) : null, best: dr.times.length ? Math.min(...dr.times) : null, avg: dr.times.length ? mean(dr.times) : null };
+        const old = pd ? { rate: pd.attempts ? rate(pd.success, pd.attempts) : null, best: pd.times.length ? Math.min(...pd.times) : null, avg: pd.times.length ? mean(pd.times) : null } : {};
+        const rows = [
+          ['Erfolgsquote', cmpVal(cur.rate, old.rate), { unit: ' %', d: 1, deltaUnit: ' %-Pkt.' }],
+          ['Beste Zeit', cmpVal(cur.best, old.best, false), { unit: ' s', time: true }],
+          ['Durchschnittszeit', cmpVal(cur.avg, old.avg, false), { unit: ' s', time: true }]
+        ];
+        out.dribbling = { prev, cur, rows, verdict: prev ? verdict(rows.map(r => r[1].status)) : 'first' };
+      } else out.dribbling = { verdict: 'none' };
+
+      // Schüsse – pro Schussart und Fuß mit der letzten gleichen Serie vergleichen
+      if (entry.shots) {
+        const blocks = [];
+        const statuses = [];
+        SHOT_TYPES.forEach(t => {
+          if (!entry.shots[t.id]) return;
+          const feet = {};
+          ['R', 'L'].forEach(f => {
+            const arr = entry.shots[t.id][f];
+            if (!arr) return;
+            const st = shotStats(arr);
+            const prev = previousOf(all, entry, e => e.shots && e.shots[t.id] && e.shots[t.id][f]);
+            const pst = prev ? shotStats(prev.shots[t.id][f]) : null;
+            const c = cmpVal(st.rate, pst ? pst.rate : null);
+            statuses.push(c.status);
+            feet[f] = { st, prev, c, arr };
+          });
+          blocks.push({ type: t, feet });
+        });
+        out.shots = { blocks, verdict: verdict(statuses) };
+      } else out.shots = { verdict: 'none' };
+
+      // Pässe – pro Pass-Art
+      if (entry.passes) {
+        const rows = [];
+        Object.keys(PASS_TYPES).forEach(k => {
+          const p = entry.passes[k];
+          if (!p) return;
+          const prev = previousOf(all, entry, e => e.passes && e.passes[k]);
+          const pp = prev ? prev.passes[k] : null;
+          rows.push([`${PASS_TYPES[k]} – Quote`, cmpVal(rate(p.success, p.attempts), pp ? rate(pp.success, pp.attempts) : null), { unit: ' %', d: 1, deltaUnit: ' %-Pkt.' }]);
+          if (k === 'long' && p.max !== null && p.max !== undefined) {
+            rows.push(['Weitester langer Pass', cmpVal(p.max, pp && pp.max !== null && pp.max !== undefined ? pp.max : null), { unit: ' m', d: 1 }]);
+          }
+        });
+        out.passes = { rows, verdict: verdict(rows.map(r => r[1].status)) };
+      } else out.passes = { verdict: 'none' };
+
+      // Sprint – pro Distanz und Variante (ohne/mit Ball getrennt)
+      if (entry.sprint) {
+        const groups = [];
+        const statuses = [];
+        Object.keys(SPRINT_VAR).forEach(v => {
+          if (!entry.sprint[v]) return;
+          const rows = [];
+          SPRINT_DISTS.forEach(dist => {
+            const cur = entry.sprint[v][dist];
+            if (!cur) return;
+            const prev = previousOf(all, entry, e => e.sprint && e.sprint[v] && e.sprint[v][dist]);
+            const c = cmpVal(cur.best, prev ? prev.sprint[v][dist].best : null, false);
+            statuses.push(c.status);
+            rows.push({ dist, cur, c, kmh: (dist / cur.best) * 3.6 });
+          });
+          groups.push({ v, rows });
+        });
+        out.sprint = { groups, verdict: verdict(statuses) };
+      } else out.sprint = { verdict: 'none' };
+
+      return out;
+    }
+
+    function zoneHeat(arr) {
+      const max = Math.max(1, ...ZONES.map(z => arr.filter(x => x === z[0]).length));
+      return `<div class="grid grid-cols-3 gap-0.5 w-24 border-2 border-b-0 border-slate-300/70 p-0.5 rounded-t-md">
+        ${ZONES.map(z => { const n = arr.filter(x => x === z[0]).length; return `<div class="h-5 rounded-sm text-[9px] font-bold flex items-center justify-center ${n ? 'text-white' : 'text-slate-600'}" style="background: rgba(16,185,129,${n ? 0.15 + 0.7 * n / max : 0.05})" title="${z[1]}">${n || ''}</div>`; }).join('')}
+      </div>`;
+    }
+
+    function showFootballAnalysis(id, justSaved = false) {
+      const entry = currentUser.perf.football.find(e => e.id === id);
+      if (!entry) return;
+      const a = fbAnalyze(entry);
+
+      const overview = Object.keys(FB_SECTIONS).map(k => {
+        const v = a[k].verdict;
+        const ui = STATUS_UI[v];
+        return `<div class="flex items-center justify-between bg-slate-950/70 border border-slate-800 rounded-xl px-3 py-2">
+          <span class="text-sm font-semibold text-slate-200">${FB_SECTIONS[k]}</span>
+          <span class="text-xs font-bold ${ui.cls}">${ui.e} ${v === 'none' ? 'Nicht trainiert' : ui.word}</span>
+        </div>`;
+      }).join('');
+
+      let html = `
+        <div class="space-y-4">
+          <div class="${BOX}">
+            <div class="flex items-center justify-between"><span class="text-sm font-bold text-white">Meine Verbesserungen</span><span class="text-[11px] text-slate-400">${fmtDate(entry.date)}</span></div>
+            ${overview}
+            <p class="text-[11px] text-slate-500">Jeder Bereich wird nur mit dem letzten Training derselben Kategorie verglichen.</p>
+          </div>`;
+
+      if (entry.dribbling) {
+        const dr = entry.dribbling, x = a.dribbling;
+        html += `
+          <div class="${BOX}">
+            <div class="flex items-center justify-between"><h4 class="font-bold text-white text-sm">Dribbling – ${esc(dr.parcours)}</h4>${verdictBadge(x.verdict)}</div>
+            <div class="grid grid-cols-3 gap-2">
+              ${statTile('Versuche', dr.attempts !== null ? dr.attempts : '–', dr.attempts !== null ? `${dr.success} erfolgreich | ${dr.attempts - dr.success} Fehler` : '')}
+              ${statTile('Erfolgsquote', x.cur.rate !== null ? fmtN(x.cur.rate, 1) + ' %' : '–')}
+              ${statTile('Beste / Ø Zeit', x.cur.best !== null ? fmtN(x.cur.best, 2) + ' s' : '–', x.cur.avg !== null ? 'Ø ' + fmtN(x.cur.avg, 2) + ' s' : '')}
+            </div>
+            ${dr.times.length ? `<div class="text-[11px] text-slate-500">Durchgänge: ${dr.times.map((t, i) => `#${i + 1} ${fmtN(t, 2)} s`).join(' | ')}</div>` : ''}
+            ${x.prev ? `<p class="text-[11px] text-slate-500">Vergleich mit ${fmtDate(x.prev.date)}</p>${x.rows.map(r => cmpRow(r[0], r[1], r[2])).join('')}` : firstNote()}
+          </div>`;
+      }
+
+      if (entry.shots) {
+        html += `<div class="${BOX}"><div class="flex items-center justify-between"><h4 class="font-bold text-white text-sm">Schuss</h4>${verdictBadge(a.shots.verdict)}</div>`;
+        a.shots.blocks.forEach(b => {
+          const R = b.feet.R, L = b.feet.L;
+          let better = '';
+          if (R && L) {
+            const diff = R.st.rate - L.st.rate;
+            better = Math.abs(diff) < 1e-9 ? 'Beide Füße gleich stark.' : `${diff > 0 ? 'Rechter' : 'Linker'} Fuß war besser (+${fmtN(Math.abs(diff), 2)} %-Punkte).`;
+          }
+          html += `
+            <div class="bg-slate-950/60 border border-slate-800 rounded-xl p-3 space-y-2">
+              <span class="text-xs font-bold text-slate-200">${b.type.name}</span>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                ${['R', 'L'].filter(f => b.feet[f]).map(f => {
+                  const F = b.feet[f];
+                  return `<div class="bg-slate-900/70 rounded-xl p-2.5 border border-slate-800 flex gap-3 items-start">
+                    ${zoneHeat(F.arr)}
+                    <div class="text-xs space-y-0.5">
+                      <div class="font-bold text-white">${FOOT[f]}</div>
+                      <div class="text-slate-300">${F.st.n} Schüsse | <b class="text-emerald-400">${F.st.goals} Tore</b></div>
+                      <div class="text-lg font-black text-white">${fmtN(F.st.rate, 2)} %</div>
+                      <div class="text-[10px] text-slate-500">${F.st.saved} gehalten | ${F.st.miss} daneben</div>
+                    </div>
+                  </div>`;
+                }).join('')}
+              </div>
+              ${better ? `<p class="text-xs font-semibold text-blue-300">${better}</p>` : ''}
+              ${['R', 'L'].filter(f => b.feet[f]).map(f => b.feet[f].prev
+                ? cmpRow(`${FOOT[f]} vs. ${fmtDate(b.feet[f].prev.date)}`, b.feet[f].c, { unit: ' %', d: 2, deltaUnit: ' %-Pkt.' })
+                : `<p class="text-[11px] text-slate-500 italic">${FOOT[f]}: Erster Eintrag – Vergleich ist ab dem nächsten Training möglich.</p>`).join('')}
+            </div>`;
+        });
+        html += `</div>`;
+      }
+
+      if (entry.passes) {
+        const p = entry.passes;
+        html += `
+          <div class="${BOX}">
+            <div class="flex items-center justify-between"><h4 class="font-bold text-white text-sm">Passspiel</h4>${verdictBadge(a.passes.verdict)}</div>
+            <div class="grid grid-cols-3 gap-2">
+              ${Object.keys(PASS_TYPES).filter(k => p[k]).map(k => statTile(PASS_TYPES[k].replace(' (2–8 m)', ''), fmtN(rate(p[k].success, p[k].attempts), 1) + ' %', `${p[k].success}/${p[k].attempts} | ${p[k].attempts - p[k].success} Fehlpässe`)).join('')}
+            </div>
+            ${p.long ? `<p class="text-[11px] text-slate-400">Lange Pässe: Ziel ${p.long.target ? fmtN(p.long.target, 1) + ' m' : '–'} | weitester Pass ${p.long.max ? fmtN(p.long.max, 1) + ' m' : '–'}${p.long.dists && p.long.dists.length ? ` | Ø ${fmtN(mean(p.long.dists), 1)} m` : ''}</p>` : ''}
+            ${a.passes.rows.every(r => r[1].status === 'first') ? firstNote() : a.passes.rows.map(r => cmpRow(r[0], r[1], r[2])).join('')}
+          </div>`;
+      }
+
+      if (entry.sprint) {
+        html += `<div class="${BOX}"><div class="flex items-center justify-between"><h4 class="font-bold text-white text-sm">Geschwindigkeit</h4>${verdictBadge(a.sprint.verdict)}</div>`;
+        a.sprint.groups.forEach(g => {
+          html += `<div class="space-y-1.5"><span class="text-xs font-bold text-slate-200">${SPRINT_VAR[g.v]}</span>
+            ${g.rows.map(r => cmpRow(`${r.dist} m (${r.cur.tries.map(t => fmtN(t, 2)).join(' / ')} s) | Ø ${fmtN(r.kmh, 1)} km/h`, r.c, { unit: ' s', time: true })).join('')}
+            ${g.rows.every(r => r.c.status === 'first') ? firstNote() : ''}
+          </div>`;
+        });
+        html += `</div>`;
+      }
+
+      if (entry.notes) html += `<div class="${BOX}"><span class="${LBL}">Notizen</span><p class="text-sm text-slate-300 whitespace-pre-line">${esc(entry.notes)}</p></div>`;
+
+      html += `<div class="grid grid-cols-2 gap-2 pb-2">
+          <button onclick="openFootballForm('training')" class="${BTN_GHOST}">Neues Training</button>
+          <button onclick="openFootballHistory()" class="${BTN_GHOST}">Verlauf</button>
+        </div></div>`;
+      openPerfModal(justSaved ? 'Training gespeichert' : 'Fußball-Analyse', 'bar-chart-3', html);
+    }
+
+    // ----- Match -----
+    function renderMatchForm() {
+      const m = fbDraft.match;
+      const f = (key, label, opts = {}) => `<div class="${opts.span || ''}"><label class="${LBL}">${label}</label>${fbIn('match.' + key, m[key], opts)}</div>`;
+      return `
+        <div class="${BOX}">
+          <div class="grid grid-cols-2 gap-2">
+            <div><label class="${LBL}">Datum</label><input type="date" value="${fbDraft.date}" onchange="fbDraft.date=this.value;fbPersist()" class="${INP}"></div>
+            <div><label class="${LBL}">Wettbewerb</label>
+              <select onchange="fbSet('match.competition', this.value)" class="${INP}">
+                ${['Liga', 'Cup', 'Testspiel', 'Turnier'].map(c => `<option ${m.competition === c ? 'selected' : ''}>${c}</option>`).join('')}
+              </select></div>
+            ${f('opponent', 'Gegner', { type: 'text', span: 'col-span-2' })}
+            ${f('teamGoals', 'Tore eigenes Team', { mode: 'numeric' })}
+            ${f('oppGoals', 'Tore Gegner', { mode: 'numeric' })}
+            ${f('minutes', 'Gespielte Minuten', { mode: 'numeric' })}
+            ${f('position', 'Position', { type: 'text', ph: 'z. B. Flügel' })}
+          </div>
+        </div>
+        <div class="${BOX}">
+          <span class="text-xs font-bold text-slate-200">Meine Leistung</span>
+          <div class="grid grid-cols-3 gap-2">
+            ${f('goals', 'Tore', { mode: 'numeric' })}
+            ${f('assists', 'Assists', { mode: 'numeric' })}
+            ${f('shotsOnTarget', 'Schüsse aufs Tor', { mode: 'numeric' })}
+            ${f('duelsWon', 'Zweikämpfe gew.', { mode: 'numeric' })}
+            ${f('duelsTotal', 'Zweikämpfe ges.', { mode: 'numeric' })}
+            ${f('ballLosses', 'Ballverluste', { mode: 'numeric' })}
+          </div>
+          ${f('rating', 'Eigene Note (1–10)', { ph: 'z. B. 7,5' })}
+          <div><label class="${LBL}">Notizen</label><textarea rows="2" oninput="fbSet('match.notes', this.value)" class="${INP}" placeholder="Was lief gut, was nicht?">${esc(m.notes)}</textarea></div>
+        </div>
+        <div class="flex gap-2 pb-2">
+          <button onclick="fbSaveMatch()" class="${BTN_PRIMARY} flex-1">Match speichern</button>
+          <button onclick="fbDiscard()" class="px-4 py-3 bg-rose-600/20 text-rose-400 border border-rose-500/30 rounded-xl font-bold text-sm">Verwerfen</button>
+        </div>`;
+    }
+
+    function fbSaveMatch() {
+      const m = fbDraft.match;
+      const rating = num(m.rating);
+      if (rating !== null && (rating < 1 || rating > 10)) return alert('Die Note muss zwischen 1 und 10 liegen.');
+      const entry = {
+        id: uid(), createdAt: Date.now(), date: fbDraft.date || getTodayString(),
+        opponent: m.opponent.trim(), competition: m.competition, teamGoals: num(m.teamGoals), oppGoals: num(m.oppGoals),
+        minutes: num(m.minutes), position: m.position.trim(), goals: num(m.goals), assists: num(m.assists),
+        shotsOnTarget: num(m.shotsOnTarget), duelsWon: num(m.duelsWon), duelsTotal: num(m.duelsTotal),
+        ballLosses: num(m.ballLosses), rating, notes: m.notes.trim()
+      };
+      if (entry.duelsWon !== null && entry.duelsTotal !== null && entry.duelsWon > entry.duelsTotal) return alert('Mehr gewonnene Zweikämpfe als Zweikämpfe insgesamt.');
+      if (!entry.opponent && entry.minutes === null && entry.rating === null) return alert('Bitte mindestens Gegner, Minuten oder Note eintragen.');
+      currentUser.perf.matches.push(entry);
+      saveUserData();
+      fbDraft.match = newFbDraft().match;
+      fbPersist();
+      showMatchAnalysis(entry.id, true);
+    }
+
+    function matchAnalyze(entry) {
+      const prev = previousOf(currentUser.perf.matches, entry);
+      const g = (o, k) => o ? o[k] : null;
+      const duel = o => o && o.duelsTotal ? rate(o.duelsWon, o.duelsTotal) : null;
+      const rows = [
+        ['Eigene Note', cmpVal(entry.rating, g(prev, 'rating')), { d: 1 }],
+        ['Minuten', cmpVal(entry.minutes, g(prev, 'minutes')), { unit: ' min', d: 0 }],
+        ['Tore', cmpVal(entry.goals, g(prev, 'goals')), { d: 0 }],
+        ['Assists', cmpVal(entry.assists, g(prev, 'assists')), { d: 0 }],
+        ['Schüsse aufs Tor', cmpVal(entry.shotsOnTarget, g(prev, 'shotsOnTarget')), { d: 0 }],
+        ['Zweikampfquote', cmpVal(duel(entry), duel(prev)), { unit: ' %', d: 1, deltaUnit: ' %-Pkt.' }],
+        ['Ballverluste', cmpVal(entry.ballLosses, g(prev, 'ballLosses'), false), { d: 0 }]
+      ];
+      return { prev, rows, verdict: prev ? verdict(rows.map(r => r[1].status)) : 'first' };
+    }
+
+    function showMatchAnalysis(id, justSaved = false) {
+      const e = currentUser.perf.matches.find(x => x.id === id);
+      if (!e) return;
+      const a = matchAnalyze(e);
+      let res = '';
+      if (e.teamGoals !== null && e.oppGoals !== null) {
+        const r = e.teamGoals > e.oppGoals ? ['Sieg', 'text-emerald-400'] : (e.teamGoals < e.oppGoals ? ['Niederlage', 'text-rose-400'] : ['Unentschieden', 'text-amber-300']);
+        res = `<span class="${r[1]} font-black">${e.teamGoals}:${e.oppGoals} ${r[0]}</span>`;
+      }
+      openPerfModal(justSaved ? 'Match gespeichert' : 'Match-Analyse', 'swords', `
+        <div class="space-y-4">
+          <div class="${BOX}">
+            <div class="flex justify-between items-center"><span class="font-bold text-white">${esc(e.opponent || 'Match')}</span>${verdictBadge(a.verdict)}</div>
+            <div class="text-xs text-slate-400">${fmtDate(e.date)} | ${esc(e.competition)} ${e.position ? '| ' + esc(e.position) : ''}</div>
+            ${res ? `<div class="text-sm">${res}</div>` : ''}
+            <div class="grid grid-cols-3 gap-2">
+              ${statTile('Tore', e.goals !== null ? e.goals : '–')}${statTile('Assists', e.assists !== null ? e.assists : '–')}${statTile('Note', e.rating !== null ? fmtN(e.rating, 1) : '–')}
+            </div>
+          </div>
+          ${a.prev ? `<div class="space-y-1.5"><span class="text-xs font-bold text-slate-300">Vergleich mit letztem Match (${fmtDate(a.prev.date)}${a.prev.opponent ? ' vs. ' + esc(a.prev.opponent) : ''})</span>
+            ${a.rows.map(r => cmpRow(r[0], r[1], r[2])).join('')}</div>` : firstNote().replace('Training', 'Match')}
+          ${e.notes ? `<div class="${BOX}"><span class="${LBL}">Notizen</span><p class="text-sm text-slate-300 whitespace-pre-line">${esc(e.notes)}</p></div>` : ''}
+          <div class="grid grid-cols-2 gap-2 pb-2">
+            <button onclick="openFootballForm('match')" class="${BTN_GHOST}">Neues Match</button>
+            <button onclick="openFootballHistory()" class="${BTN_GHOST}">Verlauf</button>
+          </div>
+        </div>`);
+    }
+
+    function openFootballHistory() {
+      const items = sortChrono(currentUser.perf.football.map(e => Object.assign({ _t: 'training' }, e))
+        .concat(currentUser.perf.matches.map(e => Object.assign({ _t: 'match' }, e)))).reverse();
+      const html = items.length ? items.map(e => {
+        if (e._t === 'match') {
+          const a = matchAnalyze(e);
+          return `<div class="bg-slate-900/70 border border-slate-800 rounded-2xl p-3 flex justify-between items-start gap-2">
+            <div><div class="font-bold text-white text-sm">⚽ Match ${fmtDate(e.date)}${e.opponent ? ' vs. ' + esc(e.opponent) : ''}</div>
+              <div class="text-[11px] text-slate-400">${e.teamGoals !== null && e.oppGoals !== null ? e.teamGoals + ':' + e.oppGoals + ' | ' : ''}Note ${e.rating !== null ? fmtN(e.rating, 1) : '–'} | ${STATUS_UI[a.verdict].e}</div>
+              <button onclick="showMatchAnalysis('${e.id}')" class="text-xs text-blue-400 hover:underline mt-1">Analyse ansehen</button></div>
+            <button onclick="fbDelete('match','${e.id}')" class="text-slate-600 hover:text-rose-400 p-1" aria-label="Löschen"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+          </div>`;
+        }
+        const a = fbAnalyze(e);
+        const secs = Object.keys(FB_SECTIONS).filter(k => a[k].verdict !== 'none').map(k => `${STATUS_UI[a[k].verdict].e} ${FB_SECTIONS[k]}`).join(' | ');
+        return `<div class="bg-slate-900/70 border border-slate-800 rounded-2xl p-3 flex justify-between items-start gap-2">
+          <div><div class="font-bold text-white text-sm">Training ${fmtDate(e.date)}</div>
+            <div class="text-[11px] text-slate-400">${secs}</div>
+            <button onclick="showFootballAnalysis('${e.id}')" class="text-xs text-blue-400 hover:underline mt-1">Analyse ansehen</button></div>
+          <button onclick="fbDelete('training','${e.id}')" class="text-slate-600 hover:text-rose-400 p-1" aria-label="Löschen"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+        </div>`;
+      }).join('') : '<p class="text-sm text-slate-500 italic">Noch keine Fußball-Einträge.</p>';
+      openPerfModal('Fußball-Verlauf', 'history', `<div class="space-y-2">
+        <div class="grid grid-cols-2 gap-2"><button onclick="openFootballForm('training')" class="${BTN_PRIMARY}">+ Training</button><button onclick="openFootballForm('match')" class="${BTN_PRIMARY} !bg-emerald-600 hover:!bg-emerald-500">+ Match</button></div>
+        ${html}</div>`);
+    }
+
+    function fbDelete(kind, id) {
+      if (!confirm('Eintrag löschen?')) return;
+      const key = kind === 'match' ? 'matches' : 'football';
+      currentUser.perf[key] = currentUser.perf[key].filter(e => e.id !== id);
+      saveUserData(); openFootballHistory();
+    }
+
+    function renderFootballCard() {
+      const p = currentUser.perf;
+      const last = lastOf(p.football);
+      const lastMatch = lastOf(p.matches);
+      let body = '';
+      if (!last) {
+        body = `<p class="text-xs text-slate-400">Ziel: Profifußballer. Trag deine erste Einheit ein – Dribbling, Schuss, Pässe oder Sprint.</p>`;
+      } else {
+        const a = fbAnalyze(last);
+        // jeweils der letzte Wert jeder Kategorie, egal aus welchem Training
+        const lastWith = pred => { const s = sortChrono(p.football).filter(pred); return s.length ? s[s.length - 1] : null; };
+        const ld = lastWith(e => e.dribbling), ls = lastWith(e => e.shots), lp = lastWith(e => e.passes), lsp = lastWith(e => e.sprint);
+        const shotTxt = ls ? ['R', 'L'].map(f => {
+          const arr = SHOT_TYPES.reduce((acc, t) => acc.concat(ls.shots[t.id] && ls.shots[t.id][f] ? ls.shots[t.id][f] : []), []);
+          return arr.length ? `${f} ${fmtN(shotStats(arr).rate, 0)} %` : '';
+        }).filter(Boolean).join(' | ') : '–';
+        const passTxt = lp ? (() => { const all = Object.values(lp.passes); const s = all.reduce((x, y) => x + y.success, 0), t = all.reduce((x, y) => x + y.attempts, 0); return fmtN(rate(s, t), 0) + ' %'; })() : '–';
+        const sprintTxt = lsp ? (() => { const v = lsp.sprint.noBall || lsp.sprint.withBall; const k = Object.keys(v)[0]; return `${k} m ${fmtN(v[k].best, 2)} s`; })() : '–';
+        const dribTxt = ld ? (ld.dribbling.attempts ? fmtN(rate(ld.dribbling.success, ld.dribbling.attempts), 0) + ' %' : (ld.dribbling.times.length ? fmtN(Math.min(...ld.dribbling.times), 2) + ' s' : '–')) : '–';
+        const cell = (k, val) => `<div class="bg-slate-950/80 p-2 rounded-xl border border-slate-800/80">
+            <div class="flex justify-between text-[10px] text-slate-400"><span>${FB_SECTIONS[k]}</span><span>${(STATUS_UI[a[k].verdict] || STATUS_UI.none).e}</span></div>
+            <div class="text-sm font-black text-white truncate">${val}</div></div>`;
+        body = `
+          <p class="text-xs text-slate-400">Letzte Einheit: <span class="text-white font-semibold">${fmtDate(last.date)}</span></p>
+          <div class="grid grid-cols-2 gap-2">${cell('dribbling', dribTxt)}${cell('shots', shotTxt)}${cell('passes', passTxt)}${cell('sprint', sprintTxt)}</div>
+          <p class="text-[10px] text-slate-500">Werte: letzter Stand je Kategorie. Farbe: Trend der letzten Einheit.</p>`;
+      }
+      if (lastMatch) {
+        body += `<p class="text-xs text-slate-400">Letztes Match: <span class="text-white">${fmtDate(lastMatch.date)}${lastMatch.opponent ? ' vs. ' + esc(lastMatch.opponent) : ''}</span>${lastMatch.rating !== null ? ` | Note ${fmtN(lastMatch.rating, 1)}` : ''}</p>`;
+      }
+      const draft = loadDraft('football');
+      const hasDraft = draft && draft.mode === 'training' && SHOT_TYPES.some(t => draft.shots.data[t.id].R.length || draft.shots.data[t.id].L.length);
+      return `
+        <div class="space-y-3">
+          ${body}
+          ${hasDraft ? `<p class="text-[11px] text-amber-300">Du hast eine nicht gespeicherte Einheit – tippe auf „+ Training“, um weiterzumachen.</p>` : ''}
+          <div class="grid grid-cols-3 gap-2">
+            <button onclick="openFootballForm('training')" class="py-2 bg-blue-600 hover:bg-blue-500 font-bold text-xs text-white rounded-xl transition">+ Training</button>
+            <button onclick="openFootballForm('match')" class="py-2 bg-emerald-600 hover:bg-emerald-500 font-bold text-xs text-white rounded-xl transition">+ Match</button>
+            <button onclick="openFootballHistory()" class="${BTN_GHOST}">Verlauf</button>
+          </div>
+        </div>`;
+    }
+
+    // =====================================================================
+    // ==========================  SOCIAL MEDIA  ===========================
+    // =====================================================================
+    const PLATFORMS = {
+      tiktok: { name: 'TikTok', icon: 'music-2', cls: 'text-pink-400' },
+      instagram: { name: 'Instagram', icon: 'camera', cls: 'text-fuchsia-400' },
+      youtube: { name: 'YouTube', icon: 'play', cls: 'text-red-400' }
+    };
+    const SM_METRICS = [
+      ['views', 'Views'], ['likes', 'Likes'], ['comments', 'Kommentare'], ['shares', 'Shares'], ['followers', 'Neue Follower']
+    ];
+
+    let smDraft = null;
+
+    function newSmDraft() { return { id: null, platform: 'tiktok', date: getTodayString(), desc: '', views: '', likes: '', comments: '', shares: '', followers: '' }; }
+
+    function openSocialForm(editId) {
+      if (editId) {
+        const p = currentUser.perf.social.posts.find(x => x.id === editId);
+        smDraft = { id: p.id, platform: p.platform, date: p.date, desc: p.desc };
+        SM_METRICS.forEach(m => smDraft[m[0]] = p[m[0]] !== null && p[m[0]] !== undefined ? String(p[m[0]]) : '');
+      } else smDraft = newSmDraft();
+      openPerfModal(editId ? 'Post aktualisieren' : 'Post eintragen', 'share-2', '');
+      renderSocialForm();
+    }
+
+    function renderSocialForm() {
+      const d = smDraft;
+      setPerfBody(`
+        <div class="space-y-4">
+          <div class="${BOX}">
+            <label class="${LBL}">Plattform</label>
+            <div class="grid grid-cols-3 gap-1.5">
+              ${Object.keys(PLATFORMS).map(k => `<button onclick="smDraft.platform='${k}';renderSocialForm()" class="${chipCls(d.platform === k, 'pink')}">${PLATFORMS[k].name}</button>`).join('')}
+            </div>
+            <div><label class="${LBL}">Datum</label><input type="date" value="${d.date}" onchange="smDraft.date=this.value" class="${INP}"></div>
+            <div><label class="${LBL}">Content / Video-Beschreibung</label><input value="${esc(d.desc)}" oninput="smDraft.desc=this.value" placeholder="z. B. Football training" class="${INP}"></div>
+          </div>
+          <div class="${BOX}">
+            <div class="grid grid-cols-2 gap-2">
+              ${SM_METRICS.map(m => `<div class="${m[0] === 'followers' ? 'col-span-2' : ''}"><label class="${LBL}">${m[1]}</label>
+                <input inputmode="numeric" value="${esc(d[m[0]])}" oninput="smDraft['${m[0]}']=this.value" class="${INP}" placeholder="${m[0] === 'followers' ? 'z. B. 30 (durch diesen Post gewonnen)' : '0'}"></div>`).join('')}
+            </div>
+            <p class="text-[11px] text-slate-500">Tipp: Werte wachsen nach dem Posten weiter. Trag sie z. B. nach 48 h nochmal über „Bearbeiten“ ein – immer zum gleichen Zeitpunkt, dann ist der Vergleich fair.</p>
+          </div>
+          <button onclick="smSave()" class="${BTN_PRIMARY}">${d.id ? 'Änderungen speichern' : 'Post speichern'}</button>
+        </div>`, true);
+    }
+
+    function smSave() {
+      const d = smDraft;
+      const post = { platform: d.platform, date: d.date || getTodayString(), desc: d.desc.trim() };
+      for (const m of SM_METRICS) {
+        const v = num(String(d[m[0]]).replace(/[.'’\s]/g, ''));
+        if (v !== null && v < 0 && m[0] !== 'followers') return alert(`${m[1]} kann nicht negativ sein.`);
+        post[m[0]] = v;
+      }
+      if (post.views === null && post.likes === null) return alert('Bitte mindestens Views oder Likes eintragen.');
+      const posts = currentUser.perf.social.posts;
+      let id = d.id;
+      if (id) {
+        const p = posts.find(x => x.id === id);
+        Object.assign(p, post);
+      } else {
+        id = uid();
+        posts.push(Object.assign({ id, createdAt: Date.now() }, post));
+      }
+      saveUserData();
+      showPostAnalysis(id, true);
+    }
+
+    function engagement(p) {
+      return p.views ? (((p.likes || 0) + (p.comments || 0) + (p.shares || 0)) / p.views) * 100 : null;
+    }
+
+    function postCompareRows(post) {
+      const prev = previousOf(currentUser.perf.social.posts, post, x => x.platform === post.platform);
+      const rows = SM_METRICS.map(m => [m[1], cmpVal(post[m[0]], prev ? prev[m[0]] : null), { d: 0, pct: true }]);
+      rows.push(['Engagement-Rate', cmpVal(engagement(post), prev ? engagement(prev) : null), { unit: ' %', d: 2, deltaUnit: ' %-Pkt.' }]);
+      return { prev, rows };
+    }
+
+    function platformStats() {
+      const posts = currentUser.perf.social.posts;
+      const stats = {};
+      Object.keys(PLATFORMS).forEach(k => {
+        const ps = posts.filter(p => p.platform === k);
+        const avg = key => { const v = ps.map(p => p[key]).filter(x => x !== null && x !== undefined); return v.length ? mean(v) : null; };
+        const sum = key => ps.reduce((s, p) => s + (p[key] || 0), 0);
+        stats[k] = { count: ps.length };
+        SM_METRICS.forEach(m => { stats[k][m[0]] = avg(m[0]); stats[k]['sum_' + m[0]] = sum(m[0]); });
+      });
+      return stats;
+    }
+
+    function platformRanking() {
+      const stats = platformStats();
+      const active = Object.keys(PLATFORMS).filter(k => stats[k].count > 0);
+      const winners = {};
+      SM_METRICS.forEach(m => {
+        let best = null;
+        active.forEach(k => { if (stats[k][m[0]] !== null && (best === null || stats[k][m[0]] > stats[best][m[0]])) best = k; });
+        winners[m[0]] = best;
+      });
+      const wins = {}; active.forEach(k => wins[k] = SM_METRICS.filter(m => winners[m[0]] === k).length);
+      const overall = active.length ? active.slice().sort((a, b) => wins[b] - wins[a] || (stats[b].views || 0) - (stats[a].views || 0))[0] : null;
+      return { stats, active, winners, wins, overall };
+    }
+
+    function rankingHTML() {
+      const r = platformRanking();
+      if (!r.active.length) return '';
+      const where = { views: 'die meisten Views', likes: 'die meisten Likes', comments: 'die meisten Kommentare', shares: 'die meisten Shares', followers: 'die meisten Follower' };
+      return `
+        <div class="${BOX}">
+          <span class="text-sm font-bold text-white">Plattform-Vergleich (Ø pro Post)</span>
+          ${r.active.length > 1 ? `<div class="bg-blue-600/10 border border-blue-500/30 rounded-xl p-3 text-sm text-blue-100">
+            Am besten läuft <b>${PLATFORMS[r.overall].name}</b> – vorne bei ${r.wins[r.overall]} von 5 Kennzahlen.</div>` : `<p class="text-[11px] text-slate-500">Sobald du auf mehreren Plattformen postest, siehst du hier, wo es am besten läuft.</p>`}
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-[11px] text-slate-300">
+              <thead class="text-[10px] uppercase text-slate-400"><tr><th class="p-1.5"></th>${r.active.map(k => `<th class="p-1.5 ${PLATFORMS[k].cls}">${PLATFORMS[k].name}</th>`).join('')}</tr></thead>
+              <tbody class="divide-y divide-slate-800/60">
+                <tr><td class="p-1.5 text-slate-400">Posts</td>${r.active.map(k => `<td class="p-1.5">${r.stats[k].count}</td>`).join('')}</tr>
+                ${SM_METRICS.map(m => `<tr><td class="p-1.5 text-slate-400">${m[1]}</td>${r.active.map(k => `<td class="p-1.5 ${r.winners[m[0]] === k && r.active.length > 1 ? 'text-emerald-400 font-bold' : ''}">${fmtN(r.stats[k][m[0]], 0)}</td>`).join('')}</tr>`).join('')}
+              </tbody>
+            </table>
+          </div>
+          ${r.active.length > 1 ? `<ul class="text-[11px] text-slate-400 space-y-0.5">${SM_METRICS.map(m => r.winners[m[0]] ? `<li>${where[m[0]]}: <span class="text-white">${PLATFORMS[r.winners[m[0]]].name}</span></li>` : '').join('')}</ul>` : ''}
+        </div>`;
+    }
+
+    function showPostAnalysis(id, justSaved = false) {
+      const post = currentUser.perf.social.posts.find(x => x.id === id);
+      if (!post) return;
+      const { prev, rows } = postCompareRows(post);
+      const v = prev ? verdict(rows.slice(0, 5).map(r => r[1].status)) : 'first';
+      openPerfModal(justSaved ? 'Post gespeichert' : 'Post-Analyse', 'bar-chart-3', `
+        <div class="space-y-4">
+          <div class="${BOX}">
+            <div class="flex justify-between items-center"><span class="font-bold ${PLATFORMS[post.platform].cls}">${PLATFORMS[post.platform].name}</span>${verdictBadge(v)}</div>
+            <div class="text-xs text-slate-400">${fmtDate(post.date)}${post.desc ? ' | ' + esc(post.desc) : ''}</div>
+            <div class="grid grid-cols-3 gap-2">
+              ${statTile('Views', fmtN(post.views, 0))}${statTile('Likes', fmtN(post.likes, 0))}${statTile('Follower', (post.followers > 0 ? '+' : '') + fmtN(post.followers, 0))}
+            </div>
+          </div>
+          ${prev ? `<div class="space-y-1.5"><span class="text-xs font-bold text-slate-300">vs. letzter ${PLATFORMS[post.platform].name}-Post (${fmtDate(prev.date)})</span>
+            ${rows.map(r => cmpRow(r[0], r[1], r[2])).join('')}</div>`
+          : `<p class="text-[11px] text-slate-400 italic bg-slate-950/60 border border-slate-800 rounded-xl px-3 py-2">Erster ${PLATFORMS[post.platform].name}-Post – Vergleich ist ab dem nächsten ${PLATFORMS[post.platform].name}-Post möglich.</p>`}
+          ${rankingHTML()}
+          <div class="grid grid-cols-2 gap-2 pb-2">
+            <button onclick="openSocialForm('${post.id}')" class="${BTN_GHOST}">Werte bearbeiten</button>
+            <button onclick="openSocialAnalysis()" class="${BTN_GHOST}">Alle Posts</button>
+          </div>
+        </div>`);
+    }
+
+    function smStreak() {
+      const dates = new Set(currentUser.perf.social.posts.map(p => p.date));
+      let d = getTodayString();
+      if (!dates.has(d)) d = addDays(d, -1); // heute zählt noch nicht als verpasst
+      let n = 0;
+      while (dates.has(d)) { n++; d = addDays(d, -1); }
+      return n;
+    }
+
+    function openSocialAnalysis() {
+      const posts = sortChrono(currentUser.perf.social.posts).reverse();
+      const list = posts.length ? posts.map(p => `
+        <div class="bg-slate-900/70 border border-slate-800 rounded-2xl p-3 flex justify-between gap-2">
+          <div class="min-w-0">
+            <div class="text-sm font-bold"><span class="${PLATFORMS[p.platform].cls}">${PLATFORMS[p.platform].name}</span> <span class="text-slate-400 font-normal text-xs">${fmtDate(p.date)}</span></div>
+            <div class="text-[11px] text-slate-400 truncate">${esc(p.desc) || '–'}</div>
+            <div class="text-[11px] text-slate-500">${fmtN(p.views, 0)} Views | ${fmtN(p.likes, 0)} Likes | ${fmtN(p.comments, 0)} Komm. | ${fmtN(p.shares, 0)} Shares | ${p.followers > 0 ? '+' : ''}${fmtN(p.followers, 0)} Follower</div>
+            <div class="flex gap-3 mt-1"><button onclick="showPostAnalysis('${p.id}')" class="text-xs text-blue-400 hover:underline">Vergleich</button><button onclick="openSocialForm('${p.id}')" class="text-xs text-blue-400 hover:underline">Bearbeiten</button></div>
+          </div>
+          <button onclick="smDelete('${p.id}')" class="text-slate-600 hover:text-rose-400 p-1 self-start" aria-label="Löschen"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+        </div>`).join('') : '<p class="text-sm text-slate-500 italic">Noch keine Posts eingetragen.</p>';
+      openPerfModal('Social-Media-Analyse', 'share-2', `
+        <div class="space-y-3">
+          <button onclick="openSocialForm()" class="${BTN_PRIMARY}">+ Post eintragen</button>
+          ${rankingHTML()}
+          ${list}
+        </div>`);
+    }
+
+    function smDelete(id) {
+      if (!confirm('Diesen Post löschen?')) return;
+      currentUser.perf.social.posts = currentUser.perf.social.posts.filter(p => p.id !== id);
+      saveUserData(); openSocialAnalysis();
+    }
+
+    function renderSocialCard() {
+      const posts = currentUser.perf.social.posts;
+      const today = getTodayString();
+      const todayPosts = posts.filter(p => p.date === today);
+      const posted = todayPosts.length > 0;
+      const days = []; for (let i = 6; i >= 0; i--) days.push(addDays(today, -i));
+      const wk = posts.filter(p => p.date >= days[0] && p.date <= today);
+      const sum = k => wk.reduce((s, p) => s + (p[k] || 0), 0);
+      const streak = smStreak();
+      return `
+        <div class="space-y-3">
+          <div class="flex items-center justify-between p-3 rounded-2xl border ${posted ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-rose-500/10 border-rose-500/30'}">
+            <div><span class="text-[10px] font-bold uppercase text-slate-400 block">Ziel: 1 Post pro Tag</span>
+              <span class="text-sm font-black ${posted ? 'text-emerald-400' : 'text-rose-400'}">${posted ? 'Heute gepostet ✅' : 'Noch nicht gepostet ❌'}</span></div>
+            <div class="text-right"><span class="text-[10px] text-slate-400 block">Serie</span><span class="text-sm font-black text-white">${streak} ${streak === 1 ? 'Tag' : 'Tage'}</span></div>
+          </div>
+          <div class="flex justify-between gap-1">
+            ${days.map(d => { const has = posts.some(p => p.date === d); const wd = WEEKDAYS[(dateFromIso(d).getDay() + 6) % 7];
+              return `<div class="flex-1 text-center"><div class="text-[9px] text-slate-500">${wd}</div><div class="mx-auto mt-0.5 w-6 h-6 rounded-lg border ${has ? 'bg-emerald-500/30 border-emerald-500/50' : 'bg-slate-900 border-slate-800'} ${d === today ? 'ring-1 ring-blue-500' : ''}"></div></div>`; }).join('')}
+          </div>
+          <div class="grid grid-cols-3 gap-2">
+            ${statTile('Views 7 T.', fmtN(sum('views'), 0))}${statTile('Likes 7 T.', fmtN(sum('likes'), 0))}${statTile('Follower 7 T.', (sum('followers') > 0 ? '+' : '') + fmtN(sum('followers'), 0))}
+          </div>
+          <div class="flex gap-1.5 text-[11px]">
+            ${Object.keys(PLATFORMS).map(k => `<span class="flex-1 text-center px-2 py-1 rounded-lg border border-slate-800 bg-slate-950/60 ${PLATFORMS[k].cls}">${PLATFORMS[k].name} ${todayPosts.some(p => p.platform === k) ? '✅' : '–'}</span>`).join('')}
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <button onclick="openSocialForm()" class="py-2 bg-blue-600 hover:bg-blue-500 font-bold text-xs text-white rounded-xl transition">+ Post</button>
+            <button onclick="openSocialAnalysis()" class="${BTN_GHOST}">Analyse</button>
+          </div>
+        </div>`;
+    }
+
+    // =====================================================================
+    // ========================  HYGIENE & AUSSEHEN  =======================
+    // =====================================================================
+    function hygLogs(rid) { return currentUser.perf.hygiene.logs.filter(l => l.routineId === rid); }
+    function hygHas(rid, date, slot) { return currentUser.perf.hygiene.logs.some(l => l.routineId === rid && l.date === date && (l.slot || null) === (slot || null)); }
+
+    function hygToggle(rid, date, slot) {
+      const logs = currentUser.perf.hygiene.logs;
+      const i = logs.findIndex(l => l.routineId === rid && l.date === date && (l.slot || null) === (slot || null));
+      if (i >= 0) logs.splice(i, 1); else logs.push({ routineId: rid, date, slot: slot || null, ts: Date.now() });
+      saveUserData();
+      renderDashboard();
+    }
+
+    function hygToggleSlot(rid, date, idx) {
+      const r = currentUser.perf.hygiene.routines.find(x => x.id === rid);
+      const slots = r && r.slots && r.slots.length ? r.slots : [null];
+      hygToggle(rid, date, slots[idx]);
+    }
+
+    function hygWeekCount(r, refDate) {
+      const ws = weekStart(refDate || getTodayString()), we = addDays(ws, 6);
+      return new Set(hygLogs(r.id).filter(l => l.date >= ws && l.date <= we).map(l => l.date)).size;
+    }
+
+    function hygDailyDone(r, date) {
+      const slots = r.slots && r.slots.length ? r.slots : [null];
+      const done = slots.filter(s => hygHas(r.id, date, s)).length;
+      return done === 0 ? 'none' : (done === slots.length ? 'full' : 'part');
+    }
+
+    function hygLastDate(r) { const d = hygLogs(r.id).map(l => l.date).sort(); return d.length ? d[d.length - 1] : null; }
+
+    function renderRoutine(r) {
+      const today = getTodayString();
+      const head = `<div class="flex items-center gap-2 text-sm font-bold text-white"><i data-lucide="${r.icon || 'check-circle-2'}" class="w-4 h-4 text-blue-400"></i>${esc(r.name)}</div>`;
+      if (r.kind === 'weekly') {
+        const ws = weekStart(today);
+        const n = hygWeekCount(r);
+        const reached = n >= r.target;
+        return `<div class="bg-slate-900/60 p-3 rounded-2xl border border-slate-800 space-y-2">
+          <div class="flex justify-between items-center">${head}<span class="text-xs font-black ${reached ? 'text-emerald-400' : 'text-slate-300'}">${n}/${r.target}${reached ? ' erreicht ✅' : ' diese Woche'}</span></div>
+          <div class="grid grid-cols-7 gap-1">
+            ${WEEKDAYS.map((wd, i) => { const d = addDays(ws, i); const on = hygHas(r.id, d, null); const future = d > today;
+              return `<button ${future ? 'disabled' : ''} onclick="hygToggle('${r.id}','${d}')" class="py-1.5 rounded-lg border text-[11px] font-bold transition ${on ? 'bg-emerald-500/25 border-emerald-500/50 text-emerald-300' : 'bg-slate-950 border-slate-800 text-slate-500'} ${d === today ? 'ring-1 ring-blue-500' : ''} disabled:opacity-30">${on ? '☑' : '☐'}<br>${wd}</button>`; }).join('')}
+          </div>
+          <div class="h-1.5 bg-slate-800 rounded-full overflow-hidden"><div class="h-full ${reached ? 'bg-emerald-500' : 'bg-blue-500'}" style="width:${Math.min(100, n / r.target * 100)}%"></div></div>
+        </div>`;
+      }
+      if (r.kind === 'interval') {
+        const last = hygLastDate(r);
+        const next = last ? addDays(last, r.days) : null;
+        const overdue = next && next < today;
+        const doneToday = hygHas(r.id, today, null);
+        return `<div class="bg-slate-900/60 p-3 rounded-2xl border border-slate-800 space-y-2">
+          ${head}
+          <div class="grid grid-cols-2 gap-2 text-xs">
+            <div><span class="text-[10px] text-slate-400 block">Letztes Mal</span><span class="font-bold text-white">${last ? fmtDate(last) : '–'}</span>${last ? `<span class="text-[10px] text-slate-500 block">vor ${daysBetween(last, today)} Tagen</span>` : ''}</div>
+            <div><span class="text-[10px] text-slate-400 block">Nächstes Mal (alle ${r.days} T.)</span><span class="font-bold ${overdue ? 'text-rose-400' : 'text-white'}">${next ? fmtDate(next) : 'jetzt'}</span>${overdue ? '<span class="text-[10px] text-rose-400 block">überfällig</span>' : ''}</div>
+          </div>
+          <button onclick="hygToggle('${r.id}','${today}')" class="w-full py-2 rounded-xl text-xs font-bold border transition ${doneToday ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-300' : 'bg-blue-600 border-blue-500 text-white'}">${doneToday ? `✓ Heute erledigt (tippen zum Rückgängig)` : `${esc(r.name)} ✓`}</button>
+        </div>`;
+      }
+      // daily
+      const slots = r.slots && r.slots.length ? r.slots : [null];
+      const days = []; for (let i = 6; i >= 0; i--) days.push(addDays(today, -i));
+      return `<div class="bg-slate-900/60 p-3 rounded-2xl border border-slate-800 space-y-2">
+        ${head}
+        <div class="grid grid-cols-${slots.length} gap-2">
+          ${slots.map(s => { const on = hygHas(r.id, today, s);
+            return `<button onclick="hygToggleSlot('${r.id}','${today}',${slots.indexOf(s)})" class="py-2 rounded-xl text-xs font-bold border transition ${on ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-300' : 'bg-slate-950 border-slate-700 text-slate-300'}">${on ? '☑' : '☐'} ${esc(s) || 'Heute verwendet'}</button>`; }).join('')}
+        </div>
+        <div class="flex justify-between gap-1">
+          ${days.map(d => { const st = hygDailyDone(r, d); const wd = WEEKDAYS[(dateFromIso(d).getDay() + 6) % 7];
+            return `<div class="flex-1 text-center"><div class="text-[9px] text-slate-500">${wd}</div><div class="mx-auto mt-0.5 w-5 h-5 rounded-md border ${st === 'full' ? 'bg-emerald-500/40 border-emerald-500/60' : st === 'part' ? 'bg-amber-500/30 border-amber-500/50' : 'bg-slate-950 border-slate-800'}"></div></div>`; }).join('')}
+        </div>
+      </div>`;
+    }
+
+    function renderHygieneCard() {
+      const rs = currentUser.perf.hygiene.routines;
+      return `<div class="space-y-3">
+        ${rs.length ? rs.map(renderRoutine).join('') : '<p class="text-xs text-slate-500 italic">Keine Routinen. Füge unten eine hinzu.</p>'}
+        <button onclick="openHygieneHistory()" class="${BTN_GHOST} w-full">Verlauf, nachtragen & Routinen verwalten</button>
+      </div>`;
+    }
+
+    function openHygieneHistory() {
+      const h = currentUser.perf.hygiene;
+      const today = getTodayString();
+      const blocks = h.routines.map(r => {
+        let hist = '';
+        if (r.kind === 'weekly') {
+          const weeks = []; let ws = weekStart(today);
+          for (let i = 0; i < 8; i++) { weeks.push(ws); ws = addDays(ws, -7); }
+          hist = `<div class="space-y-1">${weeks.map(w => { const n = hygWeekCount(r, w);
+            return `<div class="flex items-center gap-2 text-[11px]"><span class="w-24 text-slate-400">ab ${fmtDate(w)}</span>
+              <div class="flex-1 h-2 bg-slate-800 rounded-full overflow-hidden"><div class="h-full ${n >= r.target ? 'bg-emerald-500' : 'bg-blue-500'}" style="width:${Math.min(100, n / r.target * 100)}%"></div></div>
+              <span class="w-12 text-right font-bold ${n >= r.target ? 'text-emerald-400' : 'text-slate-300'}">${n}/${r.target}</span></div>`; }).join('')}</div>`;
+        } else if (r.kind === 'daily') {
+          const days = []; for (let i = 29; i >= 0; i--) days.push(addDays(today, -i));
+          const full = days.filter(d => hygDailyDone(r, d) === 'full').length;
+          hist = `<div class="grid grid-cols-10 gap-1">${days.map(d => { const st = hygDailyDone(r, d);
+            return `<div title="${fmtDate(d)}" class="h-5 rounded-md border text-[8px] flex items-center justify-center text-slate-400 ${st === 'full' ? 'bg-emerald-500/40 border-emerald-500/60' : st === 'part' ? 'bg-amber-500/30 border-amber-500/50' : 'bg-slate-950 border-slate-800'}">${dateFromIso(d).getDate()}</div>`; }).join('')}</div>
+            <p class="text-[11px] text-slate-400">Letzte 30 Tage: <b class="text-white">${full}/30</b> Tage komplett</p>`;
+        } else {
+          const ds = [...new Set(hygLogs(r.id).map(l => l.date))].sort().reverse();
+          hist = ds.length ? `<div class="flex flex-wrap gap-1">${ds.slice(0, 20).map(d => `<span class="px-2 py-0.5 rounded-md bg-slate-950 border border-slate-800 text-[11px] text-slate-300">${fmtDate(d)}</span>`).join('')}</div>` : '<p class="text-[11px] text-slate-500 italic">Noch keine Einträge.</p>';
+        }
+        const slotSel = r.kind === 'daily' && r.slots && r.slots.length
+          ? `<select id="hyg-add-slot-${r.id}" class="${INP} !w-auto">${r.slots.map(s => `<option>${esc(s)}</option>`).join('')}</select>` : '';
+        return `<div class="${BOX}">
+          <div class="flex justify-between items-center"><span class="font-bold text-white text-sm">${esc(r.name)}</span>
+            <button onclick="hygDeleteRoutine('${r.id}')" class="text-[11px] text-slate-500 hover:text-rose-400">Routine löschen</button></div>
+          ${hist}
+          <div class="flex gap-2 items-center">
+            <input type="date" id="hyg-add-date-${r.id}" value="${today}" max="${today}" class="${INP}">
+            ${slotSel}
+            <button onclick="hygBackfill('${r.id}')" class="${BTN_GHOST} shrink-0">Nachtragen</button>
+          </div>
+        </div>`;
+      }).join('');
+
+      openPerfModal('Hygiene & Pflege', 'sparkles', `
+        <div class="space-y-3">
+          ${blocks}
+          <div class="${BOX}">
+            <span class="text-sm font-bold text-white">Neue Routine hinzufügen</span>
+            <input id="hyg-new-name" placeholder="z. B. Gesichtspflege, Zähne Zahnseide, Haare schneiden" class="${INP}">
+            <select id="hyg-new-kind" onchange="document.getElementById('hyg-new-extra-wrap').querySelector('label').innerText = {weekly:'Ziel pro Woche',interval:'Alle wie viele Tage?',daily:'Zeitpunkte (mit Komma, leer = 1× täglich)'}[this.value]" class="${INP}">
+              <option value="weekly">Wochenziel (z. B. 3× pro Woche)</option>
+              <option value="daily">Täglich abhaken</option>
+              <option value="interval">Alle X Tage (wie Nägel)</option>
+            </select>
+            <div id="hyg-new-extra-wrap"><label class="${LBL}">Ziel pro Woche</label><input id="hyg-new-extra" placeholder="z. B. 3  oder  Morgens, Abends" class="${INP}"></div>
+            <button onclick="hygAddRoutine()" class="${BTN_PRIMARY}">Routine hinzufügen</button>
+          </div>
+        </div>`);
+    }
+
+    function hygBackfill(rid) {
+      const date = document.getElementById('hyg-add-date-' + rid).value;
+      const slotEl = document.getElementById('hyg-add-slot-' + rid);
+      const slot = slotEl ? slotEl.value : null;
+      if (!date) return;
+      if (hygHas(rid, date, slot)) return alert('Für dieses Datum ist schon ein Eintrag vorhanden.');
+      currentUser.perf.hygiene.logs.push({ routineId: rid, date, slot, ts: Date.now() });
+      saveUserData(); openHygieneHistory();
+    }
+
+    function hygAddRoutine() {
+      const name = document.getElementById('hyg-new-name').value.trim();
+      const kind = document.getElementById('hyg-new-kind').value;
+      const extra = document.getElementById('hyg-new-extra').value.trim();
+      if (!name) return alert('Bitte einen Namen eingeben.');
+      const r = { id: uid(), name, icon: 'check-circle-2', kind };
+      if (kind === 'weekly') { r.target = Math.max(1, Math.min(7, Math.round(num(extra) || 3))); }
+      else if (kind === 'interval') { r.days = Math.max(1, Math.round(num(extra) || 7)); }
+      else { r.slots = extra ? extra.split(',').map(s => s.trim()).filter(Boolean).slice(0, 3) : []; }
+      currentUser.perf.hygiene.routines.push(r);
+      saveUserData(); openHygieneHistory();
+    }
+
+    function hygDeleteRoutine(rid) {
+      if (!confirm('Routine und ihren Verlauf löschen?')) return;
+      const h = currentUser.perf.hygiene;
+      h.routines = h.routines.filter(r => r.id !== rid);
+      h.logs = h.logs.filter(l => l.routineId !== rid);
+      saveUserData(); openHygieneHistory();
+    }
+
+    // =====================================================================
+    // =======================  GESICHTSENTWICKLUNG  =======================
+    // =====================================================================
+    // Fotos liegen in IndexedDB (viel mehr Platz als localStorage), Metadaten im User-Objekt.
+    const PhotoDB = {
+      db: null,
+      open() {
+        return new Promise((res, rej) => {
+          if (this.db) return res(this.db);
+          const r = indexedDB.open('mylife_media', 1);
+          r.onupgradeneeded = () => r.result.createObjectStore('photos');
+          r.onsuccess = () => { this.db = r.result; res(this.db); };
+          r.onerror = () => rej(r.error);
+        });
+      },
+      async tx(mode, fn) {
+        const db = await this.open();
+        return new Promise((res, rej) => {
+          const t = db.transaction('photos', mode);
+          const req = fn(t.objectStore('photos'));
+          t.oncomplete = () => res(req ? req.result : undefined);
+          t.onerror = () => rej(t.error);
+        });
+      },
+      put(k, v) { return this.tx('readwrite', s => s.put(v, k)); },
+      get(k) { return this.tx('readonly', s => s.get(k)); },
+      del(k) { return this.tx('readwrite', s => s.delete(k)); }
+    };
+    const photoCache = {};
+    let facePending = null;
+    let faceCmp = { a: null, b: null, overlay: false, mix: 50 };
+
+    function photoKey(id) { return currentUser.username + ':' + id; }
+
+    async function hydratePhotos(root) {
+      const imgs = (root || document).querySelectorAll('img[data-photo-id]');
+      for (const img of imgs) {
+        const id = img.dataset.photoId;
+        if (!photoCache[id]) { try { photoCache[id] = await PhotoDB.get(photoKey(id)); } catch (e) {} }
+        if (photoCache[id]) img.src = photoCache[id];
+      }
+    }
+
+    function compressImage(file, maxDim = 1080, quality = 0.82) {
+      return new Promise((res, rej) => {
+        const url = URL.createObjectURL(file);
+        const img = new Image();
+        img.onload = () => {
+          const scale = Math.min(1, maxDim / Math.max(img.width, img.height));
+          const c = document.createElement('canvas');
+          c.width = Math.round(img.width * scale); c.height = Math.round(img.height * scale);
+          c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+          URL.revokeObjectURL(url);
+          res(c.toDataURL('image/jpeg', quality));
+        };
+        img.onerror = () => { URL.revokeObjectURL(url); rej(new Error('Bild konnte nicht gelesen werden')); };
+        img.src = url;
+      });
+    }
+
+    const PH_IMG = 'data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 3 4%22><rect width=%223%22 height=%224%22 fill=%22%230f172a%22/></svg>';
+
+    function openFaceUpload() {
+      facePending = null;
+      openPerfModal('Foto hinzufügen', 'camera', `
+        <div class="space-y-4">
+          <p class="text-xs text-slate-400">Für einen fairen Vergleich: gleiches Licht, gleicher Abstand, gerade in die Kamera.</p>
+          <label class="block w-full aspect-[3/4] max-h-80 rounded-2xl border-2 border-dashed border-slate-700 bg-slate-900/60 overflow-hidden cursor-pointer relative">
+            <img id="face-preview" class="w-full h-full object-cover hidden">
+            <div id="face-preview-ph" class="absolute inset-0 flex flex-col items-center justify-center text-slate-400 text-sm gap-2"><i data-lucide="camera" class="w-8 h-8"></i>Foto aufnehmen oder auswählen</div>
+            <input type="file" accept="image/*" class="hidden" onchange="faceFileChosen(event)">
+          </label>
+          <div class="grid grid-cols-2 gap-2">
+            <div><label class="${LBL}">Datum</label><input type="date" id="face-date" value="${getTodayString()}" max="${getTodayString()}" class="${INP}"></div>
+            <div><label class="${LBL}">Beschreibung (optional)</label><input id="face-note" placeholder="z. B. nach Haarschnitt" class="${INP}"></div>
+          </div>
+          <button id="face-save-btn" onclick="faceSave()" class="${BTN_PRIMARY}">Foto speichern</button>
+        </div>`);
+    }
+
+    async function faceFileChosen(ev) {
+      const file = ev.target.files[0];
+      if (!file) return;
+      try {
+        facePending = await compressImage(file);
+        const img = document.getElementById('face-preview');
+        img.src = facePending; img.classList.remove('hidden');
+        document.getElementById('face-preview-ph').classList.add('hidden');
+      } catch (e) { alert(e.message); }
+    }
+
+    async function faceSave() {
+      if (!facePending) return alert('Bitte zuerst ein Foto auswählen.');
+      const btn = document.getElementById('face-save-btn');
+      btn.disabled = true; btn.innerText = 'Speichert …';
+      const id = uid();
+      try {
+        await PhotoDB.put(photoKey(id), facePending);
+      } catch (e) {
+        btn.disabled = false; btn.innerText = 'Foto speichern';
+        return alert('Foto konnte nicht gespeichert werden (Speicher voll oder privater Modus).');
+      }
+      photoCache[id] = facePending;
+      currentUser.perf.photos.push({ id, createdAt: Date.now(), date: document.getElementById('face-date').value || getTodayString(), note: document.getElementById('face-note').value.trim() });
+      saveUserData();
+      facePending = null;
+      faceCmp = { a: null, b: null, overlay: false, mix: 50 };
+      openFaceGallery();
+    }
+
+    function openFaceGallery() {
+      const photos = sortChrono(currentUser.perf.photos);
+      if (!photos.length) {
+        openPerfModal('Gesichtsentwicklung', 'scan-face', `<div class="space-y-3 text-center py-6">
+          <p class="text-sm text-slate-400">Noch keine Fotos. Lade dein erstes hoch – z. B. einmal im Monat.</p>
+          <button onclick="openFaceUpload()" class="${BTN_PRIMARY}">+ Foto hinzufügen</button></div>`);
+        return;
+      }
+      if (!faceCmp.a || !photos.find(p => p.id === faceCmp.a)) faceCmp.a = photos[0].id;
+      if (!faceCmp.b || !photos.find(p => p.id === faceCmp.b)) faceCmp.b = photos[photos.length - 1].id;
+      openPerfModal('Gesichtsentwicklung', 'scan-face', faceGalleryHTML());
+      hydratePhotos(document.getElementById('perf-modal-body'));
+    }
+
+    function faceGalleryHTML() {
+      const photos = sortChrono(currentUser.perf.photos);
+      const A = photos.find(p => p.id === faceCmp.a), B = photos.find(p => p.id === faceCmp.b);
+      const opt = sel => photos.map(p => `<option value="${p.id}" ${p.id === sel ? 'selected' : ''}>${fmtDate(p.date)}${p.note ? ' – ' + esc(p.note) : ''}</option>`).join('');
+      const compare = photos.length >= 2 ? `
+        <div class="${BOX}">
+          <div class="flex justify-between items-center"><span class="text-sm font-bold text-white">Vergleich</span>
+            <button onclick="faceCmp.overlay=!faceCmp.overlay;setPerfBody(faceGalleryHTML(),true)" class="${BTN_GHOST}">${faceCmp.overlay ? 'Nebeneinander' : 'Überblenden'}</button></div>
+          <div class="grid grid-cols-2 gap-2">
+            <select onchange="faceCmp.a=this.value;setPerfBody(faceGalleryHTML(),true)" class="${INP}">${opt(faceCmp.a)}</select>
+            <select onchange="faceCmp.b=this.value;setPerfBody(faceGalleryHTML(),true)" class="${INP}">${opt(faceCmp.b)}</select>
+          </div>
+          ${faceCmp.overlay ? `
+            <div class="relative w-full max-w-sm mx-auto aspect-[3/4] rounded-xl overflow-hidden bg-slate-950">
+              <img data-photo-id="${A.id}" src="${PH_IMG}" class="absolute inset-0 w-full h-full object-cover">
+              <img id="face-overlay-top" data-photo-id="${B.id}" src="${PH_IMG}" style="opacity:${faceCmp.mix / 100}" class="absolute inset-0 w-full h-full object-cover">
+            </div>
+            <div class="flex items-center gap-2 text-[11px] text-slate-400"><span>Vorher</span>
+              <input type="range" min="0" max="100" value="${faceCmp.mix}" oninput="faceCmp.mix=this.value;document.getElementById('face-overlay-top').style.opacity=this.value/100" class="flex-1 accent-blue-500"><span>Nachher</span></div>`
+          : `<div class="grid grid-cols-2 gap-2">
+              ${[[A, 'Vorher'], [B, 'Nachher']].map(x => `<figure class="space-y-1"><img data-photo-id="${x[0].id}" src="${PH_IMG}" class="w-full aspect-[3/4] object-cover rounded-xl bg-slate-950">
+                <figcaption class="text-[11px] text-slate-400 text-center"><b class="text-slate-200">${x[1]}</b> | ${fmtDate(x[0].date)}</figcaption></figure>`).join('')}
+            </div>`}
+          <p class="text-[11px] text-slate-500 text-center">${Math.abs(daysBetween(A.date, B.date))} Tage dazwischen</p>
+        </div>` : `<p class="text-[11px] text-slate-500">Ab dem zweiten Foto kannst du Vorher | Nachher vergleichen.</p>`;
+
+      return `
+        <div class="space-y-4">
+          <button onclick="openFaceUpload()" class="${BTN_PRIMARY}">+ Foto hinzufügen</button>
+          ${compare}
+          <div class="space-y-3">
+            <span class="text-xs font-bold text-slate-300">Zeitverlauf (${photos.length} Fotos)</span>
+            ${photos.map(p => `
+              <div class="flex gap-3 items-start bg-slate-900/60 border border-slate-800 rounded-2xl p-2.5">
+                <img data-photo-id="${p.id}" src="${PH_IMG}" class="w-20 aspect-[3/4] object-cover rounded-xl bg-slate-950">
+                <div class="flex-1 min-w-0">
+                  <div class="text-sm font-bold text-white">${fmtDate(p.date)}</div>
+                  <div class="text-[11px] text-slate-400">${esc(p.note) || ''}</div>
+                </div>
+                <button onclick="faceDelete('${p.id}')" class="text-slate-600 hover:text-rose-400 p-1" aria-label="Foto löschen"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+              </div>`).join('')}
+          </div>
+        </div>`;
+    }
+
+    async function faceDelete(id) {
+      if (!confirm('Dieses Foto löschen?')) return;
+      currentUser.perf.photos = currentUser.perf.photos.filter(p => p.id !== id);
+      saveUserData();
+      try { await PhotoDB.del(photoKey(id)); } catch (e) {}
+      delete photoCache[id];
+      openFaceGallery();
+    }
+
+    function renderFaceCard() {
+      const photos = sortChrono(currentUser.perf.photos);
+      const last = photos.length ? photos[photos.length - 1] : null;
+      const recent = photos.slice(-3);
+      return `<div class="space-y-3">
+        ${last ? `<p class="text-xs text-slate-400">Letzter Upload: <span class="text-white font-semibold">${fmtDate(last.date)}</span> (vor ${daysBetween(last.date, getTodayString())} Tagen) | ${photos.length} Fotos</p>
+          <div class="grid grid-cols-3 gap-2">${recent.map(p => `<figure><img data-photo-id="${p.id}" src="${PH_IMG}" class="w-full aspect-[3/4] object-cover rounded-xl bg-slate-950 border border-slate-800"><figcaption class="text-[10px] text-slate-500 text-center mt-0.5">${fmtDate(p.date)}</figcaption></figure>`).join('')}</div>`
+        : `<p class="text-xs text-slate-400">Dokumentiere deine Entwicklung mit einem Foto pro Monat. Keine Bewertung – nur dein Zeitverlauf.</p>`}
+        <div class="grid grid-cols-2 gap-2">
+          <button onclick="openFaceUpload()" class="py-2 bg-blue-600 hover:bg-blue-500 font-bold text-xs text-white rounded-xl transition">+ Foto</button>
+          <button onclick="openFaceGallery()" class="${BTN_GHOST}">Verlauf & Vergleich</button>
+        </div>
+      </div>`;
+    }
+
+    // =====================================================================
+    // ========================  BACKUP EXPORT / IMPORT  ===================
+    // =====================================================================
+    async function exportBackup() {
+      const data = JSON.parse(JSON.stringify(currentUser));
+      delete data.password;
+      const photos = {};
+      for (const p of (currentUser.perf.photos || [])) {
+        try { const v = photoCache[p.id] || await PhotoDB.get(photoKey(p.id)); if (v) photos[p.id] = v; } catch (e) {}
+      }
+      const blob = new Blob([JSON.stringify({ app: 'MyLife', version: 1, exportedAt: new Date().toISOString(), user: data, photos })], { type: 'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `mylife-backup-${getTodayString()}.json`;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+    }
+
+    function importBackup(ev) {
+      const file = ev.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = async () => {
+        try {
+          const b = JSON.parse(reader.result);
+          if (b.app !== 'MyLife' || !b.user) throw new Error('Keine MyLife-Sicherung.');
+          if (!confirm('Backup einspielen? Deine aktuellen Daten in diesem Account werden ersetzt.')) return;
+          const keep = { username: currentUser.username, password: currentUser.password };
+          currentUser = Object.assign({}, b.user, keep);
+          for (const id of Object.keys(b.photos || {})) { await PhotoDB.put(photoKey(id), b.photos[id]); photoCache[id] = b.photos[id]; }
+          saveUserData();
+          closeModal('modal-profile');
+          updateNavProfile();
+          renderDashboard();
+          alert('Backup eingespielt.');
+        } catch (e) { alert('Import fehlgeschlagen: ' + e.message); }
+        ev.target.value = '';
+      };
+      reader.readAsText(file);
+    }
+
+  </script>
+</body>
+</html>
