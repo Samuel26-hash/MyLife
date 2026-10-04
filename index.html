@@ -278,7 +278,7 @@
 
     const MODULE_DEFINITIONS = [
       { id: 'wms_grades', name: 'WMS Notensystem', icon: 'graduation-cap', desc: 'Semester, EFZ/BM Fächer, Minuspunkte-Check & Bestehensregeln' },
-      { id: 'nutrition', name: 'Ernährung & Gesundheit', icon: 'apple', desc: 'Nährwert-Tracker, Health-Score, Protein-Empfehlungen & Gewichtsverlauf' },
+      { id: 'nutrition', name: 'Ernährung & Gesundheit', icon: 'apple', desc: 'Nährwert-Tracker, Health-Score, Intelligente Lebensmittel-Empfehlungen & Gewichtsverlauf' },
       { id: 'budget', name: 'Budget & Finanzen', icon: 'wallet', desc: 'Monatliche Einnahmen & Ausgaben in CHF' },
       { id: 'fitness', name: 'Fitness & Routine', icon: 'dumbbell', desc: 'Workout-Tracker & Krafttraining' },
       { id: 'football', name: 'Fußball-Promotion', icon: 'trophy', desc: 'Ligen-Entwicklung & Match-Analysen' },
@@ -543,19 +543,37 @@
             <!-- COMPARISON LIST -->
             <div id="nutr-status-list" class="grid grid-cols-2 gap-1.5 text-xs"></div>
 
-            <!-- RECOMMENDATIONS -->
-            <div id="protein-recs" class="hidden bg-amber-500/10 border border-amber-500/30 p-3 rounded-2xl text-xs space-y-1.5 text-amber-200">
-              <div class="flex items-center gap-1.5 font-bold text-amber-400">
-                <i data-lucide="alert-triangle" class="w-4 h-4"></i> Protein-Defizit erkannt!
+            <!-- INTELLIGENTE EMPFEHLUNGEN -->
+            <div id="smart-recommendations" class="space-y-2"></div>
+
+            <!-- LEBENSMITTEL UEBERSICHT TABELLE -->
+            <div class="bg-slate-900/60 p-3 rounded-2xl border border-slate-800/80 space-y-2">
+              <span class="text-[10px] font-bold uppercase text-slate-400 block">Nährwert-Referenztabelle</span>
+              <div class="overflow-x-auto">
+                <table class="w-full text-left text-[11px] text-slate-300">
+                  <thead class="bg-slate-950/80 text-[10px] uppercase text-slate-400">
+                    <tr>
+                      <th class="p-1.5">Lebensmittel</th>
+                      <th class="p-1.5">Prot.</th>
+                      <th class="p-1.5">Carbs</th>
+                      <th class="p-1.5">Fett</th>
+                      <th class="p-1.5">Gut für</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-slate-800/60">
+                    <tr><td class="p-1.5 font-medium text-white">Haferflocken 100g</td><td>~17g</td><td>~66g</td><td>~7g</td><td class="text-blue-400">Carbs + Kcal</td></tr>
+                    <tr><td class="p-1.5 font-medium text-white">Erdnussbutter 30g</td><td>~8g</td><td>~6g</td><td>~15g</td><td class="text-amber-400">Kcal + Fett</td></tr>
+                    <tr><td class="p-1.5 font-medium text-white">Milch 500ml</td><td>~17g</td><td>~24g</td><td>~15g</td><td class="text-emerald-400">Alle 3 Makros</td></tr>
+                    <tr><td class="p-1.5 font-medium text-white">Banane 1 Stk.</td><td>~1g</td><td>~28g</td><td>~0g</td><td class="text-yellow-400">Schnelle Carbs</td></tr>
+                    <tr><td class="p-1.5 font-medium text-white">Griech. Joghurt 200g</td><td>~19g</td><td>~8g</td><td>~5g</td><td class="text-indigo-400">Protein</td></tr>
+                    <tr><td class="p-1.5 font-medium text-white">Whey 30g</td><td>~24g</td><td>~3g</td><td>~2g</td><td class="text-indigo-400">Schnelles Protein</td></tr>
+                    <tr><td class="p-1.5 font-medium text-white">Eier 3 Stk.</td><td>~19g</td><td>~1g</td><td>~15g</td><td class="text-indigo-400">Protein + Fett</td></tr>
+                    <tr><td class="p-1.5 font-medium text-white">Nüsse 30g</td><td>~6g</td><td>~6g</td><td>~18g</td><td class="text-amber-400">Fett + Kcal</td></tr>
+                    <tr><td class="p-1.5 font-medium text-white">Reis gekocht 300g</td><td>~7g</td><td>~84g</td><td>~1g</td><td class="text-blue-400">Viele Carbs</td></tr>
+                    <tr><td class="p-1.5 font-medium text-white">Vollkornbrot 100g</td><td>~9g</td><td>~40g</td><td>~4g</td><td class="text-blue-400">Schnelle Mahlzeit</td></tr>
+                  </tbody>
+                </table>
               </div>
-              <p class="text-[11px] text-amber-300/80">Empfohlene proteinreiche Lebensmittel für heute:</p>
-              <ul class="list-disc list-inside text-[11px] space-y-0.5 text-amber-200/90">
-                <li>Magerquark / Hüttenkäse (~30g Protein/Becher)</li>
-                <li>Hähnchenbrust / Putenbrust (~31g Protein/100g)</li>
-                <li>Linsen & Kichererbsen (~9g Protein/100g)</li>
-                <li>Eier / Eiklar (~6g Protein pro Ei)</li>
-                <li>Proteinpulver Shake (~25g Protein/Portion)</li>
-              </ul>
             </div>
           </div>
 
@@ -586,7 +604,8 @@
 
       let score = 100;
       const statusList = document.getElementById('nutr-status-list');
-      const recs = document.getElementById('protein-recs');
+      const recsContainer = document.getElementById('smart-recommendations');
+      recsContainer.innerHTML = '';
 
       function makeBadge(label, val, target, unit, isMax = false) {
         let isOk = isMax ? val <= target : val >= target;
@@ -612,11 +631,114 @@
         ${makeBadge('Wasser', water, TARGETS.water, 'L')}
       `;
 
-      if (protein < TARGETS.protein) {
-        recs.classList.remove('hidden');
-      } else {
-        recs.classList.add('hidden');
+      // SPECIFIC RECOMMENDATIONS ENGINE
+      let recsHTML = '';
+
+      // 1. Kalorien Defizit
+      if (kcal < TARGETS.kcal - 200) {
+        recsHTML += `
+          <div class="bg-amber-500/10 border border-amber-500/30 p-3 rounded-2xl text-xs space-y-1 text-amber-200">
+            <div class="flex items-center gap-1.5 font-bold text-amber-400">
+              <i data-lucide="flame" class="w-4 h-4"></i> Zu wenig Kalorien!
+            </div>
+            <p class="text-[11px] text-amber-300/90">Du musst heute mehr essen, um dein Ziel von ${TARGETS.kcal} kcal zu erreichen. Gute Kalorienbomben: <strong>Erdnussbutter, Nüsse, Haferflocken oder Vollkornbrot</strong>.</p>
+          </div>
+        `;
       }
+
+      // 2. Protein Defizit
+      if (protein < TARGETS.protein) {
+        recsHTML += `
+          <div class="bg-indigo-500/10 border border-indigo-500/30 p-3 rounded-2xl text-xs space-y-1 text-indigo-200">
+            <div class="flex items-center gap-1.5 font-bold text-indigo-400">
+              <i data-lucide="dumbbell" class="w-4 h-4"></i> Protein-Defizit!
+            </div>
+            <p class="text-[11px] text-indigo-300/90">Empfohlene proteinreiche Lebensmittel:</p>
+            <ul class="list-disc list-inside text-[11px] space-y-0.5 text-indigo-200/90">
+              <li><strong>Whey 30g</strong> (~24g Protein)</li>
+              <li><strong>Griechischer Joghurt 200g</strong> (~19g Protein)</li>
+              <li><strong>Eier (3 Stück)</strong> (~19g Protein)</li>
+              <li><strong>Milch 500ml</strong> (~17g Protein)</li>
+              <li><strong>Haferflocken 100g</strong> (~17g Protein)</li>
+            </ul>
+          </div>
+        `;
+      }
+
+      // 3. Kohlenhydrate Defizit
+      if (carbs < TARGETS.carbs - 50) {
+        recsHTML += `
+          <div class="bg-blue-500/10 border border-blue-500/30 p-3 rounded-2xl text-xs space-y-1 text-blue-200">
+            <div class="flex items-center gap-1.5 font-bold text-blue-400">
+              <i data-lucide="zap" class="w-4 h-4"></i> Kohlenhydrate-Defizit!
+            </div>
+            <p class="text-[11px] text-blue-300/90">Empfohlene Kohlenhydrat-Lieferanten:</p>
+            <ul class="list-disc list-inside text-[11px] space-y-0.5 text-blue-200/90">
+              <li><strong>Gekochter Reis 300g</strong> (~84g Carbs)</li>
+              <li><strong>Haferflocken 100g</strong> (~66g Carbs)</li>
+              <li><strong>Vollkornbrot 100g</strong> (~40g Carbs)</li>
+              <li><strong>Banane (1 Stück)</strong> (~28g Carbs - schnelle Energie)</li>
+            </ul>
+          </div>
+        `;
+      }
+
+      // 4. Fett Defizit
+      if (fat < TARGETS.fat - 15) {
+        recsHTML += `
+          <div class="bg-amber-500/10 border border-amber-500/30 p-3 rounded-2xl text-xs space-y-1 text-amber-200">
+            <div class="flex items-center gap-1.5 font-bold text-amber-400">
+              <i data-lucide="shield" class="w-4 h-4"></i> Gesunde Fette nachfüllen!
+            </div>
+            <p class="text-[11px] text-amber-300/90">Empfohlene fettreiche Lebensmittel:</p>
+            <ul class="list-disc list-inside text-[11px] space-y-0.5 text-amber-200/90">
+              <li><strong>Nüsse 30g</strong> (~18g Fett)</li>
+              <li><strong>Erdnussbutter 30g</strong> (~15g Fett)</li>
+              <li><strong>Eier (3 Stück)</strong> (~15g Fett)</li>
+              <li><strong>Milch 500ml</strong> (~15g Fett)</li>
+            </ul>
+          </div>
+        `;
+      }
+
+      // 5. Zucker zu hoch
+      if (sugar > TARGETS.sugarMax) {
+        recsHTML += `
+          <div class="bg-rose-500/10 border border-rose-500/30 p-3 rounded-2xl text-xs space-y-1 text-rose-200">
+            <div class="flex items-center gap-1.5 font-bold text-rose-400">
+              <i data-lucide="alert-triangle" class="w-4 h-4"></i> Zu viel Zucker!
+            </div>
+            <p class="text-[11px] text-rose-300/90">Versuche für den Rest des Tages Süßgetränke, Süßigkeiten und verarbeitete Snacks zu reduzieren.</p>
+          </div>
+        `;
+      }
+
+      // 6. Salz zu hoch
+      if (salt > TARGETS.saltMax) {
+        recsHTML += `
+          <div class="bg-rose-500/10 border border-rose-500/30 p-3 rounded-2xl text-xs space-y-1 text-rose-200">
+            <div class="flex items-center gap-1.5 font-bold text-rose-400">
+              <i data-lucide="alert-triangle" class="w-4 h-4"></i> Zu viel Salz!
+            </div>
+            <p class="text-[11px] text-rose-300/90">Bitte reduziere den Konsum von stark gesalzenen Fertiggerichten, Chips oder Soßen.</p>
+          </div>
+        `;
+      }
+
+      // 7. Wasser zu wenig
+      if (water < TARGETS.water) {
+        recsHTML += `
+          <div class="bg-cyan-500/10 border border-cyan-500/30 p-3 rounded-2xl text-xs space-y-1 text-cyan-200">
+            <div class="flex items-center gap-1.5 font-bold text-cyan-400">
+              <i data-lucide="droplet" class="w-4 h-4"></i> Zu wenig Wasser getrunken!
+            </div>
+            <p class="text-[11px] text-cyan-300/90">Trinke noch mehr Wasser! Mindestens ${TARGETS.water} Liter pro Tag sichern maximale körperliche und mentale Leistungsfähigkeit.</p>
+          </div>
+        `;
+      }
+
+      recsContainer.innerHTML = recsHTML;
+      lucide.createIcons();
 
       score = Math.max(0, score);
       document.getElementById('health-score-val').innerText = score;
