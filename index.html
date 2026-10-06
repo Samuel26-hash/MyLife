@@ -1,39 +1,3 @@
-<!DOCTYPE html>
-<html lang="de" class="h-full bg-slate-950 text-slate-100">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>MYLife – Personal Dashboard & Growth</title>
-  <meta name="theme-color" content="#020617">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-title" content="MYLife">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="format-detection" content="telephone=no">
-  <link rel="manifest" href="manifest.webmanifest">
-  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-  <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
-  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
-  <script>try { if (localStorage.getItem('mylife_theme') === 'light') document.documentElement.classList.add('light'); } catch (e) { }</script>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://unpkg.com/lucide@latest"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <style>
-    .glass {
-      background: rgba(15, 23, 42, 0.75);
-      backdrop-filter: blur(16px);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-    }
-    /* iPhone-Komfort */
-    html { color-scheme: dark; -webkit-text-size-adjust: 100%; }
-    html.light { color-scheme: light; }
-    body { -webkit-tap-highlight-color: transparent; }
-    button, a, label, select { touch-action: manipulation; }
-    @media (max-width: 640px) { input, select, textarea { font-size: 16px !important; } }
-    #app-screen > header { padding-top: env(safe-area-inset-top, 0px); }
-    #app-screen main { padding-bottom: calc(2rem + env(safe-area-inset-bottom, 0px)); }
-    #auth-screen { padding-top: calc(1rem + env(safe-area-inset-top, 0px)); padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px)); }
-    .search-panel { padding-top: calc(env(safe-area-inset-top, 0px) + 12px); }
     @media (min-width: 640px) { .search-panel { padding-top: 10vh; } }
     #boot-splash .logo { animation: bootpulse 1.2s ease-in-out infinite; }
     @keyframes bootpulse { 50% { transform: scale(0.92); opacity: 0.7; } }
