@@ -8,6 +8,8 @@
 //   GEMINI_MODEL    (optional) – Standard: gemini-2.5-flash
 //   CHAT_DAILY_LIMIT (optional) – Nachrichten pro Tag und Nutzer, Standard 150
 
+import { callAI } from '../../lib/gemini.js';
+
 const json = (obj, status = 200) => new Response(JSON.stringify(obj), { status, headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' } });
 
 const SYSTEM = `Du bist der persönliche KI-Assistent in der App „MyLife“, einem Dashboard für Schule (WMS), Fitness, Fussball, Ernährung, Lesen, Lernen, Social Media und Routinen.
@@ -17,7 +19,7 @@ Bei Aktien/ETFs gibst du allgemeine Informationen, aber keine konkreten Kauf- od
 Wenn dir Kontext aus der App mitgegeben wird, nutze ihn nur, wenn er zur Frage passt.`;
 
 export async function onRequestPost({ request, env }) {
-  if (!env.GEMINI_API_KEY) return json({ ok: false, error: 'no_key' });
+  if (!env.GEMINI_API_KEY && !env.AI) return json({ ok: false, error: 'no_key' });
   if (!env.MYLIFE) return json({ ok: false, error: 'no_kv' });
   let b; try { b = await request.json(); } catch (e) { return json({ ok: false, error: 'bad_request' }, 400); }
 
@@ -41,23 +43,8 @@ export async function onRequestPost({ request, env }) {
     contents: msgs,
     generationConfig: { temperature: 0.7, maxOutputTokens: 1024 }
   };
-  const model = env.GEMINI_MODEL || 'gemini-2.5-flash';
-  const key = env.GEMINI_API_KEY;
-  const url = key.startsWith('AIza')
-    ? `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`
-    : `https://aiplatform.googleapis.com/v1/publishers/google/models/${model}:generateContent?key=${encodeURIComponent(key)}`;
-  const headers = { 'Content-Type': 'application/json' };
-  if (key.startsWith('AIza')) headers['x-goog-api-key'] = key;
-
-  try {
-    const r = await fetch(url, { method: 'POST', headers, body: JSON.stringify(body) });
-    const j = await r.json().catch(() => ({}));
-    if (!r.ok) return json({ ok: false, error: 'ai_error', message: (j.error && j.error.message) || ('HTTP ' + r.status) });
-    const text = (((j.candidates || [])[0] || {}).content || {}).parts?.map(p => p.text || '').join('').trim();
-    if (!text) return json({ ok: false, error: 'empty' });
-    await env.MYLIFE.put(limitKey, String(used + 1), { expirationTtl: 60 * 60 * 26 });
-    return json({ ok: true, text });
-  } catch (e) {
-    return json({ ok: false, error: 'ai_error', message: e.message });
-  }
+  const r = await callAI(env, body);
+  if (!r.ok) return json({ ok: false, error: r.error, message: r.message });
+  await env.MYLIFE.put(limitKey, String(used + 1), { expirationTtl: 60 * 60 * 26 });
+  return json({ ok: true, text: r.text, provider: r.target === 'cloudflare' ? 'Cloudflare' : 'Gemini' });
 }
