@@ -296,12 +296,22 @@ html.light, html.light body { background: #eef2f7; color: #0f172a; }
     </div>
   </div>
 
+  <!-- SYSTEM-CHECK -->
+  <div id="modal-check" style="z-index:62" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 hidden" onclick="if (event.target === this) closeModal('modal-check')">
+    <div class="glass w-full max-w-md p-5 rounded-3xl border border-slate-800 space-y-3 max-h-[88vh] overflow-y-auto">
+      <div class="flex items-center justify-between"><h3 class="text-lg font-bold text-white">🛠️ System-Check</h3><button onclick="closeModal('modal-check')" class="text-sm text-slate-400 hover:text-white">Schliessen</button></div>
+      <p class="text-[11px] text-slate-400">Prüft, ob auf Cloudflare alles eingerichtet ist. Bei ❌ steht direkt, was du tun musst.</p>
+      <div id="check-list" class="space-y-2"></div>
+      <button onclick="openSystemCheck()" class="w-full py-2.5 rounded-xl text-xs font-bold bg-slate-800 text-white border border-slate-700">Nochmal prüfen</button>
+    </div>
+  </div>
+
   <!-- KI-ASSISTENT -->
   <button id="chat-fab" onclick="toggleChat()" class="hidden fixed left-4 w-14 h-14 rounded-full bg-blue-600 hover:bg-blue-500 text-white shadow-xl shadow-blue-600/40 flex items-center justify-center transition" style="z-index:40; bottom:calc(1rem + env(safe-area-inset-bottom, 0px))" aria-label="KI-Assistent öffnen"><i data-lucide="message-circle" class="w-6 h-6"></i></button>
   <div id="chat-panel" class="hidden fixed inset-x-0 bottom-0 sm:inset-x-auto sm:left-4 sm:bottom-24 sm:w-96 flex flex-col bg-slate-950 border border-slate-800 rounded-t-3xl sm:rounded-3xl shadow-2xl" style="z-index:45; height:min(78vh, 640px)">
     <div class="flex items-center justify-between px-4 py-3 border-b border-slate-800">
       <div class="flex items-center gap-2"><span class="w-8 h-8 rounded-full bg-blue-600/20 text-blue-400 flex items-center justify-center"><i data-lucide="sparkles" class="w-4 h-4"></i></span><div><p class="text-sm font-bold text-white">MyLife KI</p><p class="text-[10px] text-slate-500">mit Google Gemini</p></div></div>
-      <div class="flex items-center gap-3"><button onclick="clearChat()" class="text-[11px] text-slate-400 hover:text-white">Leeren</button><button onclick="toggleChat(false)" class="text-slate-400 hover:text-white" aria-label="Schliessen"><i data-lucide="x" class="w-5 h-5"></i></button></div>
+      <div class="flex items-center gap-3"><button onclick="openSystemCheck()" class="text-[11px] text-slate-400 hover:text-white">Check</button><button onclick="clearChat()" class="text-[11px] text-slate-400 hover:text-white">Leeren</button><button onclick="toggleChat(false)" class="text-slate-400 hover:text-white" aria-label="Schliessen"><i data-lucide="x" class="w-5 h-5"></i></button></div>
     </div>
     <div id="chat-msgs" class="flex-1 overflow-y-auto overscroll-contain p-3 space-y-2"></div>
     <div class="p-3 border-t border-slate-800 flex gap-2" style="padding-bottom:calc(0.75rem + env(safe-area-inset-bottom, 0px))">
@@ -565,6 +575,11 @@ html.light, html.light body { background: #eef2f7; color: #0f172a; }
         </div>
 
         <div class="bg-slate-900/60 p-4 rounded-2xl border border-slate-800 flex items-center justify-between gap-3">
+          <div><p class="text-xs font-semibold uppercase text-slate-400">System-Check</p><p class="text-[11px] text-slate-500">Prüft KI, Börse, Cloud & Datenbank</p></div>
+          <button type="button" onclick="openSystemCheck()" class="px-3 py-2 rounded-xl text-xs font-bold bg-blue-600 text-white">Jetzt prüfen</button>
+        </div>
+
+        <div class="bg-slate-900/60 p-4 rounded-2xl border border-slate-800 flex items-center justify-between gap-3">
           <div><p class="text-xs font-semibold uppercase text-slate-400">Design</p><p class="text-[11px] text-slate-500">Dunkel oder hell (weiss)</p></div>
           <button type="button" onclick="toggleTheme()" class="px-3 py-2 rounded-xl text-xs font-bold bg-slate-800 text-white border border-slate-700"><span class="theme-icon">☀️</span> <span class="theme-label">Helles Design</span></button>
         </div>
@@ -611,7 +626,7 @@ html.light, html.light body { background: #eef2f7; color: #0f172a; }
       { id: 'nutrition', name: 'Ernährung & Gesundheit', icon: 'apple', desc: 'Nährwert-Tracker, Health-Score, Intelligente Lebensmittel-Empfehlungen & Gewichtsverlauf' },
       { id: 'budget', name: 'Budget & Finanzen', icon: 'wallet', desc: 'Monatliche Einnahmen & Ausgaben in CHF' },
       { id: 'fitness', name: 'Fitness & Routine', icon: 'dumbbell', desc: 'Trainings mit Übungen, Sätzen & Wiederholungen, Kalorien-Schätzung & Fortschrittsanalyse' },
-      { id: 'football', name: 'Fußball', icon: 'trophy', desc: 'Dribbling, Schuss, Pässe, Sprint & Matches mit Vergleich zum letzten Training' },
+      { id: 'football', name: 'Sport & Hobbies', icon: 'trophy', desc: 'Fussball (Einzel-, Klub-Training, Match) und alle anderen Sportarten & Hobbies' },
       { id: 'social_media', name: 'Social Media Creator', icon: 'share-2', desc: 'TikTok, Instagram & YouTube: Posting-Ziel, Kennzahlen & Plattform-Analyse' },
       { id: 'lifestyle', name: 'Hygiene & Aussehen', icon: 'sparkles', desc: 'Duschen pro Woche, Körperpflege, Nägel & Historie' },
       { id: 'growth', name: 'Wachstum-Analyse', icon: 'ruler', desc: 'Grösse & Zielgrösse, tägliche Routine mit Tageszähler, monatliche Messung mit Diagramm' },
@@ -624,7 +639,8 @@ html.light, html.light body { background: #eef2f7; color: #0f172a; }
       { id: 'screentime', name: 'Bildschirmzeit', icon: 'smartphone', desc: 'TikTok, Instagram, YouTube, Browser, CapCut – Limits & Analyse' },
       { id: 'books', name: 'Bücher & Lesen', icon: 'book-open', desc: 'Leseliste, Seite & Kapitel, Lesezeit pro Tag, Wochenplan' },
       { id: 'learning', name: 'Lernen', icon: 'graduation-cap', desc: 'Was & wie lange gelernt, Fortschritts-Notizen pro Thema' },
-      { id: 'stocks', name: 'Aktien & ETFs', icon: 'line-chart', desc: 'Watchlist, Kurse, Charts (1T–5J) & Trends' }
+      { id: 'stocks', name: 'Investment', icon: 'wallet', desc: 'Portfolio mit Broker, Hebel & Marge, Markt-Übersicht, Aktien, ETFs, Krypto' },
+      { id: 'nodopa', name: 'Kein Dopamin-Konsum', icon: 'shield-check', desc: 'Tägliche Regeln (kein Scrollen, Games …) mit Tageszähler' }
     ];
 
     window.onload = function() {
@@ -668,6 +684,7 @@ html.light, html.light body { background: #eef2f7; color: #0f172a; }
       ensureV3Data();
       ensureV5Data();
       ensureV6Data();
+      ensureV7Data();
       updateNavProfile();
       renderDashboard();
     }
@@ -719,11 +736,13 @@ html.light, html.light body { background: #eef2f7; color: #0f172a; }
       } else if (modId === 'fitness') {
         contentHTML = trackerCompact('fitness', "openWorkspace('fitness','plan')") + renderFitnessCard();
       } else if (modId === 'football') {
-        contentHTML = trackerCompact('football', "openWorkspace('football','plan')") + renderFootballCard();
+        contentHTML = trackerCompact('football', "openWorkspace('football','plan')") + renderSportCard();
       } else if (modId === 'social_media') {
         contentHTML = trackerCompact('social', "openWorkspace('social_media','calendar')") + renderSocialCard();
       } else if (modId === 'lifestyle') {
         contentHTML = renderHygieneCard();
+      } else if (modId === 'nodopa') {
+        contentHTML = renderNodopaCard();
       } else if (modId === 'todo') {
         contentHTML = renderTodoCard();
       } else if (modId === 'clock') {
@@ -1783,7 +1802,7 @@ html.light, html.light body { background: #eef2f7; color: #0f172a; }
     // =====================================================================
     const WS_DEF = {
       fitness:       { title: 'Fitness & Routine',  icon: 'dumbbell',  tabs: [['new', 'Training'], ['plan', 'Plan & Tage'], ['history', 'Verlauf']] },
-      football:      { title: 'Fußball',            icon: 'trophy',    tabs: [['session', 'Einzeltraining'], ['club', 'Klub-Training'], ['match', 'Match'], ['plan', 'Plan & Tage'], ['history', 'Verlauf']] },
+      football:      { title: 'Sport & Hobbies',    icon: 'trophy',    tabs: [['session', 'Einzeltraining'], ['club', 'Klub-Training'], ['match', 'Match'], ['plan', 'Plan & Tage'], ['history', 'Verlauf']], tabsFn: () => sportTabs() },
       social_media:  { title: 'Social Media',       icon: 'share-2',   tabs: [['new', 'Post eintragen'], ['calendar', 'Kalender'], ['analysis', 'Analyse'], ['history', 'Verlauf']] },
       lifestyle:     { title: 'Hygiene & Aussehen', icon: 'sparkles',  tabs: [['today', 'Tracker'], ['history', 'Verlauf']] },
       face_progress: { title: 'Gesichtsentwicklung', icon: 'scan-face', tabs: [['photos', 'Fotos'], ['compare', 'Vergleich']] },
@@ -1791,12 +1810,13 @@ html.light, html.light body { background: #eef2f7; color: #0f172a; }
       screentime:    { title: 'Bildschirmzeit',     icon: 'smartphone', tabs: [['today', 'Eintragen'], ['calendar', 'Kalender'], ['analysis', 'Analyse'], ['settings', 'Limits']] },
       books:         { title: 'Bücher & Lesen',     icon: 'book-open', tabs: [['today', 'Lesen'], ['books', 'Bücher'], ['calendar', 'Wochenplan'], ['analysis', 'Analyse']] },
       learning:      { title: 'Lernen',             icon: 'graduation-cap', tabs: [['new', 'Eintragen'], ['calendar', 'Kalender'], ['analysis', 'Fortschritte']] },
-      stocks:        { title: 'Aktien & ETFs',      icon: 'line-chart', tabs: [['detail', 'Chart'], ['list', 'Watchlist & Trends']] }
+      stocks:        { title: 'Investment',         icon: 'wallet',    tabs: [['portfolio', 'Portfolio'], ['market', 'Markt'], ['detail', 'Chart'], ['list', 'Suche & Watchlist']] },
+      nodopa:        { title: 'Kein Dopamin-Konsum', icon: 'shield-check', tabs: [['today', 'Heute'], ['calendar', 'Kalender'], ['rules', 'Regeln']] }
     };
     const ws = { mod: null, tab: null };
 
     function openWorkspace(mod, tab) {
-      ws.mod = mod; ws.tab = tab || WS_DEF[mod].tabs[0][0];
+      ws.mod = mod; ws.tab = tab || (WS_DEF[mod].tabsFn ? WS_DEF[mod].tabsFn() : WS_DEF[mod].tabs)[0][0];
       document.getElementById('modal-workspace').classList.remove('hidden');
       document.body.classList.add('overflow-hidden');
       renderWorkspace(true);
@@ -1815,9 +1835,9 @@ html.light, html.light body { background: #eef2f7; color: #0f172a; }
       const body = document.getElementById('ws-body');
       const st = body.scrollTop;
       document.getElementById('ws-title').innerHTML = `<i data-lucide="${def.icon}" class="text-blue-400 w-5 h-5"></i> ${def.title}`;
-      document.getElementById('ws-tabs').innerHTML = def.tabs.map(([id, l]) =>
+      document.getElementById('ws-tabs').innerHTML = (def.tabsFn ? def.tabsFn() : def.tabs).map(([id, l]) =>
         `<button onclick="setWsTab('${id}')" class="px-3.5 py-2 rounded-xl text-sm font-semibold whitespace-nowrap transition ${ws.tab === id ? 'bg-blue-600 text-white' : 'bg-slate-900 text-slate-400 border border-slate-800 hover:text-white'}">${l}</button>`).join('');
-      const R = { fitness: renderFitnessWs, football: renderFootballWs, social_media: renderSocialWs, lifestyle: renderHygieneWs, face_progress: renderFaceWs, growth: renderGrowthWs, screentime: renderScreenWs, books: renderBooksWs, learning: renderLearnWs, stocks: renderStocksWs };
+      const R = { fitness: renderFitnessWs, football: renderSportWs, social_media: renderSocialWs, lifestyle: renderHygieneWs, face_progress: renderFaceWs, growth: renderGrowthWs, screentime: renderScreenWs, books: renderBooksWs, learning: renderLearnWs, stocks: renderInvestWs, nodopa: renderNodopaWs };
       body.innerHTML = R[ws.mod](ws.tab);
       lucide.createIcons();
       body.scrollTop = resetScroll ? 0 : st;
@@ -1830,7 +1850,7 @@ html.light, html.light body { background: #eef2f7; color: #0f172a; }
       if (ws.mod === 'screentime' && ws.tab === 'analysis') drawScreenChart();
       if (ws.mod === 'books' && ws.tab === 'analysis') drawReadChart();
       if (ws.mod === 'learning' && ws.tab === 'analysis') drawLearnChart();
-      if (ws.mod === 'stocks') { if (ws.tab === 'detail') loadStockDetail(); else loadStockTrends(); }
+      if (ws.mod === 'stocks') afterInvestRender();
       if (ws.mod === 'fitness' && ws.tab === 'history') drawFitChart();
       if (ws.mod === 'football' && ws.tab === 'session' && !fbResultId && fbDraft) {
         if (fbDraft.cats.dribbling) fbLiveDribble();
@@ -5101,9 +5121,9 @@ html.light, html.light body { background: #eef2f7; color: #0f172a; }
     const TOOL_KEYWORDS = {
       wms_grades: 'noten schule prüfung semester fach notiz bm efz', nutrition: 'essen ernährung kalorien protein health score gewicht wasser',
       budget: 'geld finanzen ausgaben einnahmen chf', fitness: 'training sport gym joggen laufen schwimmen kraft muskeln',
-      football: 'fussball fußball dribbling schuss pass sprint match tor', social_media: 'tiktok instagram youtube posts views follower content',
+      football: 'sport hobby hobbies fussball fußball dribbling schuss pass sprint match tor basketball tennis', social_media: 'tiktok instagram youtube posts views follower content',
       lifestyle: 'hygiene duschen nägel creme pflege aussehen', growth: 'grösse größe wachsen wachstum milch eier hängen haltung messen',
-      face_progress: 'gesicht foto selfie vorher nachher', weather: 'wetter regen temperatur basel', calendar: 'termine kalender agenda', news: 'nachrichten schlagzeilen welt', todo: 'aufgaben todo erledigen frist termin', clock: 'uhr zeit schlafen aufstehen wecker', screentime: 'bildschirmzeit handy tiktok instagram youtube capcut limit', books: 'buch bücher lesen seite kapitel', learning: 'lernen schule thema fortschritt', stocks: 'aktien etf börse kurs krypto bitcoin trend'
+      face_progress: 'gesicht foto selfie vorher nachher', weather: 'wetter regen temperatur basel', calendar: 'termine kalender agenda', news: 'nachrichten schlagzeilen welt', todo: 'aufgaben todo erledigen frist termin', clock: 'uhr zeit schlafen aufstehen wecker', screentime: 'bildschirmzeit handy tiktok instagram youtube capcut limit', books: 'buch bücher lesen seite kapitel', learning: 'lernen schule thema fortschritt', stocks: 'investment aktien etf börse kurs krypto bitcoin trend portfolio broker hebel marge capital interactive', nodopa: 'dopamin detox scrollen verzicht disziplin'
     };
     const QUICK_ACTIONS = [
       ['🏃', 'Joggen eintragen', 'laufen run lauf', 'fitness', () => { fitDraft = null; fitLastType = 'jog'; fitResultId = null; openWorkspace('fitness', 'new'); }],
@@ -5126,7 +5146,12 @@ html.light, html.light body { background: #eef2f7; color: #0f172a; }
       ['📱', 'Bildschirmzeit eintragen', 'handy zeit', 'screentime', () => { screenDate = null; openWorkspace('screentime', 'today'); }],
       ['📖', 'Lesezeit eintragen', 'buch lesen', 'books', () => openWorkspace('books', 'today')],
       ['🧠', 'Lerneinheit eintragen', 'lernen', 'learning', () => openWorkspace('learning', 'new')],
-      ['📈', 'Aktie / ETF hinzufügen', 'börse kurs', 'stocks', () => openWorkspace('stocks', 'list')],
+      ['📈', 'Aktie / ETF suchen', 'börse kurs investment', 'stocks', () => openWorkspace('stocks', 'list')],
+      ['💼', 'Investment: Position erfassen', 'portfolio broker hebel marge kauf', 'stocks', () => { invFormOpen = true; openWorkspace('stocks', 'portfolio'); }],
+      ['🔥', 'Markt: Top-Gewinner heute', 'trend gewinner steigen', 'stocks', () => openWorkspace('stocks', 'market')],
+      ['🛡️', 'Kein Dopamin: heute abhaken', 'detox scrollen', 'nodopa', () => { nodopaDate = null; openWorkspace('nodopa', 'today'); }],
+      ['🏅', 'Hobby / Sport eintragen', 'basketball tennis gitarre training', 'football', () => openWorkspace('football', sportTabs()[0][0])],
+      ['🛠️', 'System-Check (KI, Börse, Cloud)', 'fehler funktioniert nicht hilfe problem einrichten', '', () => openSystemCheck()],
       ['🤖', 'KI-Assistent öffnen', 'chat ki ai frage hilfe gemini', '', () => toggleChat(true)],
       ['👤', 'Steckbrief öffnen', 'profil gewicht alter grösse email passwort', '', () => openProfileModal()],
       ['💾', 'Backup exportieren', 'sichern datei', '', () => exportBackup()],
@@ -5261,6 +5286,8 @@ html.light, html.light body { background: #eef2f7; color: #0f172a; }
         (u.footballMatches || []).filter(l => l.date === d).forEach(l => out.push({ icon: '🏟️', title: `Match${l.opponent ? ' vs. ' + l.opponent : ''}`, sub: `${l.minutes} Min. · ${l.goals} Tore · ${l.assists} Assists`, run: () => { matchResultId = l.id; openWorkspace('football', 'match'); } }));
       }
       if (key === 'social') (u.socialPosts || []).filter(p => p.date === d).forEach(p => out.push({ icon: '📱', title: `${PLATFORMS[p.platform].name}${p.desc ? ': ' + p.desc : ''}`, sub: `${fmtNum(p.views)} Views · ${fmtNum(p.likes)} Likes`, run: () => { socResultId = p.id; openWorkspace('social_media', 'new'); } }));
+      if (key === 'football') (u.hobbyLogs || []).filter(l => l.date === d).forEach(l => out.push({ icon: hobbyIcon(l.hobby), title: `${l.hobby} – ${fmtHM(l.minutes)}`, sub: l.note || '', run: () => { currentUser.sportSel = l.hobby; openWorkspace('football', 'hobbyhist'); } }));
+      if (key === 'nodopa') { const l = (u.nodopa.log || {})[d] || {}; u.nodopa.rules.forEach(r => out.push({ icon: l[r.id] === 'ok' ? '✅' : l[r.id] === 'fail' ? '❌' : '⬜', title: r.name, sub: l[r.id] === 'ok' ? 'eingehalten' : l[r.id] === 'fail' ? 'nicht eingehalten' : 'nicht abgehakt', run: () => { nodopaDate = d; openWorkspace('nodopa', 'today'); } })); }
       if (key === 'screen') { const e = (u.screen.log || {})[d]; if (e) { const o = screenOver(e); out.push({ icon: '📱', title: `Bildschirmzeit ${fmtHM(screenTotal(e))}`, sub: o.length ? 'Über Limit: ' + o.map(a => `${a.name} ${fmtHM(e[a.id])}`).join(', ') : 'Alle Limits eingehalten ✅', run: () => { screenDate = d; openWorkspace('screentime', 'today'); } }); } }
       if (key === 'reading') (u.readingLog || []).filter(l => l.date === d).forEach(l => { const b = (u.books || []).find(x => x.id === l.bookId); out.push({ icon: '📖', title: `${b ? b.title : 'Buch'} – ${fmtHM(l.minutes)}`, sub: `${l.page ? 'bis Seite ' + l.page : ''}${l.chapter ? ' · Kapitel ' + l.chapter : ''}${l.note ? ' · ' + l.note : ''}`, run: () => openWorkspace('books', 'analysis') }); });
       if (key === 'learning') ((u.learning || {}).sessions || []).filter(l => l.date === d).forEach(l => out.push({ icon: '🧠', title: `${l.topic} – ${fmtHM(l.minutes)}`, sub: l.note || '', run: () => { learnTopicFilter = l.topic; openWorkspace('learning', 'analysis'); } }));
@@ -5308,7 +5335,8 @@ html.light, html.light body { background: #eef2f7; color: #0f172a; }
       switch (id) {
         case 'nutrition': return trackState('nutrition', y) === 'missed' ? `Ernährung ${yl} nicht eingetragen` : '';
         case 'fitness': a = trkAlert('fitness'); return a ? 'Training: ' + a : '';
-        case 'football': a = trkAlert('football'); return a ? 'Fußball: ' + a : '';
+        case 'football': a = trkAlert('football'); return a ? 'Sport: ' + a : '';
+        case 'nodopa': { const l = currentUser.nodopa.log[y] || {}; const f = currentUser.nodopa.rules.filter(r => l[r.id] === 'fail').map(r => r.name); if (f.length) return `${yl} nicht durchgehalten: ${f.join(', ')}`; return trackState('nodopa', y) === 'missed' ? `${yl} nicht abgehakt` : ''; }
         case 'social_media': a = trkAlert('social'); return a ? 'Kein Post ' + a.replace(' nicht erledigt', '') : '';
         case 'lifestyle': {
           const h = hyg(), parts = [];
@@ -5965,28 +5993,8 @@ html.light, html.light body { background: #eef2f7; color: #0f172a; }
     const chgCls = v => v === null || v === undefined ? 'text-slate-400' : v >= 0 ? 'text-emerald-400' : 'text-rose-400';
     const chgTxt = v => v === null || v === undefined ? '–' : (v >= 0 ? '▲ +' : '▼ ') + fmtNum(v, 2) + ' %';
     const symId = s => 'stk-' + s.replace(/[^A-Za-z0-9]/g, '_');
-    function renderStocksCard() {
-      const list = currentUser.stocks.list;
-      return `<div class="space-y-2">
-        ${list.length ? list.map(s => `<button onclick="stockSel='${s}';openWorkspace('stocks','detail')" id="${symId(s)}" class="w-full flex items-center justify-between gap-2 p-2.5 rounded-xl bg-slate-900/60 border border-slate-800 hover:border-blue-500 text-left transition">
-            <span class="min-w-0"><span class="block text-sm font-bold text-white">${esc(s)}</span><span class="stk-name block text-[10px] text-slate-500 truncate">lädt …</span></span>
-            <span class="text-right shrink-0"><span class="stk-price block text-sm font-bold text-white">–</span><span class="stk-chg block text-[11px] font-bold text-slate-400"></span></span></button>`).join('') : '<p class="text-xs text-slate-400">Füge Aktien, ETFs oder Krypto hinzu.</p>'}
-        <p id="stocks-msg" class="text-[11px] text-slate-500"></p>
-        ${cardBtns([['Charts', "openWorkspace('stocks','detail')", true], ['+ Hinzufügen / Trends', "openWorkspace('stocks','list')"]])}
-      </div>`;
-    }
-    async function loadStocksCard() {
-      if (!document.querySelector('.dash-card[data-mod="stocks"]')) return;
-      for (const s of currentUser.stocks.list) {
-        const el = document.getElementById(symId(s)); if (!el) continue;
-        try {
-          const q = await marketGet({ action: 'chart', symbol: s, range: '1d' });
-          el.querySelector('.stk-name').textContent = q.name;
-          el.querySelector('.stk-price').textContent = fmtPrice(q.price, q.currency);
-          const c = el.querySelector('.stk-chg'); c.textContent = chgTxt(q.dayChangePct); c.className = 'stk-chg block text-[11px] font-bold ' + chgCls(q.dayChangePct);
-        } catch (e) { const m = document.getElementById('stocks-msg'); if (m) m.textContent = e.message; el.querySelector('.stk-name').textContent = 'keine Daten'; if (/Cloudflare/.test(e.message)) break; }
-      }
-    }
+
+
     function renderStocksWs(tab) {
       if (tab === 'list') return `<div class="${BOX}">${panelHead('search', 'Aktie, ETF oder Krypto suchen')}
           <div class="flex gap-2"><input id="stk-q" placeholder="z. B. Apple, Nestlé, MSCI World, Bitcoin" onkeydown="if(event.key==='Enter')stockSearch()" class="${IN}"><button onclick="stockSearch()" class="px-4 rounded-xl bg-blue-600 text-white text-sm font-bold">Suchen</button></div>
@@ -6033,15 +6041,7 @@ html.light, html.light body { background: #eef2f7; color: #0f172a; }
         el.innerHTML = j.items.map(x => `<div class="flex items-center justify-between gap-2 py-1"><div class="min-w-0"><p class="text-sm font-bold text-white">${esc(x.symbol)}</p><p class="text-[10px] text-slate-500 truncate">${esc(x.name)}</p></div><div class="flex items-center gap-2 shrink-0"><span class="text-xs font-bold ${chgCls(x.dayChangePct)}">${chgTxt(x.dayChangePct)}</span>${currentUser.stocks.list.includes(x.symbol) ? '<span class="text-[10px] text-slate-500">✓</span>' : `<button onclick="addStock('${esc(x.symbol)}')" class="px-2 py-1 rounded-lg text-[11px] font-bold bg-blue-600 text-white">+</button>`}</div></div>`).join('') || '<p class="text-xs text-slate-500">Gerade keine Trends.</p>';
       } catch (e) { el.innerHTML = `<p class="text-xs text-rose-300">${esc(e.message)}</p>`; }
     }
-    async function stockSearch() {
-      const q = document.getElementById('stk-q').value.trim(); if (!q) return;
-      const el = document.getElementById('stk-results'); el.innerHTML = '<p class="text-xs text-slate-400">sucht …</p>';
-      try {
-        const j = await marketGet({ action: 'search', q }, 3600000);
-        stockSearchRes = j.results.map(x => `<div class="flex items-center justify-between gap-2 p-2 rounded-xl bg-slate-950/70 border border-slate-800"><div class="min-w-0"><p class="text-sm font-bold text-white">${esc(x.symbol)} <span class="text-[10px] font-normal text-slate-500">${esc(x.type)} · ${esc(x.exchange)}</span></p><p class="text-[11px] text-slate-400 truncate">${esc(x.name)}</p></div>${currentUser.stocks.list.includes(x.symbol) ? '<span class="text-[11px] text-slate-500">✓ drin</span>' : `<button onclick="addStock('${esc(x.symbol)}')" class="px-2.5 py-1.5 rounded-lg text-xs font-bold bg-blue-600 text-white">+ Hinzufügen</button>`}</div>`).join('') || '<p class="text-xs text-slate-500">Nichts gefunden.</p>';
-        el.innerHTML = stockSearchRes;
-      } catch (e) { el.innerHTML = `<p class="text-xs text-rose-300">${esc(e.message)}</p>`; }
-    }
+
     function addStock(s) { if (!currentUser.stocks.list.includes(s)) currentUser.stocks.list.push(s); stockSel = s; saveUserData(); stockSearchRes = null; setWsTab('detail'); }
     function removeStock(s) { currentUser.stocks.list = currentUser.stocks.list.filter(x => x !== s); if (stockSel === s) stockSel = null; saveUserData(); renderWorkspace(); }
     function moveStock(i, d) { const l = currentUser.stocks.list; [l[i], l[i + d]] = [l[i + d], l[i]]; saveUserData(); renderWorkspace(); }
@@ -6099,13 +6099,13 @@ html.light, html.light body { background: #eef2f7; color: #0f172a; }
     async function sendChat() {
       const inp = document.getElementById('chat-input'); const text = inp.value.trim(); if (!text || chatBusy) return;
       const h = chatHistory(); h.push({ role: 'user', text }); saveChat(h); inp.value = '';
-      if (!currentUser.cloud || !getToken()) { h.push({ role: 'assistant', error: true, text: 'Der KI-Assistent braucht ein Cloud-Konto. Melde dich mit E-Mail und Passwort an (nicht als Gast).' }); saveChat(h); return renderChat(); }
+      if (!currentUser.cloud || !getToken()) { h.push({ role: 'assistant', error: true, text: 'Der KI-Assistent braucht ein Cloud-Konto. Tippe oben auf „Check“ – dort steht, was noch fehlt.' }); saveChat(h); return renderChat(); }
       chatBusy = true; renderChat();
       let reply;
       try {
         const r = await fetch('/api/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token: getToken(), context: chatContext(), messages: h.filter(m => !m.error).slice(-14) }) });
         const j = (r.headers.get('content-type') || '').includes('json') ? await r.json() : { ok: false, error: 'no_fn' };
-        const err = { no_key: 'Der KI-Schlüssel ist auf Cloudflare noch nicht eingetragen (GEMINI_API_KEY).', no_kv: 'Die Cloud-Datenbank ist nicht verbunden.', no_session: 'Deine Anmeldung ist abgelaufen – melde dich neu an.', limit: 'Tageslimit für den Chat erreicht. Morgen geht es weiter.', no_fn: 'Die Chat-Datei (functions/api/chat.js) ist noch nicht auf Cloudflare.', ai_error: 'Die KI hat einen Fehler gemeldet: ' + (j.message || ''), empty: 'Die KI hat keine Antwort geliefert. Versuch es nochmal.' };
+        const err = { no_key: 'Der KI-Schlüssel fehlt auf Cloudflare (Secret GEMINI_API_KEY). Tippe oben auf „Check“.', no_kv: 'Die Cloud-Datenbank ist nicht verbunden.', no_session: 'Deine Anmeldung ist abgelaufen – melde dich neu an.', limit: 'Tageslimit für den Chat erreicht. Morgen geht es weiter.', no_fn: 'Der Server-Teil läuft auf Cloudflare noch nicht. Tippe oben auf „Check“ – dort steht, was fehlt.', ai_error: aiErrorHint(j.message), empty: 'Die KI hat keine Antwort geliefert. Versuch es nochmal.' };
         reply = j.ok ? { role: 'assistant', text: j.text } : { role: 'assistant', error: true, text: err[j.error] || 'Fehler – versuch es nochmal.' };
       } catch (e) { reply = { role: 'assistant', error: true, text: 'Keine Verbindung. Prüfe dein Internet.' }; }
       chatBusy = false; const h2 = chatHistory(); h2.push(reply); saveChat(h2); renderChat();
@@ -6122,6 +6122,443 @@ html.light, html.light body { background: #eef2f7; color: #0f172a; }
       return d === today ? 'open' : 'missed';
     }
     function initV6Widgets() { updateClocks(); updateTodoTimers(); if (currentUser.activeModules.includes('stocks')) loadStocksCard(); }
+
+
+    // =====================================================================
+    //  MYLIFE V7 – System-Check, Investment (Portfolio & Markt),
+    //  Kein Dopamin-Konsum, Sport & Hobbies
+    // =====================================================================
+
+    const NODOPA_DEFAULT = ['Kein endloses Scrollen (Reels, TikTok, Shorts)', 'Keine Games', 'Keine Süssigkeiten & Energy Drinks', 'Kein Serien- oder YouTube-Binge'];
+    const HOBBY_DEFAULT = ['Fussball', 'Basketball', 'Tennis', 'Volleyball', 'Kampfsport', 'Velo', 'Gitarre', 'Zeichnen'];
+    function ensureV7Data() {
+      const u = currentUser, today = getTodayString();
+      const st = u.stocks;
+      if (!st.positions) st.positions = [];
+      if (!st.closed) st.closed = [];
+      if (!st.marketCat) st.marketCat = 'all';
+      if (!st.sort) st.sort = 'up';
+      if (!u.nodopa) u.nodopa = { rules: NODOPA_DEFAULT.map(n => ({ id: uid(), name: n })), log: {} };
+      if (!u.hobbies) u.hobbies = HOBBY_DEFAULT.slice();
+      if (!u.hobbyLogs) u.hobbyLogs = [];
+      if (!u.sportSel) u.sportSel = 'Fussball';
+      if (!u.trackers.nodopa) u.trackers.nodopa = { days: [0, 1, 2, 3, 4, 5, 6], start: today, checkins: [] };
+      saveUserData();
+    }
+
+    // =====================================================================
+    //  SYSTEM-CHECK – zeigt genau, was auf Cloudflare noch fehlt
+    // =====================================================================
+    function aiErrorHint(msg) {
+      msg = String(msg || '');
+      if (/api key not valid|API_KEY_INVALID|invalid api key/i.test(msg)) return 'Der Schlüssel ist ungültig. Kopiere ihn nochmal genau (ohne Leerzeichen) in das Secret GEMINI_API_KEY.';
+      if (/has not been used|is disabled|SERVICE_DISABLED|not enabled/i.test(msg)) return 'Die KI-Schnittstelle ist in deinem Google-Projekt nicht aktiviert. Am einfachsten: neuen Schlüssel bei aistudio.google.com erstellen (beginnt mit „AIza“).';
+      if (/expired/i.test(msg)) return 'Der Schlüssel ist abgelaufen (Vertex-Express-Testphase dauert 90 Tage). Erstell einen neuen bei aistudio.google.com.';
+      if (/quota|RESOURCE_EXHAUSTED|429/i.test(msg)) return 'Das Gratis-Kontingent ist aufgebraucht. Warte etwas oder prüfe dein Limit bei Google.';
+      if (/not found|404|is not supported/i.test(msg)) return 'Das KI-Modell wurde nicht gefunden. Lege die Variable GEMINI_MODEL mit dem Wert gemini-2.5-flash (oder gemini-2.0-flash) an.';
+      if (/PERMISSION_DENIED|403/i.test(msg)) return 'Keine Berechtigung für diesen Schlüssel. Erstell am besten einen neuen bei aistudio.google.com.';
+      return 'Google meldet: ' + msg;
+    }
+    async function openSystemCheck() {
+      closeSearch(); closeModal('modal-profile');
+      document.getElementById('modal-check').classList.remove('hidden');
+      const el = document.getElementById('check-list');
+      const rows = [];
+      const draw = () => {
+        el.innerHTML = rows.map(r => `<div class="p-3 rounded-xl border ${r.s === 'ok' ? 'border-emerald-500/40 bg-emerald-500/10' : r.s === 'bad' ? 'border-rose-500/50 bg-rose-500/10' : r.s === 'warn' ? 'border-amber-500/40 bg-amber-500/10' : 'border-slate-800 bg-slate-900'}">
+          <p class="text-sm font-bold text-white">${{ ok: '✅', bad: '❌', warn: '⚠️', wait: '⏳' }[r.s]} ${r.t}</p>${r.d ? `<p class="text-[11px] text-slate-300 mt-1">${r.d}</p>` : ''}</div>`).join('');
+      };
+      const add = (t) => { const r = { s: 'wait', t, d: '' }; rows.push(r); draw(); return (s, d) => { r.s = s; r.d = d || ''; draw(); }; };
+
+      let h = null;
+      let set = add('Server-Teil auf Cloudflare');
+      try {
+        const r = await fetch('/api/health', { cache: 'no-store' });
+        if ((r.headers.get('content-type') || '').includes('json')) h = await r.json();
+      } catch (e) { }
+      if (location.protocol === 'file:') { set('bad', 'Du hast die Datei direkt geöffnet. Der System-Check funktioniert nur auf deiner Cloudflare-Adresse.'); return; }
+      if (!h) { set('bad', 'Der Server-Teil läuft nicht. Darum gehen KI, Aktien, Cloud-Login und News nicht. Meistens ist dein Projekt ein <b>Worker</b> (Adresse endet auf .workers.dev): Dann brauchst du <b>worker.js</b>, <b>wrangler.jsonc</b> und <b>.assetsignore</b> im Repo (Anleitung „Weg B“). Bei einem Pages-Projekt muss der Ordner exakt <b>functions</b> heissen.'); }
+      else set('ok', `Läuft (${h.runtime === 'worker' ? 'als Worker' : 'als Pages-Projekt'}).`);
+      if (!h) return;
+
+      set = add('Cloud-Datenbank (KV „MYLIFE“)');
+      set(h.kv ? 'ok' : 'bad', h.kv ? 'Verbunden.' : (h.runtime === 'worker' ? 'Nicht verbunden. Trag die KV-ID in wrangler.jsonc bei kv_namespaces ein (Anleitung Schritt B3).' : 'Nicht verbunden. Cloudflare → dein Projekt → Settings → Bindings → KV namespace, Name MYLIFE.'));
+
+      set = add('Angemeldet mit Cloud-Konto');
+      set(currentUser && currentUser.cloud && getToken() ? 'ok' : 'bad', currentUser && currentUser.cloud && getToken() ? `Ja, als ${esc(currentUser.username)}.` : 'Nein. Der KI-Assistent braucht ein Cloud-Konto: abmelden und mit E-Mail + Passwort neu anmelden (nicht als Gast).');
+
+      set = add('KI-Schlüssel (GEMINI_API_KEY)');
+      if (!h.ai) set('bad', 'Nicht gefunden. Cloudflare → dein Projekt → Settings → Variables and Secrets → Add → Typ <b>Secret</b>, Name genau <b>GEMINI_API_KEY</b>. Danach neu deployen.');
+      else {
+        set('ok', `Gefunden (${h.aiType}, Modell ${esc(h.model)}).`);
+        set = add('KI-Testanfrage an Google');
+        try {
+          const t = await (await fetch('/api/health?test=ai', { cache: 'no-store' })).json();
+          if (t.aiTest && t.aiTest.ok) set('ok', 'Google antwortet – der Assistent funktioniert.');
+          else set('bad', aiErrorHint(t.aiTest && t.aiTest.message));
+        } catch (e) { set('bad', 'Test fehlgeschlagen.'); }
+      }
+
+      set = add('Börsendaten');
+      try { await marketGet({ action: 'chart', symbol: 'SPY', range: '1d' }, 0); set('ok', 'Kurse kommen an.'); }
+      catch (e) { set('bad', esc(e.message)); }
+
+      set = add('E-Mail-Versand (optional)');
+      set(h.mail ? 'ok' : 'warn', h.mail ? 'Eingerichtet.' : 'Nicht eingerichtet – Registrierung geht trotzdem, nur ohne Bestätigungscode.');
+    }
+
+    // =====================================================================
+    //  INVESTMENT – Portfolio mit Broker, Hebel & Marge, Markt-Übersicht
+    // =====================================================================
+    const BROKERS = ['Interactive Brokers', 'Capital.com', 'Swissquote', 'PostFinance', 'Yuh', 'Neon', 'Trade Republic', 'Andere'];
+    const MARKET_CATS = [['all', 'Alle'], ['stocks', 'Aktien'], ['etf', 'ETFs'], ['crypto', 'Krypto'], ['index', 'Indizes'], ['commodity', 'Rohstoffe'], ['fx', 'Devisen']];
+    const TYPE_LABEL = { EQUITY: 'Aktie', ETF: 'ETF', CRYPTOCURRENCY: 'Krypto', INDEX: 'Index', MUTUALFUND: 'Fonds', FUTURE: 'Rohstoff/Future', CURRENCY: 'Devise' };
+    const SEARCH_TYPES = [['all', 'Alle'], ['EQUITY', 'Aktien'], ['ETF', 'ETFs'], ['CRYPTOCURRENCY', 'Krypto'], ['MUTUALFUND', 'Fonds'], ['INDEX', 'Indizes']];
+    let invDraft = null, invFormOpen = false, moversType = 'day_gainers', searchType = 'all', searchRaw = null, mktFilter = '';
+    const fmtCHF = (v, sign) => (v === null || v === undefined || isNaN(v)) ? '–' : (sign && v > 0 ? '+' : v < 0 ? '−' : '') + fmtNum(Math.abs(v), 2) + ' CHF';
+    const fmtPct = v => (v === null || v === undefined || isNaN(v)) ? '–' : (v > 0 ? '+' : v < 0 ? '−' : '') + fmtNum(Math.abs(v), 2) + ' %';
+    function newInvDraft(sym) { return { symbol: sym || '', broker: 'Interactive Brokers', brokerOther: '', dir: 'long', entry: '', date: getTodayString(), margin: '', lev: '1', note: '' }; }
+    function posCalc(p, price) {
+      const dir = p.dir === 'short' ? -1 : 1;
+      const ret = price ? dir * (price - p.entry) / p.entry : null; // Kursbewegung zu deinen Gunsten
+      const lev = p.lev || 1;
+      return {
+        price, ret,
+        plPct: ret === null ? null : ret * lev * 100,
+        plCHF: ret === null ? null : p.margin * lev * ret,
+        exposure: p.margin * lev,
+        cushion: ret === null ? null : (1 / lev + ret) * 100 // wie viel % Gegenbewegung noch bis Totalverlust
+      };
+    }
+    function renderInvestWs(tab) {
+      if (tab === 'portfolio') return renderPortfolioShell();
+      if (tab === 'market') return renderMarketShell();
+      if (tab === 'list') return renderSearchShell();
+      return renderStocksWs('detail');
+    }
+    function afterInvestRender() {
+      if (ws.tab === 'portfolio') loadPortfolio();
+      else if (ws.tab === 'market') { loadMarketView(); loadMovers(); }
+      else if (ws.tab === 'list') loadStockTrends();
+      else loadStockDetail();
+    }
+
+    // ---------- Portfolio ----------
+    function renderPortfolioShell() {
+      if (!invDraft) invDraft = newInvDraft();
+      const d = invDraft;
+      const m = pNum(d.margin), lev = pNum(d.lev) || 1;
+      const form = invFormOpen ? `<div class="${BOX}">
+          ${panelHead('plus-circle', 'Position erfassen')}
+          <div class="grid grid-cols-2 gap-2">
+            <div><label class="${LBL}">Wertpapier / Symbol</label><input value="${esc(d.symbol)}" list="inv-syms" placeholder="z. B. AAPL, VT, BTC-USD" oninput="invDraft.symbol=this.value.toUpperCase().trim()" autocapitalize="characters" class="${IN}"><datalist id="inv-syms">${currentUser.stocks.list.map(s => `<option value="${esc(s)}">`).join('')}</datalist></div>
+            <div><label class="${LBL}">Broker</label><select onchange="invDraft.broker=this.value;renderWorkspace()" class="${IN}">${BROKERS.map(b => `<option ${d.broker === b ? 'selected' : ''}>${b}</option>`).join('')}</select></div>
+            ${d.broker === 'Andere' ? `<div class="col-span-2"><label class="${LBL}">Name des Brokers</label><input value="${esc(d.brokerOther)}" oninput="invDraft.brokerOther=this.value" class="${IN}"></div>` : ''}
+            <div><label class="${LBL}">Richtung</label><div class="grid grid-cols-2 gap-1">${segBtn('Long ↑', d.dir === 'long', "invDraft.dir='long';renderWorkspace()")}${segBtn('Short ↓', d.dir === 'short', "invDraft.dir='short';renderWorkspace()")}</div></div>
+            <div><label class="${LBL}">Gestartet am</label><input type="date" value="${d.date}" max="${getTodayString()}" onchange="invDraft.date=this.value" class="${IN} px-2"></div>
+            <div><label class="${LBL}">Einstiegskurs</label><div class="flex gap-1"><input id="inv-entry" inputmode="decimal" value="${esc(d.entry)}" placeholder="z. B. 182,50" oninput="invDraft.entry=this.value;invPreview()" class="${IN} text-center"><button onclick="fillCurrentPrice()" class="px-2 rounded-xl bg-slate-800 border border-slate-700 text-[10px] font-bold text-slate-200 leading-tight" title="Aktuellen Kurs übernehmen">Kurs<br>jetzt</button></div></div>
+            <div><label class="${LBL}">Einsatz / Marge (CHF)</label><input inputmode="decimal" value="${esc(d.margin)}" placeholder="z. B. 500" oninput="invDraft.margin=this.value;invPreview()" class="${IN} text-center"></div>
+          </div>
+          <div><label class="${LBL}">Hebel</label><div class="grid grid-cols-6 gap-1">${['1', '2', '5', '10', '20', '30'].map(x => segBtn(x + '×', String(d.lev) === x, `invDraft.lev='${x}';renderWorkspace()`)).join('')}</div>
+            <input inputmode="decimal" value="${esc(d.lev)}" oninput="invDraft.lev=this.value;invPreview()" placeholder="eigener Hebel" class="${IN} mt-1 text-center"></div>
+          <div><label class="${LBL}">Notiz (optional)</label><input value="${esc(d.note)}" placeholder="Warum hast du investiert?" oninput="invDraft.note=this.value" class="${IN}"></div>
+          <div id="inv-preview" class="text-[11px]"></div>
+          <div class="grid grid-cols-2 gap-2"><button onclick="invFormOpen=false;renderWorkspace()" class="py-2.5 rounded-xl text-xs font-bold bg-slate-900 border border-slate-700 text-slate-300">Abbrechen</button><button onclick="savePosition()" class="py-2.5 rounded-xl text-xs font-bold bg-emerald-600 text-white">Position speichern</button></div>
+          <p class="text-[10px] text-slate-500">Hebel vervielfacht Gewinne <b>und</b> Verluste. Bei Hebel 10× ist deine Marge schon bei −10 % Kursbewegung weg. Die meisten Privatanleger verlieren mit gehebelten Produkten (CFDs) Geld.</p>
+        </div>` : `<button onclick="invFormOpen=true;renderWorkspace()" class="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold">+ Neue Position erfassen</button>`;
+      return `${form}<div id="pf-body" class="space-y-3"><p class="text-xs text-slate-400 text-center py-4">Portfolio wird geladen …</p></div>`;
+    }
+    function invPreview() {
+      const el = document.getElementById('inv-preview'); if (!el) return;
+      const m = pNum(invDraft.margin), lev = pNum(invDraft.lev) || 1;
+      if (!(m > 0)) { el.innerHTML = ''; return; }
+      el.innerHTML = `<p class="text-slate-300">Positionswert: <b class="text-white">${fmtCHF(m * lev)}</b> (Marge ${fmtCHF(m)} × Hebel ${fmtNum(lev, lev % 1 ? 1 : 0)})</p>${lev > 1 ? `<p class="text-amber-300 font-semibold">⚠️ Totalverlust der Marge schon bei ${fmtNum(100 / lev, 1)} % Bewegung gegen dich.</p>` : ''}`;
+    }
+    async function fillCurrentPrice() {
+      const s = (invDraft.symbol || '').trim(); if (!s) return alert('Gib zuerst das Symbol ein.');
+      try { const q = await marketGet({ action: 'chart', symbol: s, range: '1d' }); invDraft.entry = String(+q.price.toFixed(q.price >= 100 ? 2 : 4)).replace('.', ','); const i = document.getElementById('inv-entry'); if (i) i.value = invDraft.entry; invPreview(); }
+      catch (e) { alert(e.message); }
+    }
+    function savePosition() {
+      const d = invDraft, entry = pNum(d.entry), margin = pNum(d.margin), lev = pNum(d.lev) || 1;
+      if (!d.symbol) return alert('Gib das Symbol ein, z. B. AAPL.');
+      if (!(entry > 0)) return alert('Gib deinen Einstiegskurs ein (oder tippe auf „Kurs jetzt“).');
+      if (!(margin > 0)) return alert('Gib ein, wie viel Geld du eingesetzt hast (CHF).');
+      if (!(lev >= 1 && lev <= 500)) return alert('Der Hebel muss zwischen 1 und 500 liegen.');
+      const broker = d.broker === 'Andere' ? (d.brokerOther.trim() || 'Andere') : d.broker;
+      currentUser.stocks.positions.push({ id: uid(), createdAt: Date.now(), symbol: d.symbol.toUpperCase(), broker, dir: d.dir, entry, date: d.date, margin, lev, note: d.note.trim() });
+      if (!currentUser.stocks.list.includes(d.symbol.toUpperCase())) currentUser.stocks.list.push(d.symbol.toUpperCase());
+      saveUserData(); invDraft = null; invFormOpen = false; renderWorkspace();
+    }
+    async function priceMap(symbols) {
+      const out = {};
+      await Promise.all([...new Set(symbols)].map(async s => { try { const q = await marketGet({ action: 'chart', symbol: s, range: '1d' }); out[s] = q; } catch (e) { out[s] = null; } }));
+      return out;
+    }
+    async function portfolioTotals() {
+      const P = currentUser.stocks.positions; const prices = await priceMap(P.map(p => p.symbol));
+      let margin = 0, exposure = 0, pl = 0, known = 0;
+      const rows = P.map(p => { const q = prices[p.symbol]; const c = posCalc(p, q ? q.price : null); margin += p.margin; exposure += c.exposure; if (c.plCHF !== null) { pl += c.plCHF; known++; } return { p, q, c }; });
+      return { rows, margin, exposure, pl, plPct: margin ? pl / margin * 100 : null, complete: known === P.length };
+    }
+    async function loadPortfolio() {
+      const el = document.getElementById('pf-body'); if (!el) return;
+      const st = currentUser.stocks;
+      if (!st.positions.length && !st.closed.length) { el.innerHTML = `<div class="${BOX} text-center"><p class="text-sm text-slate-300">Noch keine Positionen.</p><p class="text-[11px] text-slate-500">Erfasse jede Investition mit Broker, Einstiegskurs, Einsatz und Hebel – dann siehst du hier dein Plus oder Minus in Prozent und Franken.</p></div>`; return; }
+      const t = await portfolioTotals();
+      const byBroker = {}; t.rows.forEach(({ p, c }) => { const b = byBroker[p.broker] = byBroker[p.broker] || { margin: 0, pl: 0 }; b.margin += p.margin; b.pl += c.plCHF || 0; });
+      const realized = st.closed.reduce((s, p) => s + p.realized, 0);
+      el.innerHTML = `
+        <div class="${BOX}">
+          <div class="grid grid-cols-2 gap-2">${tile('Investiert (Marge)', fmtCHF(t.margin))}${tile('Positionswert', fmtCHF(t.exposure))}${tile('Gewinn / Verlust', fmtCHF(t.pl, true), t.pl >= 0 ? 'text-emerald-300' : 'text-rose-300')}${tile('Rendite auf Einsatz', fmtPct(t.plPct), t.pl >= 0 ? 'text-emerald-300' : 'text-rose-300')}</div>
+          ${Object.keys(byBroker).length > 1 ? `<div class="divide-y divide-slate-800">${Object.entries(byBroker).map(([b, v]) => `<div class="flex justify-between text-xs py-1.5"><span class="text-slate-300">${esc(b)}</span><span><span class="text-slate-400">${fmtCHF(v.margin)}</span> · <b class="${v.pl >= 0 ? 'text-emerald-300' : 'text-rose-300'}">${fmtCHF(v.pl, true)}</b></span></div>`).join('')}</div>` : ''}
+          ${!t.complete ? '<p class="text-[11px] text-amber-300">Für einzelne Positionen gibt es gerade keinen Kurs – sie fehlen in der Summe.</p>' : ''}
+          <p class="text-[10px] text-slate-500">Vereinfachte Rechnung: ohne Gebühren, Finanzierungskosten über Nacht und Wechselkurs-Schwankungen. Die echten Werte siehst du bei deinem Broker.</p>
+        </div>
+        ${t.rows.sort((a, b) => (b.p.date > a.p.date) - (b.p.date < a.p.date)).map(({ p, q, c }) => {
+          const up = (c.plCHF || 0) >= 0, danger = p.lev > 1 && c.cushion !== null && c.cushion < 100 / p.lev * 0.5;
+          return `<div class="bg-slate-900/80 border ${c.cushion !== null && c.cushion <= 0 ? 'border-rose-500 glow-red' : danger ? 'border-amber-500/50' : 'border-slate-800'} rounded-2xl p-3 space-y-2">
+            <div class="flex items-start justify-between gap-2">
+              <button onclick="stockSel='${esc(p.symbol)}';setWsTab('detail')" class="min-w-0 text-left"><p class="text-sm font-bold text-white">${esc(p.symbol)} <span class="text-[10px] font-semibold px-1.5 py-0.5 rounded ${p.dir === 'short' ? 'bg-rose-500/20 text-rose-300' : 'bg-emerald-500/20 text-emerald-300'}">${p.dir === 'short' ? 'Short' : 'Long'}</span>${p.lev > 1 ? ` <span class="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300">Hebel ${fmtNum(p.lev, p.lev % 1 ? 1 : 0)}×</span>` : ''}</p>
+                <p class="text-[11px] text-slate-400 truncate">${q ? esc(q.name) + ' · ' : ''}${esc(p.broker)} · seit ${fmtDate(p.date)}</p></button>
+              <div class="text-right shrink-0"><p class="text-sm font-black ${up ? 'text-emerald-300' : 'text-rose-300'}">${fmtPct(c.plPct)}</p><p class="text-xs font-bold ${up ? 'text-emerald-400' : 'text-rose-400'}">${fmtCHF(c.plCHF, true)}</p></div>
+            </div>
+            <div class="grid grid-cols-3 gap-2">${tile('Einstieg', fmtPrice(p.entry))}${tile('Jetzt', q ? fmtPrice(q.price, q.currency) : '–')}${tile('Marge', fmtCHF(p.margin))}</div>
+            ${p.lev > 1 && c.cushion !== null ? `<p class="text-[11px] ${c.cushion <= 0 ? 'text-rose-300 font-bold' : danger ? 'text-amber-300' : 'text-slate-400'}">${c.cushion <= 0 ? '⚠️ Marge rechnerisch aufgebraucht – prüfe die Position bei deinem Broker!' : `Positionswert ${fmtCHF(c.exposure)} · noch ${fmtNum(c.cushion, 1)} % Gegenbewegung bis Totalverlust`}</p>` : ''}
+            ${p.note ? `<p class="text-[11px] text-slate-500">${esc(p.note)}</p>` : ''}
+            <div class="flex justify-end gap-3 text-xs"><button onclick="closePosition('${p.id}')" class="font-semibold text-blue-400">Schliessen</button><button onclick="deletePosition('${p.id}')" class="font-semibold text-slate-400">Löschen</button></div>
+          </div>`;
+        }).join('')}
+        ${st.closed.length ? `<div class="${BOX}"><div class="flex justify-between"><span class="${SUB}">Geschlossene Positionen</span><span class="text-xs font-bold ${realized >= 0 ? 'text-emerald-300' : 'text-rose-300'}">${fmtCHF(realized, true)}</span></div>
+          ${st.closed.slice().reverse().map(p => `<div class="flex items-center justify-between text-xs py-1.5 border-b border-slate-800 last:border-0"><span class="text-slate-300">${esc(p.symbol)} · ${esc(p.broker)}${p.lev > 1 ? ' · ' + p.lev + '×' : ''}<br><span class="text-[10px] text-slate-500">${fmtDate(p.date)} → ${fmtDate(p.closedAt)}</span></span><span class="text-right"><b class="${p.realized >= 0 ? 'text-emerald-300' : 'text-rose-300'}">${fmtCHF(p.realized, true)}</b><br><span class="text-[10px] text-slate-400">${fmtPct(p.realizedPct)}</span></span></div>`).join('')}</div>` : ''}`;
+    }
+    async function closePosition(id) {
+      const st = currentUser.stocks, p = st.positions.find(x => x.id === id); if (!p) return;
+      let cur = ''; try { const q = await marketGet({ action: 'chart', symbol: p.symbol, range: '1d' }); cur = String(+q.price.toFixed(4)); } catch (e) { }
+      const v = prompt(`Zu welchem Kurs hast du ${p.symbol} verkauft / geschlossen?`, cur.replace('.', ','));
+      if (v === null) return;
+      const exit = pNum(v); if (!(exit > 0)) return alert('Ungültiger Kurs.');
+      const c = posCalc(p, exit);
+      st.closed.push(Object.assign({}, p, { exit, closedAt: getTodayString(), realized: Math.max(c.plCHF, -p.margin), realizedPct: Math.max(c.plPct, -100) }));
+      st.positions = st.positions.filter(x => x.id !== id);
+      saveUserData(); renderWorkspace();
+    }
+    function deletePosition(id) { if (!confirm('Position löschen (ohne sie als geschlossen zu speichern)?')) return; currentUser.stocks.positions = currentUser.stocks.positions.filter(x => x.id !== id); saveUserData(); renderWorkspace(); }
+
+    // ---------- Markt-Übersicht ----------
+    function renderMarketShell() {
+      const st = currentUser.stocks;
+      return `<div class="${BOX}">
+          ${panelHead('activity', 'Wichtigste Werte heute')}
+          <div class="flex gap-1.5 overflow-x-auto pb-1">${MARKET_CATS.map(([k, l]) => `<button onclick="currentUser.stocks.marketCat='${k}';saveUserData();renderWorkspace()" class="px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap ${st.marketCat === k ? 'bg-blue-600 text-white' : 'bg-slate-950 border border-slate-700 text-slate-400'}">${l}</button>`).join('')}</div>
+          <div class="grid gap-2" style="grid-template-columns:minmax(0,1fr) auto">
+            <input value="${esc(mktFilter)}" oninput="mktFilter=this.value;drawMarketList()" placeholder="In der Liste suchen …" class="${IN}">
+            <select onchange="currentUser.stocks.sort=this.value;saveUserData();drawMarketList()" class="${IN} w-auto">${[['up', 'Gewinner zuerst'], ['down', 'Verlierer zuerst'], ['az', 'A–Z']].map(([k, l]) => `<option value="${k}" ${st.sort === k ? 'selected' : ''}>${l}</option>`).join('')}</select>
+          </div>
+          <div id="mkt-list" class="space-y-1.5"><p class="text-xs text-slate-400">lädt …</p></div>
+        </div>
+        <div class="${BOX}">
+          ${panelHead('flame', 'USA heute')}
+          <div class="grid grid-cols-3 gap-1">${[['day_gainers', 'Top-Gewinner'], ['day_losers', 'Top-Verlierer'], ['most_actives', 'Meistgehandelt']].map(([k, l]) => segBtn(l, moversType === k, `moversType='${k}';loadMovers()`)).join('')}</div>
+          <div id="mv-list" class="space-y-1.5"><p class="text-xs text-slate-400">lädt …</p></div>
+        </div>
+        <p class="text-[10px] text-slate-500 text-center">Daten: Yahoo Finance, teils verzögert. Nur Information – keine Anlageberatung.</p>`;
+    }
+    let mktItems = [];
+    async function loadMarketView() {
+      const cat = currentUser.stocks.marketCat;
+      const cats = cat === 'all' ? MARKET_CATS.slice(1).map(c => c[0]) : [cat];
+      try {
+        const res = await Promise.all(cats.map(c => marketGet({ action: 'overview', cat: c }, 120000).catch(e => ({ items: [], error: e.message }))));
+        mktItems = res.flatMap(r => r.items || []);
+        if (!mktItems.length && res[0] && res[0].error) throw new Error(res[0].error);
+        drawMarketList();
+      } catch (e) { const el = document.getElementById('mkt-list'); if (el) el.innerHTML = `<p class="text-xs text-rose-300">${esc(e.message)}</p>`; }
+    }
+    function marketRow(x, tag) {
+      const inList = currentUser.stocks.list.includes(x.symbol);
+      return `<div class="flex items-center gap-2 p-2 rounded-xl bg-slate-950/70 border border-slate-800">
+        <button onclick="stockSel='${esc(x.symbol)}';setWsTab('detail')" class="min-w-0 flex-1 text-left"><p class="text-sm font-bold text-white truncate">${esc(x.name)}</p><p class="text-[10px] text-slate-500">${esc(x.symbol)}${tag ? ' · ' + tag : ''}</p></button>
+        <div class="text-right shrink-0"><p class="text-xs font-bold text-white">${fmtPrice(x.price, x.currency)}</p><p class="text-[11px] font-bold ${chgCls(x.dayChangePct)}">${chgTxt(x.dayChangePct)}</p></div>
+        <div class="flex flex-col gap-1 shrink-0">${inList ? '<span class="text-[10px] text-slate-500 text-center">★</span>' : `<button onclick="addStockQuiet('${esc(x.symbol)}')" class="px-1.5 py-0.5 rounded bg-slate-800 text-[10px] text-slate-200" title="Zur Watchlist">☆</button>`}<button onclick="startPosition('${esc(x.symbol)}')" class="px-1.5 py-0.5 rounded bg-blue-600 text-[10px] font-bold text-white" title="Position erfassen">+</button></div>
+      </div>`;
+    }
+    function drawMarketList() {
+      const el = document.getElementById('mkt-list'); if (!el) return;
+      const f = fold(mktFilter).trim(), sort = currentUser.stocks.sort;
+      const catName = Object.fromEntries(MARKET_CATS);
+      let list = mktItems.filter(x => !f || fold(x.name + ' ' + x.symbol).includes(f));
+      list.sort((a, b) => sort === 'az' ? a.name.localeCompare(b.name) : sort === 'down' ? (a.dayChangePct ?? 0) - (b.dayChangePct ?? 0) : (b.dayChangePct ?? 0) - (a.dayChangePct ?? 0));
+      el.innerHTML = list.map(x => marketRow(x, currentUser.stocks.marketCat === 'all' ? catName[x.cat] : '')).join('') || '<p class="text-xs text-slate-500">Nichts gefunden.</p>';
+    }
+    async function loadMovers() {
+      document.querySelectorAll('#ws-body [onclick^="moversType="]').forEach(b => { const on = b.getAttribute('onclick').includes(`'${moversType}'`); b.className = b.className.replace(/bg-blue-600 text-white shadow-lg shadow-blue-600\/20|bg-slate-950 text-slate-400 border border-slate-700 hover:text-white/, on ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'bg-slate-950 text-slate-400 border border-slate-700 hover:text-white'); });
+      const el = document.getElementById('mv-list'); if (!el) return;
+      el.innerHTML = '<p class="text-xs text-slate-400">lädt …</p>';
+      try { const j = await marketGet({ action: 'movers', type: moversType }, 300000); el.innerHTML = j.items.slice(0, 12).map(x => marketRow(x, TYPE_LABEL[x.type] || '')).join('') || '<p class="text-xs text-slate-500">Gerade keine Daten (Börse geschlossen?).</p>'; }
+      catch (e) { el.innerHTML = `<p class="text-xs text-slate-500">Diese Liste ist gerade nicht verfügbar. Die Übersicht oben funktioniert trotzdem.</p>`; }
+    }
+    function addStockQuiet(s) { if (!currentUser.stocks.list.includes(s)) { currentUser.stocks.list.push(s); saveUserData(); } drawMarketList(); }
+    function startPosition(s) { invDraft = newInvDraft(s); invFormOpen = true; setWsTab('portfolio'); fillCurrentPrice(); }
+
+    // ---------- Suche & Watchlist ----------
+    function renderSearchShell() {
+      const base = renderStocksWs('list');
+      return base.replace('<div id="stk-results" class="space-y-1.5">', `<div class="flex gap-1.5 overflow-x-auto pb-1">${SEARCH_TYPES.map(([k, l]) => `<button onclick="searchType='${k}';drawSearchResults();this.parentNode.querySelectorAll('button').forEach(b=>b.className=b.className.replace('bg-blue-600 text-white','bg-slate-950 border border-slate-700 text-slate-400'));this.className=this.className.replace('bg-slate-950 border border-slate-700 text-slate-400','bg-blue-600 text-white')" class="px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap ${searchType === k ? 'bg-blue-600 text-white' : 'bg-slate-950 border border-slate-700 text-slate-400'}">${l}</button>`).join('')}</div><div id="stk-results" class="space-y-1.5">`);
+    }
+    async function stockSearch() {
+      const q = document.getElementById('stk-q').value.trim(); if (!q) return;
+      const el = document.getElementById('stk-results'); el.innerHTML = '<p class="text-xs text-slate-400">sucht …</p>';
+      try { const j = await marketGet({ action: 'search', q }, 3600000); searchRaw = j.results; drawSearchResults(); }
+      catch (e) { el.innerHTML = `<p class="text-xs text-rose-300">${esc(e.message)}</p>`; }
+    }
+    function drawSearchResults() {
+      const el = document.getElementById('stk-results'); if (!el || !searchRaw) return;
+      const list = searchRaw.filter(x => searchType === 'all' || x.type === searchType);
+      stockSearchRes = list.map(x => `<div class="flex items-center justify-between gap-2 p-2 rounded-xl bg-slate-950/70 border border-slate-800"><button onclick="stockSel='${esc(x.symbol)}';setWsTab('detail')" class="min-w-0 text-left"><p class="text-sm font-bold text-white">${esc(x.symbol)} <span class="text-[10px] font-normal text-slate-500">${esc(TYPE_LABEL[x.type] || x.type)} · ${esc(x.exchange)}</span></p><p class="text-[11px] text-slate-400 truncate">${esc(x.name)}</p></button>
+        <div class="flex gap-1 shrink-0">${currentUser.stocks.list.includes(x.symbol) ? '<span class="text-[11px] text-slate-500 px-1">★</span>' : `<button onclick="addStock('${esc(x.symbol)}')" class="px-2 py-1.5 rounded-lg text-[11px] font-bold bg-slate-800 text-slate-200">☆ Merken</button>`}<button onclick="startPosition('${esc(x.symbol)}')" class="px-2 py-1.5 rounded-lg text-[11px] font-bold bg-blue-600 text-white">+ Position</button></div></div>`).join('') || '<p class="text-xs text-slate-500">Nichts gefunden – versuch es mit einem anderen Filter oder Namen.</p>';
+      el.innerHTML = stockSearchRes;
+    }
+
+    // ---------- Dashboard-Karte ----------
+    function renderStocksCard() {
+      const st = currentUser.stocks;
+      return `<div class="space-y-2">
+        ${st.positions.length ? `<div id="inv-sum" class="bg-slate-900/60 p-3 rounded-2xl border border-slate-800"><p class="text-xs text-slate-400">Portfolio wird berechnet …</p></div>` : ''}
+        ${st.list.slice(0, 4).map(s => `<button onclick="stockSel='${s}';openWorkspace('stocks','detail')" id="${symId(s)}" class="w-full flex items-center justify-between gap-2 p-2.5 rounded-xl bg-slate-900/60 border border-slate-800 hover:border-blue-500 text-left transition">
+            <span class="min-w-0"><span class="block text-sm font-bold text-white">${esc(s)}</span><span class="stk-name block text-[10px] text-slate-500 truncate">lädt …</span></span>
+            <span class="text-right shrink-0"><span class="stk-price block text-sm font-bold text-white">–</span><span class="stk-chg block text-[11px] font-bold text-slate-400"></span></span></button>`).join('')}
+        <p id="stocks-msg" class="text-[11px] text-slate-500"></p>
+        ${cardBtns([['Portfolio', "openWorkspace('stocks','portfolio')", true], ['Markt & Trends', "openWorkspace('stocks','market')"]])}
+      </div>`;
+    }
+    async function loadStocksCard() {
+      if (!document.querySelector('.dash-card[data-mod="stocks"]')) return;
+      const st = currentUser.stocks;
+      if (st.positions.length) {
+        portfolioTotals().then(t => { const el = document.getElementById('inv-sum'); if (!el) return;
+          el.innerHTML = `<div class="flex items-center justify-between"><span class="${SUB}">Mein Portfolio</span><span class="text-[11px] text-slate-400">${st.positions.length} Position${st.positions.length === 1 ? '' : 'en'}</span></div>
+            <div class="flex items-baseline justify-between mt-1"><span class="text-xs text-slate-400">Einsatz ${fmtCHF(t.margin)}</span><span class="text-lg font-black ${t.pl >= 0 ? 'text-emerald-300' : 'text-rose-300'}">${fmtCHF(t.pl, true)} <span class="text-xs">(${fmtPct(t.plPct)})</span></span></div>`; });
+      }
+      for (const s of st.list.slice(0, 4)) {
+        const el = document.getElementById(symId(s)); if (!el) continue;
+        try {
+          const q = await marketGet({ action: 'chart', symbol: s, range: '1d' });
+          el.querySelector('.stk-name').textContent = q.name;
+          el.querySelector('.stk-price').textContent = fmtPrice(q.price, q.currency);
+          const c = el.querySelector('.stk-chg'); c.textContent = chgTxt(q.dayChangePct); c.className = 'stk-chg block text-[11px] font-bold ' + chgCls(q.dayChangePct);
+        } catch (e) { const m = document.getElementById('stocks-msg'); if (m) m.innerHTML = esc(e.message) + ' <button onclick="openSystemCheck()" class="text-blue-400 underline">System-Check</button>'; el.querySelector('.stk-name').textContent = 'keine Daten'; if (/Cloudflare/.test(e.message)) break; }
+      }
+    }
+
+    // =====================================================================
+    //  KEIN DOPAMIN-KONSUM
+    // =====================================================================
+    TRACK_DEF.nodopa = {
+      label: 'Kein Dopamin-Konsum', manual: false,
+      done: d => { const r = currentUser.nodopa.rules, l = currentUser.nodopa.log[d] || {}; return r.length > 0 && r.every(x => l[x.id] === 'ok'); },
+      failed: d => { const l = currentUser.nodopa.log[d] || {}; return currentUser.nodopa.rules.some(x => l[x.id] === 'fail'); }
+    };
+    let nodopaDate = null;
+    function setNodopa(ruleId, val, d) {
+      d = d || getTodayString(); const log = currentUser.nodopa.log;
+      if (!log[d]) log[d] = {};
+      log[d][ruleId] = log[d][ruleId] === val ? undefined : val;
+      saveUserData(); refreshPerf();
+    }
+    function nodopaRules(d, small) {
+      const l = currentUser.nodopa.log[d] || {};
+      return currentUser.nodopa.rules.map(r => {
+        const v = l[r.id];
+        return `<div class="flex items-center justify-between gap-2 ${small ? 'py-1' : 'p-2.5 rounded-xl border ' + (v === 'ok' ? 'border-emerald-500/40 bg-emerald-500/10' : v === 'fail' ? 'border-rose-500/50 bg-rose-500/10' : 'border-slate-800 bg-slate-950/70')}">
+          <span class="text-xs ${v === 'ok' ? 'text-emerald-200' : v === 'fail' ? 'text-rose-200' : 'text-slate-200'} min-w-0">${esc(r.name)}</span>
+          <div class="flex gap-1 shrink-0"><button onclick="setNodopa('${r.id}','ok','${d}')" class="w-9 h-8 rounded-lg text-sm font-bold ${v === 'ok' ? 'bg-emerald-600 text-white' : 'bg-slate-950 border border-slate-700 text-slate-400'}" aria-label="Eingehalten">✓</button><button onclick="setNodopa('${r.id}','fail','${d}')" class="w-9 h-8 rounded-lg text-sm font-bold ${v === 'fail' ? 'bg-rose-600 text-white' : 'bg-slate-950 border border-slate-700 text-slate-400'}" aria-label="Nicht eingehalten">✕</button></div></div>`;
+      }).join('');
+    }
+    function renderNodopaWs(tab) {
+      if (tab === 'calendar') return trackerFull('nodopa');
+      if (tab === 'rules') return `<div class="${BOX}">${panelHead('list-checks', 'Deine Regeln')}
+          ${currentUser.nodopa.rules.map(r => `<div class="flex items-center gap-2 bg-slate-950/70 border border-slate-800 rounded-xl px-3 py-2"><p class="flex-1 text-sm text-white">${esc(r.name)}</p>${delBtn(`removeNodopaRule('${r.id}')`)}</div>`).join('')}
+          <div class="flex gap-2"><input id="nd-new" placeholder="z. B. Handy nicht im Bett" onkeydown="if(event.key==='Enter')addNodopaRule()" class="${IN}"><button onclick="addNodopaRule()" class="px-4 rounded-xl bg-blue-600 text-white font-bold">+</button></div>
+          <p class="text-[11px] text-slate-500">Ein Tag wird grün, wenn du alle Regeln eingehalten hast. Sobald du eine brichst (✕), wird er sofort rot.</p></div>`;
+      const d = nodopaDate || getTodayString(), s = trackState('nodopa', d);
+      return `<div class="${BOX} ${s === 'done' ? '!border-emerald-500/40' : s === 'missed' ? '!border-rose-500/50' : ''}">
+          ${panelHead('shield-check', 'Heute dopaminfrei?', `<input type="date" value="${d}" max="${getTodayString()}" onchange="nodopaDate=this.value;renderWorkspace()" class="${IN} w-auto py-1">`)}
+          <p class="text-sm font-bold ${s === 'done' ? 'text-emerald-300' : s === 'missed' ? 'text-rose-300' : 'text-slate-300'}">${s === 'done' ? '✅ Alles eingehalten – stark!' : s === 'missed' ? '❌ Heute nicht durchgehalten. Morgen neuer Versuch.' : 'Hake am Abend ab, was du eingehalten hast.'}</p>
+          <div class="space-y-2">${nodopaRules(d)}</div>
+        </div>
+        <div class="${BOX}">${panelHead('lightbulb', 'Statt Scrollen')}<p class="text-[11px] text-slate-300">Wenn der Drang kommt: 10 Liegestütze, kurz raus an die frische Luft, ein paar Seiten lesen oder Ball jonglieren. Leg das Handy beim Lernen in einen anderen Raum – das hilft mehr als Willenskraft.</p></div>`;
+    }
+    function addNodopaRule() { const i = document.getElementById('nd-new'); const n = i.value.trim(); if (!n) return; currentUser.nodopa.rules.push({ id: uid(), name: n }); saveUserData(); renderWorkspace(); }
+    function removeNodopaRule(id) { const r = currentUser.nodopa.rules.find(x => x.id === id); if (!r || !confirm(`„${r.name}“ entfernen?`)) return; currentUser.nodopa.rules = currentUser.nodopa.rules.filter(x => x.id !== id); saveUserData(); renderWorkspace(); }
+    function renderNodopaCard() {
+      const today = getTodayString();
+      return `${trackerCompact('nodopa', "openWorkspace('nodopa','calendar')")}<div class="space-y-2">${nodopaRules(today, true)}</div>
+        <div class="pt-2">${cardBtns([['Heute abhaken', "nodopaDate=null;openWorkspace('nodopa','today')", true], ['Regeln', "openWorkspace('nodopa','rules')"]])}</div>`;
+    }
+
+    // =====================================================================
+    //  SPORT & HOBBIES (Fussball ist eine Auswahl davon)
+    // =====================================================================
+    TRACK_DEF.football.label = 'Sport & Hobbies';
+    const _fbDone = TRACK_DEF.football.done;
+    TRACK_DEF.football.done = d => _fbDone(d) || (currentUser.hobbyLogs || []).some(l => l.date === d);
+    const FOOTBALL_TABS = [['session', 'Einzeltraining'], ['club', 'Klub-Training'], ['match', 'Match'], ['plan', 'Plan & Tage'], ['history', 'Verlauf']];
+    const HOBBY_TABS = [['hobby', 'Eintragen'], ['plan', 'Plan & Tage'], ['hobbyhist', 'Verlauf']];
+    const HOBBY_ICON = { Fussball: '⚽', Basketball: '🏀', Tennis: '🎾', Volleyball: '🏐', Kampfsport: '🥋', Velo: '🚴', Gitarre: '🎸', Zeichnen: '🎨' };
+    const hobbyIcon = h => HOBBY_ICON[h] || '⭐';
+    function sportTabs() { return currentUser && currentUser.sportSel !== 'Fussball' ? HOBBY_TABS : FOOTBALL_TABS; }
+    function selectSport(h) {
+      currentUser.sportSel = h; saveUserData();
+      const open = !document.getElementById('modal-workspace').classList.contains('hidden');
+      if (open) { ws.tab = sportTabs()[0][0]; renderWorkspace(true); } else renderDashboard();
+    }
+    function addHobby() {
+      const n = (prompt('Welche Sportart oder welches Hobby?') || '').trim(); if (!n) return;
+      if (!currentUser.hobbies.includes(n)) currentUser.hobbies.push(n);
+      selectSport(n);
+    }
+    function sportBar(compact) {
+      return `<div class="flex gap-1.5 overflow-x-auto pb-1 ${compact ? 'mb-3' : ''}">${currentUser.hobbies.map(h => `<button onclick="selectSport('${jsq(h)}')" class="px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap ${currentUser.sportSel === h ? 'bg-blue-600 text-white' : 'bg-slate-950 border border-slate-700 text-slate-400'}">${hobbyIcon(h)} ${esc(h)}</button>`).join('')}<button onclick="addHobby()" class="px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap bg-slate-950 border border-dashed border-slate-600 text-slate-400">+ Hobby</button></div>`;
+    }
+    function renderSportWs(tab) {
+      if (!sportTabs().some(t => t[0] === tab)) { tab = ws.tab = sportTabs()[0][0]; setTimeout(() => renderWorkspace(true), 0); }
+      if (currentUser.sportSel === 'Fussball') return sportBar() + renderFootballWs(tab);
+      return sportBar() + renderHobbyWs(tab);
+    }
+    function renderHobbyWs(tab) {
+      const h = currentUser.sportSel;
+      if (tab === 'plan') return renderPlanTab('football');
+      const logs = sortChrono(currentUser.hobbyLogs.filter(l => l.hobby === h)).reverse();
+      if (tab === 'hobbyhist') {
+        if (!logs.length) return emptyState(`Noch keine Einträge für ${esc(h)}.`, 'Jetzt eintragen', "setWsTab('hobby')");
+        const wk = weekDates(getTodayString()), pwk = weekDates(addDays(getTodayString(), -7));
+        const sum = ds => logs.filter(l => ds.includes(l.date)).reduce((s, l) => s + l.minutes, 0);
+        const c = cmp(sum(pwk), sum(wk), true, 'Min.');
+        return `<div class="grid grid-cols-3 gap-2">${tile('Diese Woche', fmtHM(sum(wk)))}${tile('Einheiten', logs.length)}${tile('Gesamt', fmtHM(logs.reduce((s, l) => s + l.minutes, 0)))}</div>
+          ${c ? cmpRow(`${h}: diese Woche vs. letzte Woche`, c, { pct: true }) : ''}
+          <div class="space-y-2">${logs.map(l => `<div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-3"><div class="flex items-center justify-between gap-2"><p class="text-sm font-bold text-white">${fmtDate(l.date)} · ${fmtHM(l.minutes)}${l.rating ? ` <span class="text-xs font-normal text-slate-400">· Gefühl ${l.rating}/10</span>` : ''}</p>${delBtn(`deleteHobbyLog('${l.id}')`)}</div>${l.note ? `<p class="text-[11px] text-slate-300 mt-1">${esc(l.note)}</p>` : ''}</div>`).join('')}</div>`;
+      }
+      return `<div class="${BOX}">${panelHead('plus-circle', `${hobbyIcon(h)} ${esc(h)} eintragen`)}
+          <div class="grid grid-cols-3 gap-2"><div><label class="${LBL}">Datum</label><input type="date" id="hb-date" value="${getTodayString()}" max="${getTodayString()}" class="${IN} px-2"></div><div><label class="${LBL}">Dauer</label><input id="hb-min" inputmode="decimal" placeholder="60 / 1:30" class="${IN} text-center"></div>
+          <div><label class="${LBL}">Gefühl</label><select id="hb-rate" class="${IN} px-2"><option value="">–</option>${Array.from({ length: 10 }, (_, i) => `<option>${i + 1}</option>`).join('')}</select></div></div>
+          <div><label class="${LBL}">Was hast du gemacht / Fortschritt?</label><textarea id="hb-note" rows="2" placeholder="z. B. Korbleger geübt, 7 von 10 getroffen" class="${IN}"></textarea></div>
+          <button onclick="saveHobbyLog()" class="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl">Speichern</button></div>
+        ${logs[0] ? `<p class="text-[11px] text-slate-400 text-center">Zuletzt: ${fmtDate(logs[0].date)} · ${fmtHM(logs[0].minutes)}</p>` : ''}`;
+    }
+    function saveHobbyLog() {
+      const minutes = parseMinutes(document.getElementById('hb-min').value); if (!(minutes > 0)) return alert('Trag die Dauer ein.');
+      currentUser.hobbyLogs.push({ id: uid(), createdAt: Date.now(), hobby: currentUser.sportSel, date: document.getElementById('hb-date').value || getTodayString(), minutes, rating: nz(pInt(document.getElementById('hb-rate').value)), note: document.getElementById('hb-note').value.trim() });
+      saveUserData(); setWsTab('hobbyhist');
+    }
+    function deleteHobbyLog(id) { if (!confirm('Eintrag löschen?')) return; currentUser.hobbyLogs = currentUser.hobbyLogs.filter(x => x.id !== id); saveUserData(); renderWorkspace(); }
+    function renderSportCard() {
+      const h = currentUser.sportSel;
+      if (h === 'Fussball') return sportBar(true) + renderFootballCard();
+      const last = sortChrono(currentUser.hobbyLogs.filter(l => l.hobby === h)).pop();
+      return sportBar(true) + `<div class="space-y-3">${last ? `<div class="bg-slate-900/60 p-3 rounded-2xl border border-slate-800 text-xs"><span class="${SUB} mb-1">Zuletzt ${esc(h)}</span><span class="text-white font-bold">${fmtDate(last.date)} · ${fmtHM(last.minutes)}</span>${last.note ? `<p class="text-[11px] text-slate-400 mt-1">${esc(last.note)}</p>` : ''}</div>` : `<p class="text-xs text-slate-400">Trag ein, wann und wie lange du ${esc(h)} machst.</p>`}
+        ${cardBtns([['Eintragen', "openWorkspace('football','hobby')", true], ['Verlauf', "openWorkspace('football','hobbyhist')"]])}</div>`;
+    }
 
   </script>
 <script>
