@@ -6,6 +6,7 @@
 //   CAPITAL_API_KEY     – API-Key aus Capital.com (Einstellungen → API-Integrationen)
 //   CAPITAL_IDENTIFIER  – deine Capital.com-Login-E-Mail
 //   CAPITAL_PASSWORD    – das "Custom password", das du beim Erstellen des API-Keys festlegst
+//                         (darf auch CAPITAL_PASS heissen)
 //   CAPITAL_OWNER       – dein MyLife-Benutzername (nur dieses Konto darf die Daten sehen)
 //   CAPITAL_DEMO        – optional: 1 = Demo-Konto statt echtem Konto
 // Braucht dieselbe KV-Bindung MYLIFE wie account.js (für die Anmelde-Prüfung).
@@ -23,11 +24,14 @@ export async function onRequestPost({ request, env, waitUntil }) {
   if (!env.MYLIFE) return json({ ok: false, error: 'KV-Bindung MYLIFE fehlt.' });
   const username = b.token ? await env.MYLIFE.get('session:' + b.token) : null;
   if (!username) return json({ ok: false, code: 'no_session', error: 'Bitte zuerst in MyLife anmelden.' }, 401);
-  if (!env.CAPITAL_API_KEY || !env.CAPITAL_IDENTIFIER || !env.CAPITAL_PASSWORD || !env.CAPITAL_OWNER) {
-    return json({ ok: false, code: 'not_configured', error: 'Capital.com ist noch nicht eingerichtet (Secrets in Cloudflare fehlen).' });
+  // Passwort darf auch CAPITAL_PASS oder CAPITAL_API_PASSWORD heissen
+  const pass = env.CAPITAL_PASSWORD || env.CAPITAL_PASS || env.CAPITAL_API_PASSWORD;
+  const missing = [['CAPITAL_API_KEY', env.CAPITAL_API_KEY], ['CAPITAL_IDENTIFIER', env.CAPITAL_IDENTIFIER], ['CAPITAL_PASS', pass], ['CAPITAL_OWNER', env.CAPITAL_OWNER]].filter(x => !x[1]).map(x => x[0]);
+  if (missing.length) {
+    return json({ ok: false, code: 'not_configured', missing, error: 'In Cloudflare fehlt noch: ' + missing.join(', ') + '. Danach "Retry deployment".' });
   }
   if (String(username).toLowerCase() !== String(env.CAPITAL_OWNER).trim().toLowerCase()) {
-    return json({ ok: false, code: 'not_owner', error: 'Dieses MyLife-Konto ist nicht für Capital.com freigeschaltet.' }, 403);
+    return json({ ok: false, code: 'not_owner', error: `Du bist in MyLife als "${username}" angemeldet, aber CAPITAL_OWNER ist anders eingetragen. Trage dort genau "${username}" ein.` }, 403);
   }
 
   const demo = String(env.CAPITAL_DEMO || '') === '1', base = demo ? DEMO : LIVE;
@@ -35,7 +39,7 @@ export async function onRequestPost({ request, env, waitUntil }) {
     const s = await fetch(base + '/api/v1/session', {
       method: 'POST',
       headers: { 'X-CAP-API-KEY': env.CAPITAL_API_KEY, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ identifier: env.CAPITAL_IDENTIFIER, password: env.CAPITAL_PASSWORD, encryptedPassword: false })
+      body: JSON.stringify({ identifier: env.CAPITAL_IDENTIFIER, password: pass, encryptedPassword: false })
     });
     if (!s.ok) {
       const t = (await s.text()).slice(0, 160);
