@@ -10,11 +10,11 @@
   <meta name="apple-mobile-web-app-title" content="MyLife">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="format-detection" content="telephone=no">
-  <meta name="mylife-build" content="15.4">
+  <meta name="mylife-build" content="15.6">
   <script>
     // Update-Wächter: lädt automatisch die neue Version, falls noch eine alte im Speicher ist
     (function () {
-      var BUILD = '15.4';
+      var BUILD = '15.6';
       if (!/^https?:$/.test(location.protocol)) return;
       var hadController = !!(navigator.serviceWorker && navigator.serviceWorker.controller);
       if (navigator.serviceWorker) navigator.serviceWorker.addEventListener('controllerchange', function () {
@@ -14443,7 +14443,7 @@ html.light, html.light body { background: #eef2f7; color: #0f172a; }
       const el = document.getElementById('tr-cap'); if (!el) return;
       if (!trCap) { el.innerHTML = '<p class="text-[11px] text-slate-500">Lädt …</p>'; return; }
       if (!trCap.ok) {
-        const msg = { missing: 'Die Datei functions/api/capital.js ist noch nicht auf Cloudflare.', not_configured: 'Noch nicht verbunden. Trage in Cloudflare die Secrets CAPITAL_API_KEY, CAPITAL_IDENTIFIER, CAPITAL_PASSWORD und CAPITAL_OWNER ein (Anleitung im Chat).', no_session: 'Melde dich in MyLife mit deinem Cloud-Konto an, damit dein Capital.com-Konto geschützt angezeigt werden kann.' }[trCap.code] || trCap.error || 'Fehler';
+        const msg = { missing: 'Die Datei functions/api/capital.js ist noch nicht auf Cloudflare.', not_configured: trCap.error || 'Noch nicht verbunden: In Cloudflare fehlen Secrets.', no_session: 'Melde dich in MyLife mit deinem Cloud-Konto an, damit dein Capital.com-Konto geschützt angezeigt werden kann.' }[trCap.code] || trCap.error || 'Fehler';
         el.innerHTML = `<p class="text-[11px] text-slate-400">${esc(msg)}</p><button onclick="trLoadCap()" class="w-full mt-2 ${v11Btn}">Erneut versuchen</button>`; return;
       }
       const acc = trCap.accounts.find(a => a.preferred) || trCap.accounts[0];
@@ -14512,6 +14512,253 @@ html.light, html.light body { background: #eef2f7; color: #0f172a; }
     try {
       QUICK_ACTIONS.push(['🕯️', 'Live-Trader: Lohnt sich Kaufen?', 'trading krypto bitcoin gold etf qqq index chart prognose kaufen verkaufen long short capital', 'stocks', () => openWorkspace('stocks', 'trader')]);
       TOOL_KEYWORDS.stocks = (TOOL_KEYWORDS.stocks || '') + ' trading trader krypto bitcoin gold rohstoffe indizes prognose kaufen verkaufen capital';
+    } catch (e) { }
+
+    // =====================================================================
+    //  ZIELE & FORTSCHRITT  ·  in jedem passenden Tool ein eigener Tab
+    //  Täglich festhalten, was man dazugelernt/erreicht hat (mit Datum),
+    //  Ziele mit Zeitspanne (von–bis) inkl. Fortschrittsbalken & "im Plan?",
+    //  Verlauf nach Datum. Plus Gesamt-Übersicht über alle Tools.
+    // =====================================================================
+    const PG_KINDS = {
+      learn: { icon: '📚', label: 'Neu gelernt', hint: 'Was hast du heute dazugelernt?' },
+      skill: { icon: '⚡', label: 'Fähigkeit', hint: 'Welche Fähigkeit ist besser geworden?' },
+      title: { icon: '🏆', label: 'Titel / Erfolg', hint: 'Welchen Titel oder Erfolg hast du erreicht?' },
+      grade: { icon: '📝', label: 'Note', hint: 'Welche Note hast du bekommen?' },
+      money: { icon: '💰', label: 'Geld erzielt', hint: 'Wie viel hast du eingenommen?' },
+      metric: { icon: '📏', label: 'Messwert', hint: 'Was hast du gemessen?' }
+    };
+    // Welche Fortschritt-Arten in welchem Tool Sinn machen (+ Vorschläge)
+    const PG_CFG = {
+      fitness: { kinds: ['metric', 'skill', 'learn', 'title'], names: ['Körpergewicht', 'Bankdrücken', 'Kniebeugen', 'Klimmzüge', 'Liegestütze', '5 km Laufzeit', 'Plank'], units: ['kg', 'Wdh.', 'min', 'sek'] },
+      football: { kinds: ['skill', 'title', 'learn', 'metric'], names: ['Dribbling', 'Passen', 'Schuss', 'Schnelligkeit', 'Ausdauer', 'Kopfball', 'Schwacher Fuss', 'Tore', 'Assists'], units: ['Stufe', 'Tore', 'sek', 'km/h'] },
+      social_media: { kinds: ['metric', 'money', 'title', 'learn'], names: ['Follower TikTok', 'Follower Instagram', 'Abonnenten YouTube', 'Views', 'Likes'], units: ['Follower', 'Views'] },
+      books: { kinds: ['learn', 'metric', 'title'], names: ['Gelesene Bücher', 'Seiten pro Tag'], units: ['Bücher', 'Seiten'] },
+      learning: { kinds: ['grade', 'learn', 'metric', 'title'], names: ['Mathematik', 'Deutsch', 'Englisch', 'Französisch', 'Wirtschaft', 'Prüfungsschnitt'], units: ['Note'] },
+      school: { kinds: ['grade', 'learn', 'title'], names: ['Mathematik', 'Deutsch', 'Englisch', 'Französisch', 'Wirtschaft & Recht', 'Finanz- & Rechnungswesen', 'Geschichte', 'IDAF', 'IDPA'], units: ['Note'] },
+      knowledge: { kinds: ['learn', 'title'] },
+      faith: { kinds: ['learn', 'title', 'metric'], names: ['Gelesene Kapitel', 'Gebetstage', 'Auswendig gelernte Verse'], units: ['Kapitel', 'Tage', 'Verse'] },
+      work: { kinds: ['learn', 'money', 'skill', 'title', 'metric'], names: ['Umsatz', 'Kunden', 'Verkaufte Produkte', 'Verhandeln', 'Präsentieren'], units: ['CHF', 'Kunden', 'Stück'] },
+      stocks: { kinds: ['learn', 'money', 'metric'], names: ['Depotwert', 'Gewinn'], units: ['CHF', '%'] },
+      finance: { kinds: ['money', 'learn', 'metric'], names: ['Erspartes', 'Schulden abbezahlt'], units: ['CHF'] },
+      screentime: { kinds: ['metric', 'learn'], names: ['Bildschirmzeit pro Tag', 'TikTok pro Tag'], units: ['h', 'min'] },
+      nodopa: { kinds: ['metric', 'learn', 'title'], names: ['Saubere Tage am Stück'], units: ['Tage'] },
+      growth: { kinds: ['metric'], names: ['Körpergrösse', 'Körpergewicht'], units: ['cm', 'kg'] },
+      nutri: { kinds: ['metric', 'learn'], names: ['Protein pro Tag', 'Wasser pro Tag', 'Körpergewicht'], units: ['g', 'l', 'kg'] },
+      diet: { kinds: ['metric', 'learn'], names: ['Körpergewicht', 'Protein pro Tag'], units: ['kg', 'g'] },
+      lifestyle: { kinds: ['learn', 'skill', 'metric'], names: ['Hautbild', 'Routine-Tage am Stück'], units: ['Stufe', 'Tage'] },
+      face_progress: { kinds: ['metric', 'learn'], names: ['Kieferlinie', 'Hautbild'], units: ['Stufe'] },
+      draw: { kinds: ['skill', 'learn', 'title'], names: ['Proportionen', 'Schattieren', 'Perspektive'], units: ['Stufe'] },
+      journal: null, zeit: null, notify: null, reminders: null, konten: null, trips: null, fortschritt: null
+    };
+    const PG_DEFAULT = { kinds: ['learn', 'skill', 'title', 'metric'] };
+    const pgCfg = mod => (mod in PG_CFG) ? PG_CFG[mod] : PG_DEFAULT;
+    const pgEnabled = mod => !!(mod && WS_DEF[mod] && pgCfg(mod));
+    let pgKind = {}, pgFilter = {}, pgFlash = '', pgGoalOpen = false;
+
+    function pgStore(mod) {
+      if (!currentUser.progress) currentUser.progress = {};
+      const P = currentUser.progress;
+      if (!P[mod]) P[mod] = { entries: [], goals: [] };
+      if (!Array.isArray(P[mod].entries)) P[mod].entries = [];
+      if (!Array.isArray(P[mod].goals)) P[mod].goals = [];
+      return P[mod];
+    }
+    const pgToday = () => getTodayString();
+    const pgDate = d => { try { return new Date(d + 'T12:00:00').toLocaleDateString('de-CH', { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' }); } catch (e) { return d; } };
+    const pgNum = v => { const x = parseFloat(String(v == null ? '' : v).replace(/'/g, '').replace(',', '.')); return isFinite(x) ? x : null; };
+    const pgVal = id => { const e = document.getElementById(id); return e ? e.value.trim() : ''; };
+    const pgDays = (a, b) => Math.round((new Date(b + 'T12:00:00') - new Date(a + 'T12:00:00')) / 86400000);
+    const pgModTitle = mod => { try { return WS_DEF[mod].title; } catch (e) { return mod; } };
+
+    // ---------- Ziele auswerten ----------
+    function pgGoalState(mod, g) {
+      const S = pgStore(mod), today = pgToday(), inRange = e => e.date >= g.from && e.date <= g.to;
+      let cur = null, pct = 0;
+      if (g.type === 'value') {
+        const hits = S.entries.filter(e => ['metric', 'skill', 'grade'].includes(e.kind) && (e.name || '').trim().toLowerCase() === (g.name || '').trim().toLowerCase() && e.value != null).sort((a, b) => (a.date + (a.at || 0)).localeCompare(b.date + (b.at || 0)));
+        cur = hits.length ? hits[hits.length - 1].value : g.start;
+        const span = g.target - g.start; pct = span === 0 ? (cur === g.target ? 1 : 0) : (cur - g.start) / span;
+      } else if (g.type === 'money') { cur = S.entries.filter(e => e.kind === 'money' && inRange(e)).reduce((s, e) => s + (e.value || 0), 0); pct = g.target ? cur / g.target : 0; }
+      else if (g.type === 'count') { cur = new Set(S.entries.filter(e => inRange(e) && (!g.kind || e.kind === g.kind)).map(e => e.date)).size; pct = g.target ? cur / g.target : 0; }
+      else { cur = g.done ? 1 : 0; pct = cur; }
+      pct = Math.max(0, Math.min(1, pct));
+      const total = Math.max(1, pgDays(g.from, g.to)), passed = Math.max(0, Math.min(total, pgDays(g.from, today))), timePct = passed / total, left = pgDays(today, g.to);
+      let status, cls;
+      if (pct >= 1 || g.done) { status = '✅ Erreicht'; cls = 'text-emerald-300'; }
+      else if (left < 0) { status = '❌ Zeit abgelaufen'; cls = 'text-rose-300'; }
+      else if (today < g.from) { status = `⏳ Startet in ${pgDays(today, g.from)} Tagen`; cls = 'text-slate-400'; }
+      else if (g.type === 'done') { status = `Noch ${left} Tage`; cls = 'text-amber-300'; }
+      else if (pct + 0.05 >= timePct) { status = `👍 Im Plan · noch ${left} Tage`; cls = 'text-emerald-300'; }
+      else { status = `⚠️ Hinter dem Plan · noch ${left} Tage`; cls = 'text-amber-300'; }
+      return { cur, pct, timePct, left, status, cls };
+    }
+    function pgGoalCard(mod, g, showMod) {
+      const s = pgGoalState(mod, g), unit = g.unit ? ' ' + esc(g.unit) : '';
+      const what = g.type === 'value' ? `${esc(g.name)}: ${fmtNum(s.cur, 1)}${unit} → Ziel ${fmtNum(g.target, 1)}${unit} (Start ${fmtNum(g.start, 1)})`
+        : g.type === 'money' ? `Eingenommen: ${fmtNum(s.cur, 2)} von ${fmtNum(g.target, 2)}${unit}`
+          : g.type === 'count' ? `${s.cur} von ${fmtNum(g.target, 0)} Tagen mit Einträgen${g.kind ? ' (' + PG_KINDS[g.kind].label + ')' : ''}`
+            : (g.done ? 'Erledigt' : 'Noch offen');
+      return `<div class="p-3 rounded-2xl border border-slate-800 bg-slate-950/70 space-y-1.5">
+        <div class="flex items-start justify-between gap-2"><div class="min-w-0">${showMod ? `<p class="text-[10px] text-slate-500">${esc(pgModTitle(mod))}</p>` : ''}<p class="text-sm font-bold text-white">🎯 ${esc(g.title)}</p></div>
+          <div class="flex gap-1 shrink-0">${g.type === 'done' ? `<button onclick="pgToggleGoal('${mod}','${g.id}')" class="px-2 py-1 rounded-lg text-[11px] font-bold ${g.done ? 'bg-emerald-600 text-white' : 'bg-slate-800 text-slate-300'}">${g.done ? '✓' : 'Erledigt?'}</button>` : ''}<button onclick="pgDelGoal('${mod}','${g.id}')" class="px-2 py-1 rounded-lg text-[11px] bg-slate-800 text-slate-400">✕</button></div></div>
+        <p class="text-[11px] text-slate-300">${what}</p>
+        <div class="h-2 rounded-full bg-slate-800 overflow-hidden relative"><div class="h-full ${s.pct >= 1 ? 'bg-emerald-500' : 'bg-blue-500'}" style="width:${Math.round(s.pct * 100)}%"></div><div class="absolute top-0 h-full bg-white/60" style="left:${Math.round(s.timePct * 100)}%;width:2px" title="So weit solltest du heute sein"></div></div>
+        <div class="flex justify-between text-[10px]"><span class="${s.cls} font-bold">${s.status}</span><span class="text-slate-500">${pgDate(g.from)} – ${pgDate(g.to)} · ${Math.round(s.pct * 100)} %</span></div></div>`;
+    }
+
+    // ---------- Ansicht im Tool ----------
+    function pgStreak(entries) {
+      const days = new Set(entries.map(e => e.date)); let n = 0, d = new Date(pgToday() + 'T12:00:00');
+      if (!days.has(pgToday())) d.setDate(d.getDate() - 1);
+      while (days.has(d.toISOString().slice(0, 10))) { n++; d.setDate(d.getDate() - 1); }
+      return n;
+    }
+    function pgEntryLine(mod, e, showMod) {
+      const K = PG_KINDS[e.kind] || PG_KINDS.learn;
+      const main = e.kind === 'learn' ? esc(e.text || '')
+        : e.kind === 'grade' ? `${esc(e.name || 'Note')}: <b>${fmtNum(e.value, 2)}</b>${e.old != null ? ` <span class="${e.value > e.old ? 'text-emerald-300' : e.value < e.old ? 'text-rose-300' : 'text-slate-400'}">(vorher ${fmtNum(e.old, 2)}, ${e.value >= e.old ? '+' : ''}${fmtNum(e.value - e.old, 2)})</span>` : ''}`
+          : e.kind === 'money' ? `<b class="text-emerald-300">+${fmtNum(e.value || 0, 2)} ${esc(e.unit || 'CHF')}</b>${e.name ? ' · ' + esc(e.name) : ''}`
+            : e.kind === 'title' ? `<b>${esc(e.name || '')}</b>`
+              : `${esc(e.name || '')}: <b>${e.value != null ? fmtNum(e.value, 1) : '–'}${e.unit ? ' ' + esc(e.unit) : ''}</b>`;
+      const extra = e.kind !== 'learn' && e.text ? `<p class="text-[10px] text-slate-400">${esc(e.text)}</p>` : '';
+      return `<div class="flex items-start gap-2 py-1.5 border-b border-slate-800"><span class="text-base">${K.icon}</span><div class="flex-1 min-w-0">${showMod ? `<p class="text-[10px] text-slate-500">${esc(pgModTitle(mod))}</p>` : ''}<p class="text-xs text-white">${main}</p>${extra}</div><button onclick="pgDelEntry('${mod}','${e.id}')" class="text-[11px] text-slate-500 px-1">✕</button></div>`;
+    }
+    function renderProgressWs(mod) {
+      const cfg = pgCfg(mod), S = pgStore(mod), kinds = cfg.kinds, kind = kinds.includes(pgKind[mod]) ? pgKind[mod] : kinds[0], K = PG_KINDS[kind];
+      const today = pgToday(), week = new Date(); week.setDate(week.getDate() - 6); const wk = week.toISOString().slice(0, 10);
+      const names = (cfg.names || []).concat(S.entries.map(e => e.name).filter(Boolean)).filter((v, i, a) => a.indexOf(v) === i);
+      const units = (cfg.units || []).concat(S.entries.map(e => e.unit).filter(Boolean)).filter((v, i, a) => a.indexOf(v) === i);
+      const f = pgFlash; pgFlash = '';
+      const tile = (l, v) => `<div class="p-2 rounded-xl bg-slate-950/70 border border-slate-800 text-center"><p class="text-lg font-black text-white">${v}</p><p class="text-[10px] text-slate-400">${l}</p></div>`;
+      const openGoals = S.goals.filter(g => { const s = pgGoalState(mod, g); return s.pct < 1 && !g.done && s.left >= 0; }).length;
+      const nameField = (label, ph) => `<div><label class="${LBL}">${label}</label><input id="pg-name" list="pg-names" placeholder="${ph}" class="${IN}"><datalist id="pg-names">${names.map(n => `<option value="${esc(n)}">`).join('')}</datalist></div>`;
+      const unitField = `<div><label class="${LBL}">Einheit</label><input id="pg-unit" list="pg-units" placeholder="z. B. kg" class="${IN}"><datalist id="pg-units">${units.map(n => `<option value="${esc(n)}">`).join('')}</datalist></div>`;
+      const fields = kind === 'learn' ? `<div><label class="${LBL}">${K.hint}</label><textarea id="pg-text" rows="3" placeholder="z. B. Heute habe ich gelernt, dass …" class="${IN}"></textarea></div>`
+        : kind === 'skill' ? `${nameField('Fähigkeit', 'z. B. Dribbling')}<div><label class="${LBL}">Wie gut jetzt? (1–10)</label><input id="pg-value" type="number" min="1" max="10" step="1" placeholder="z. B. 7" class="${IN}"></div><div><label class="${LBL}">Was wurde besser? (optional)</label><input id="pg-text" class="${IN}"></div>`
+          : kind === 'title' ? `${nameField('Titel / Erfolg', 'z. B. Turniersieg U18, Spieler des Spiels')}<div><label class="${LBL}">Details (optional)</label><input id="pg-text" class="${IN}"></div>`
+            : kind === 'grade' ? `${nameField('Fach / Prüfung', 'z. B. Mathematik')}<div class="grid grid-cols-2 gap-2"><div><label class="${LBL}">Neue Note</label><input id="pg-value" inputmode="decimal" placeholder="z. B. 5.0" class="${IN}"></div><div><label class="${LBL}">Vorherige Note (optional)</label><input id="pg-old" inputmode="decimal" placeholder="z. B. 4.5" class="${IN}"></div></div><div><label class="${LBL}">Was hat geholfen? (optional)</label><input id="pg-text" class="${IN}"></div>`
+              : kind === 'money' ? `<div class="grid grid-cols-2 gap-2"><div><label class="${LBL}">Betrag</label><input id="pg-value" inputmode="decimal" placeholder="z. B. 120" class="${IN}"></div><div><label class="${LBL}">Währung</label><input id="pg-unit" value="CHF" class="${IN}"></div></div>${nameField('Wofür / woher?', 'z. B. Honigverkauf Markt')}<div><label class="${LBL}">Notiz (optional)</label><input id="pg-text" class="${IN}"></div>`
+                : `${nameField('Was hast du gemessen?', 'z. B. Bankdrücken')}<div class="grid grid-cols-2 gap-2"><div><label class="${LBL}">Wert</label><input id="pg-value" inputmode="decimal" placeholder="z. B. 60" class="${IN}"></div>${unitField}</div><div><label class="${LBL}">Notiz (optional)</label><input id="pg-text" class="${IN}"></div>`;
+      const filt = pgFilter[mod] || 'all', list = S.entries.filter(e => filt === 'all' || e.kind === filt).sort((a, b) => (b.date + (b.at || 0)).localeCompare(a.date + (a.at || 0)));
+      const byDay = {}; list.forEach(e => { (byDay[e.date] = byDay[e.date] || []).push(e); });
+      const chip = (on, fn, l) => `<button onclick="${fn}" class="px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap ${on ? 'bg-blue-600 text-white' : 'bg-slate-900 text-slate-400 border border-slate-800'}">${l}</button>`;
+      return `${f}<div class="grid grid-cols-4 gap-2">${tile('Einträge', S.entries.length)}${tile('Diese Woche', S.entries.filter(e => e.date >= wk).length)}${tile('Tage-Serie 🔥', pgStreak(S.entries))}${tile('Offene Ziele', openGoals)}</div>
+        <div class="${BOX}">${panelHead('plus-circle', 'Fortschritt festhalten')}
+          <div class="flex gap-1.5 overflow-x-auto pb-1">${kinds.map(k => chip(k === kind, `pgSetKind('${mod}','${k}')`, PG_KINDS[k].icon + ' ' + PG_KINDS[k].label)).join('')}</div>
+          ${fields}
+          <div><label class="${LBL}">Datum</label><input id="pg-date" type="date" value="${today}" max="${today}" class="${IN}"></div>
+          <button onclick="pgSave('${mod}','${kind}')" class="w-full ${v11Pri}">Speichern</button></div>
+        <div class="${BOX}">${panelHead('target', 'Meine Ziele mit Zeitspanne')}
+          ${S.goals.length ? S.goals.map(g => pgGoalCard(mod, g)).join('') : '<p class="text-[11px] text-slate-500">Noch kein Ziel. Lege fest, was du bis wann erreichen willst.</p>'}
+          <button onclick="pgGoalOpen=!pgGoalOpen;renderWorkspace()" class="w-full ${v11Btn}">${pgGoalOpen ? 'Abbrechen' : '➕ Neues Ziel'}</button>
+          ${pgGoalOpen ? pgGoalForm(mod, names, units) : ''}</div>
+        <div class="${BOX}">${panelHead('history', 'Verlauf')}
+          <div class="flex gap-1.5 overflow-x-auto pb-1">${chip(filt === 'all', `pgSetFilter('${mod}','all')`, 'Alle')}${kinds.map(k => chip(filt === k, `pgSetFilter('${mod}','${k}')`, PG_KINDS[k].icon + ' ' + PG_KINDS[k].label)).join('')}</div>
+          ${Object.keys(byDay).length ? Object.keys(byDay).map(d => `<div><p class="text-[11px] font-bold text-blue-300 pt-2">${pgDate(d)}</p>${byDay[d].map(e => pgEntryLine(mod, e)).join('')}</div>`).join('') : '<p class="text-[11px] text-slate-500">Noch keine Einträge.</p>'}</div>`;
+    }
+    function pgGoalForm(mod, names, units) {
+      const t = pgToday(), in3 = new Date(); in3.setMonth(in3.getMonth() + 3); const to = in3.toISOString().slice(0, 10);
+      const kinds = pgCfg(mod).kinds;
+      return `<div class="space-y-2 p-3 rounded-2xl border border-blue-500/40 bg-blue-500/5">
+        <div><label class="${LBL}">Ziel (Titel)</label><input id="pgg-title" placeholder="z. B. 80 kg Bankdrücken, Note 5 in Mathe, 1000 Follower" class="${IN}"></div>
+        <div><label class="${LBL}">Art des Ziels</label><select id="pgg-type" class="${IN}" onchange="pgGoalTypeUi()">
+          ${kinds.some(k => ['metric', 'skill', 'grade'].includes(k)) ? '<option value="value">Einen Wert erreichen (Messwert, Fähigkeit, Note)</option>' : ''}
+          ${kinds.includes('money') ? '<option value="money">Geld einnehmen</option>' : ''}
+          <option value="count">An X Tagen etwas festhalten (z. B. 30 Tage lernen)</option>
+          <option value="done">Einfach abhaken (z. B. Titel gewinnen)</option></select></div>
+        <div id="pgg-value-ui" class="space-y-2"><div><label class="${LBL}">Wert-Name (gleich wie bei deinen Einträgen)</label><input id="pgg-name" list="pgg-names" placeholder="z. B. Bankdrücken" class="${IN}"><datalist id="pgg-names">${names.map(n => `<option value="${esc(n)}">`).join('')}</datalist></div>
+          <div class="grid grid-cols-3 gap-2"><div><label class="${LBL}">Jetzt</label><input id="pgg-start" inputmode="decimal" placeholder="60" class="${IN}"></div><div><label class="${LBL}">Ziel</label><input id="pgg-target" inputmode="decimal" placeholder="80" class="${IN}"></div><div><label class="${LBL}">Einheit</label><input id="pgg-unit" list="pgg-units" placeholder="kg" class="${IN}"><datalist id="pgg-units">${units.map(n => `<option value="${esc(n)}">`).join('')}</datalist></div></div></div>
+        <div id="pgg-amount-ui" class="hidden"><label class="${LBL}">Wie viel? (Betrag bzw. Anzahl Tage)</label><input id="pgg-amount" inputmode="decimal" placeholder="z. B. 500" class="${IN}"></div>
+        <div class="grid grid-cols-2 gap-2"><div><label class="${LBL}">Von</label><input id="pgg-from" type="date" value="${t}" class="${IN}"></div><div><label class="${LBL}">Bis</label><input id="pgg-to" type="date" value="${to}" class="${IN}"></div></div>
+        <button onclick="pgSaveGoal('${mod}')" class="w-full ${v11Pri}">Ziel speichern</button></div>`;
+    }
+    function pgGoalTypeUi() {
+      const t = pgVal('pgg-type'), v = document.getElementById('pgg-value-ui'), a = document.getElementById('pgg-amount-ui');
+      if (v) v.classList.toggle('hidden', t !== 'value'); if (a) a.classList.toggle('hidden', !(t === 'money' || t === 'count'));
+    }
+
+    // ---------- Aktionen ----------
+    function pgSetKind(mod, k) { pgKind[mod] = k; renderWorkspace(); }
+    function pgSetFilter(mod, k) { pgFilter[mod] = k; renderWorkspace(); }
+    function pgSave(mod, kind) {
+      const S = pgStore(mod), date = pgVal('pg-date') || pgToday(), text = pgVal('pg-text'), name = pgVal('pg-name'), value = pgNum(pgVal('pg-value'));
+      const warn = m => { pgFlash = `<p class="text-xs text-rose-300 px-1">⚠️ ${m}</p>`; renderWorkspace(); };
+      if (kind === 'learn' && !text) return warn('Schreib kurz auf, was du gelernt hast.');
+      if (['skill', 'title', 'grade', 'metric'].includes(kind) && !name) return warn('Bitte einen Namen eingeben.');
+      if (['skill', 'grade', 'metric', 'money'].includes(kind) && value == null) return warn('Bitte einen Wert eingeben.');
+      const e = { id: uid(), date, kind, text, at: Date.now() };
+      if (name) e.name = name; if (value != null) e.value = value;
+      const unit = pgVal('pg-unit'); if (unit) e.unit = unit;
+      if (kind === 'skill') e.unit = 'Stufe';
+      if (kind === 'grade') { e.unit = 'Note'; const o = pgNum(pgVal('pg-old')); if (o != null) e.old = o; }
+      S.entries.push(e); saveUserData();
+      const reached = S.goals.filter(g => !g.notified && pgGoalState(mod, g).pct >= 1);
+      reached.forEach(g => { g.notified = true; try { nfShow('🎯 Ziel erreicht!', g.title, mod); } catch (x) { } });
+      if (reached.length) saveUserData();
+      pgFlash = `<p class="text-xs text-emerald-300 px-1">✓ Gespeichert${reached.length ? ' – und Ziel erreicht: ' + reached.map(g => esc(g.title)).join(', ') + ' 🎉' : ''}</p>`;
+      renderWorkspace();
+    }
+    function pgSaveGoal(mod) {
+      const S = pgStore(mod), type = pgVal('pgg-type'), title = pgVal('pgg-title'), from = pgVal('pgg-from'), to = pgVal('pgg-to');
+      const warn = m => { const el = document.getElementById('pgg-title'); alert(m); if (el) el.focus(); };
+      if (!title) return warn('Bitte gib dem Ziel einen Titel.');
+      if (!from || !to || to <= from) return warn('Das Enddatum muss nach dem Startdatum liegen.');
+      const g = { id: uid(), title, type, from, to, at: Date.now() };
+      if (type === 'value') {
+        g.name = pgVal('pgg-name') || title; g.start = pgNum(pgVal('pgg-start')); g.target = pgNum(pgVal('pgg-target')); g.unit = pgVal('pgg-unit');
+        if (g.start == null || g.target == null) return warn('Bitte „Jetzt" und „Ziel" als Zahl eingeben.');
+      } else if (type === 'money' || type === 'count') {
+        g.target = pgNum(pgVal('pgg-amount')); if (!(g.target > 0)) return warn('Bitte eine Zahl bei „Wie viel?" eingeben.');
+        if (type === 'money') g.unit = 'CHF';
+      } else g.done = false;
+      S.goals.push(g); saveUserData(); pgGoalOpen = false;
+      pgFlash = '<p class="text-xs text-emerald-300 px-1">✓ Ziel gespeichert</p>'; renderWorkspace();
+    }
+    function pgToggleGoal(mod, id) { const g = pgStore(mod).goals.find(x => x.id === id); if (g) { g.done = !g.done; saveUserData(); renderWorkspace(); } }
+    function pgDelGoal(mod, id) { if (!confirm('Ziel löschen?')) return; const S = pgStore(mod); S.goals = S.goals.filter(x => x.id !== id); saveUserData(); renderWorkspace(); }
+    function pgDelEntry(mod, id) { if (!confirm('Eintrag löschen?')) return; const S = pgStore(mod); S.entries = S.entries.filter(x => x.id !== id); saveUserData(); renderWorkspace(); }
+
+    // ---------- Gesamt-Übersicht über alle Tools ----------
+    function renderProgressAll(tab) {
+      const P = currentUser.progress || {}, mods = Object.keys(P).filter(m => WS_DEF[m]);
+      if (tab === 'history') {
+        const all = []; mods.forEach(m => P[m].entries.forEach(e => all.push([m, e])));
+        all.sort((a, b) => (b[1].date + (b[1].at || 0)).localeCompare(a[1].date + (a[1].at || 0)));
+        const byDay = {}; all.slice(0, 300).forEach(x => { (byDay[x[1].date] = byDay[x[1].date] || []).push(x); });
+        return `<div class="${BOX}">${panelHead('history', 'Alles, was du festgehalten hast')}${Object.keys(byDay).length ? Object.keys(byDay).map(d => `<div><p class="text-[11px] font-bold text-blue-300 pt-2">${pgDate(d)}</p>${byDay[d].map(([m, e]) => pgEntryLine(m, e, true)).join('')}</div>`).join('') : '<p class="text-[11px] text-slate-500">Noch nichts. Öffne ein Tool und tippe auf den Tab „🎯 Ziele & Fortschritt".</p>'}</div>`;
+      }
+      const goals = []; mods.forEach(m => P[m].goals.forEach(g => goals.push([m, g])));
+      goals.sort((a, b) => a[1].to.localeCompare(b[1].to));
+      const open = goals.filter(([m, g]) => { const s = pgGoalState(m, g); return s.pct < 1 && !g.done && s.left >= 0; }), rest = goals.filter(x => !open.includes(x));
+      return `<div class="${BOX}">${panelHead('target', 'Offene Ziele (nach Frist sortiert)')}${open.length ? open.map(([m, g]) => pgGoalCard(m, g, true)).join('') : '<p class="text-[11px] text-slate-500">Keine offenen Ziele.</p>'}</div>
+        ${rest.length ? `<div class="${BOX}">${panelHead('check-circle', 'Erreicht oder abgelaufen')}${rest.map(([m, g]) => pgGoalCard(m, g, true)).join('')}</div>` : ''}
+        <div class="${BOX}">${panelHead('layout-grid', 'Tools')}<div class="grid grid-cols-2 gap-2">${Object.keys(WS_DEF).filter(pgEnabled).map(m => `<button onclick="openWorkspace('${m}','progress')" class="p-2 rounded-xl bg-slate-950/70 border border-slate-800 text-left text-xs text-white">${esc(pgModTitle(m))}<span class="block text-[10px] text-slate-500">${P[m] ? P[m].entries.length + ' Einträge · ' + P[m].goals.length + ' Ziele' : 'noch leer'}</span></button>`).join('')}</div></div>`;
+    }
+    WS_DEF.fortschritt = { title: 'Alle Fortschritte & Ziele', icon: 'target', tabs: [['goals', '🎯 Ziele'], ['history', '📅 Verlauf']], render: renderProgressAll };
+
+    // ---------- Tab "🎯 Ziele & Fortschritt" in jedes passende Tool einbauen ----------
+    function pgTabBtn() {
+      const t = document.getElementById('ws-tabs'); if (!t || !pgEnabled(ws.mod) || t.querySelector('[data-pg]')) return;
+      t.insertAdjacentHTML('beforeend', `<button data-pg="1" onclick="setWsTab('progress')" class="px-3.5 py-2 rounded-xl text-sm font-semibold whitespace-nowrap transition ${ws.tab === 'progress' ? 'bg-blue-600 text-white' : 'bg-slate-900 text-slate-400 border border-slate-800 hover:text-white'}">🎯 Ziele & Fortschritt</button>`);
+    }
+    renderWorkspace = (function (orig) {
+      return function (resetScroll) {
+        if (!ws.mod) return;
+        if (ws.tab !== 'progress' || !pgEnabled(ws.mod)) { orig(resetScroll); pgTabBtn(); return; }
+        const def = WS_DEF[ws.mod], body = document.getElementById('ws-body'), st = body.scrollTop;
+        document.getElementById('ws-title').innerHTML = `<i data-lucide="${def.icon}" class="text-blue-400 w-5 h-5"></i> ${def.title}`;
+        document.getElementById('ws-tabs').innerHTML = (def.tabsFn ? def.tabsFn() : def.tabs).map(([id, l]) =>
+          `<button onclick="setWsTab('${id}')" class="px-3.5 py-2 rounded-xl text-sm font-semibold whitespace-nowrap transition bg-slate-900 text-slate-400 border border-slate-800 hover:text-white">${l}</button>`).join('');
+        pgTabBtn();
+        try { body.innerHTML = renderProgressWs(ws.mod); } catch (e) { console.error(e); body.innerHTML = `<p class="text-rose-300 text-sm p-3">Fehler: ${esc(e.message)}</p>`; }
+        lucide.createIcons();
+        body.scrollTop = resetScroll ? 0 : st;
+        try { if (typeof trStop === 'function') trStop(); } catch (e) { }
+      };
+    })(renderWorkspace);
+    try {
+      QUICK_ACTIONS.push(['🎯', 'Alle Fortschritte & Ziele', 'fortschritt ziele gelernt lernen notiz zeitspanne erfolge titel noten geld', null, () => openWorkspace('fortschritt')]);
     } catch (e) { }
 </script>
 <script>
