@@ -1,4 +1,3 @@
-
 // Cloudflare Pages Function – erreichbar unter /api/market
 // Holt Kurse, Charts, Suche und Trends serverseitig (der Browser darf
 // Finanz-APIs wegen CORS nicht direkt abfragen) und liefert kompaktes JSON.
