@@ -10,11 +10,11 @@
   <meta name="apple-mobile-web-app-title" content="MyLife">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="format-detection" content="telephone=no">
-  <meta name="mylife-build" content="15.3">
+  <meta name="mylife-build" content="15.4">
   <script>
     // Update-Wächter: lädt automatisch die neue Version, falls noch eine alte im Speicher ist
     (function () {
-      var BUILD = '15.3';
+      var BUILD = '15.4';
       if (!/^https?:$/.test(location.protocol)) return;
       var hadController = !!(navigator.serviceWorker && navigator.serviceWorker.controller);
       if (navigator.serviceWorker) navigator.serviceWorker.addEventListener('controllerchange', function () {
@@ -14021,17 +14021,21 @@ html.light, html.light body { background: #eef2f7; color: #0f172a; }
 </script>
 <script>
     // =====================================================================
-    //  LIVE-TRADER (Investment → Tab "Live-Trader")
-    //  Alle Anlageklassen über /api/market (Yahoo, ohne API-Key):
-    //  Krypto, Aktien, ETFs, Indizes, Rohstoffe, Devisen.
-    //  Kerzen-Chart · Kauf/Verkauf-Empfehlung mit Zeitpunkt (kurz/mittel/lang)
-    //  Einstieg, Stop, Ziel · Handelszeiten · Trefferquote · Spielgeld · Benachrichtigung
+    //  LIVE-TRADER (Investment → Tab "Live-Trader")  ·  Build 15.4
+    //  Alle Anlageklassen über /api/market (Yahoo, ohne API-Key).
+    //  Für jeden Zeitraum: Wenn ich JETZT Geld reinstecke – Gewinn oder Verlust?
+    //  Prognose-Modell = langfristiger Trend des Werts (z. B. QQQ steigt über Jahre)
+    //  + aktueller Trend + Rückkehr zum Mittelwert, mit Schwankungsbreite.
+    //  Prognose-Linie im Chart · Kaufen/Halten/Verkaufen · Long/Short · Trefferquote
+    //  Watchlist · Spielgeld · Capital.com (nur lesen) · Benachrichtigungen
     // =====================================================================
     const TR_TF = [['15m', '15 Min'], ['1h', '1 h'], ['4h', '4 h'], ['1d', '24 h'], ['1w', 'Woche'], ['1M', 'Monat'], ['1y', 'Jahr']];
+    // Prognose-Horizont pro Zeitraum: [Anzahl Kerzen, Text, Gewicht aktueller Trend]
+    const TR_HZ = { '15m': [16, '4 Stunden', 0.14], '1h': [24, '1 Tag', 0.14], '4h': [30, '5 Tagen', 0.14], '1d': [21, '1 Monat', 0.12], '1w': [26, '6 Monaten', 0.08], '1M': [12, '1 Jahr', 0.05], '1y': [36, '3 Jahren', 0.03] };
     const TR_CATS = [
       ['crypto', '🪙 Krypto', ['BTC-USD', 'ETH-USD', 'SOL-USD', 'XRP-USD', 'BNB-USD', 'DOGE-USD', 'ADA-USD']],
       ['stocks', '📈 Aktien', ['AAPL', 'NVDA', 'MSFT', 'TSLA', 'AMZN', 'META', 'NESN.SW', 'NOVN.SW', 'ROG.SW', 'UBSG.SW', 'SAP.DE']],
-      ['etf', '🧺 ETFs', ['SPY', 'QQQ', 'VT', 'VTI', 'IWDA.AS', 'VWRL.AS', 'CSSPX.SW', 'CHSPI.SW', 'GLD']],
+      ['etf', '🧺 ETFs', ['QQQ', 'SPY', 'VT', 'VTI', 'IWDA.AS', 'VWRL.AS', 'CSSPX.SW', 'CHSPI.SW', 'GLD']],
       ['index', '📊 Indizes', ['^GSPC', '^NDX', '^DJI', '^SSMI', '^GDAXI', '^STOXX50E', '^N225', '^FTSE']],
       ['commodity', '🛢️ Rohstoffe', ['GC=F', 'SI=F', 'CL=F', 'BZ=F', 'NG=F', 'HG=F', 'PL=F']],
       ['fx', '💱 Devisen', ['USDCHF=X', 'EURCHF=X', 'EURUSD=X', 'GBPCHF=X', 'JPY=X']]
@@ -14039,16 +14043,14 @@ html.light, html.light body { background: #eef2f7; color: #0f172a; }
     const TR_NAMES = {
       '^GSPC': 'S&P 500', '^NDX': 'Nasdaq 100', '^DJI': 'Dow Jones', '^SSMI': 'SMI', '^GDAXI': 'DAX', '^STOXX50E': 'Euro Stoxx 50', '^N225': 'Nikkei 225', '^FTSE': 'FTSE 100',
       'GC=F': 'Gold', 'SI=F': 'Silber', 'CL=F': 'Öl WTI', 'BZ=F': 'Öl Brent', 'NG=F': 'Erdgas', 'HG=F': 'Kupfer', 'PL=F': 'Platin',
-      'USDCHF=X': 'USD/CHF', 'EURCHF=X': 'EUR/CHF', 'EURUSD=X': 'EUR/USD', 'GBPCHF=X': 'GBP/CHF', 'JPY=X': 'USD/JPY'
+      'USDCHF=X': 'USD/CHF', 'EURCHF=X': 'EUR/CHF', 'EURUSD=X': 'EUR/USD', 'GBPCHF=X': 'GBP/CHF', 'JPY=X': 'USD/JPY',
+      'BTC-USD': 'Bitcoin', 'ETH-USD': 'Ethereum', 'SOL-USD': 'Solana', 'XRP-USD': 'XRP', 'BNB-USD': 'BNB', 'DOGE-USD': 'Dogecoin', 'ADA-USD': 'Cardano',
+      'QQQ': 'QQQ (Nasdaq 100 ETF)', 'SPY': 'SPY (S&P 500 ETF)', 'VT': 'VT (Welt-ETF)', 'GLD': 'GLD (Gold-ETF)'
     };
-    const TR_H = [
-      { id: 'kurz', label: 'Kurzfristig', tf: '1h', hold: 'Stunden bis 3 Tage', w: 0.2 },
-      { id: 'mittel', label: 'Mittelfristig', tf: '1d', hold: '1 bis 6 Wochen', w: 0.4 },
-      { id: 'lang', label: 'Langfristig', tf: '1w', hold: '3 bis 12 Monate', w: 0.4 }
-    ];
     const TR_START = 10000;
-    let trChart = null, trSeries = null, trE20 = null, trE50 = null, trLines = [], trTimer = null, trBusy = false, trTick = 0, trRes = null;
-    const trMeta = {}, trPrices = {};
+    let trChart = null, trSeries = null, trE20 = null, trFc = null, trFcHi = null, trFcLo = null, trLines = [], trTimer = null, trBusy = false, trTick = 0;
+    let trCap = null, trCapBusy = false;
+    const trMeta = {}, trPrices = {}, trModels = {}, trWatchRes = {};
 
     function trState() {
       if (!currentUser.trader) currentUser.trader = {};
@@ -14059,14 +14061,19 @@ html.light, html.light body { background: #eef2f7; color: #0f172a; }
       if (!TR_TF.some(x => x[0] === T.tf)) T.tf = '1d';
       if (!Array.isArray(T.positions)) T.positions = [];
       T.positions = T.positions.filter(p => p.sym && !/USDT$/.test(p.sym));
+      if (!Array.isArray(T.watch)) T.watch = [];
       if (!T.recs) T.recs = {}; if (typeof T.realized !== 'number') T.realized = 0;
+      if (!(T.sim > 0)) T.sim = 100;
       return T;
     }
     const trLabel = s => TR_NAMES[s] || s;
+    const trTfLabel = tf => (TR_TF.find(x => x[0] === tf) || [])[1] || tf;
     const trDec = p => p < 0.01 ? 8 : p < 1 ? 5 : p < 10 ? 4 : 2;
     const trF = p => p == null || isNaN(p) ? '–' : fmtNum(p, trDec(Math.abs(p)));
     const trCls = v => v > 0 ? 'text-emerald-300' : v < 0 ? 'text-rose-300' : 'text-slate-400';
     const trSign = v => (v > 0 ? '+' : '') + fmtNum(v, 2);
+    const trPct = v => (v > 0 ? '+' : '') + fmtNum(v * 100, Math.abs(v) < 0.1 ? 1 : 0) + ' %';
+    const trMean = a => a.reduce((s, x) => s + x, 0) / a.length;
 
     function trLoadLib() {
       if (window.LightweightCharts) return Promise.resolve();
@@ -14088,8 +14095,15 @@ html.light, html.light body { background: #eef2f7; color: #0f172a; }
       trMeta[sym] = { name: j.name, currency: j.currency, exchange: j.exchange, type: j.type };
       return j.candles.map(r => ({ time: r[0], open: r[1], high: r[2], low: r[3], close: r[4], volume: r[5] }));
     }
+    // Langfristiger Trend: durchschnittliche Monatsrendite der letzten bis zu 10 Jahre
+    async function trLongDrift(sym) {
+      const m = await trCandles(sym, '1M', 3600000), lc = m.map(x => Math.log(x.close)), r = [];
+      for (let i = 1; i < lc.length; i++) r.push(lc[i] - lc[i - 1]);
+      const rr = r.slice(-120);
+      return { months: m, mu: rr.length >= 12 ? trMean(rr) : null, n: rr.length };
+    }
 
-    // ---------- Indikatoren & die 5 Methoden ----------
+    // ---------- Mathe ----------
     function trEma(arr, p) { const k = 2 / (p + 1), out = []; let prev; arr.forEach((v, i) => { prev = i === 0 ? v : v * k + prev * (1 - k); out.push(prev); }); return out; }
     function trRsi(cl, p = 14) {
       if (cl.length < p + 1) return null;
@@ -14099,153 +14113,119 @@ html.light, html.light body { background: #eef2f7; color: #0f172a; }
       for (let i = p + 1; i < cl.length; i++) { const d = cl[i] - cl[i - 1]; g = (g * (p - 1) + Math.max(d, 0)) / p; l = (l * (p - 1) + Math.max(-d, 0)) / p; }
       return l === 0 ? 100 : 100 - 100 / (1 + g / l);
     }
-    function trAtr(c, p = 14) {
-      if (c.length < p + 1) return null; let s = 0;
-      for (let i = c.length - p; i < c.length; i++) { const k = c[i], pc = c[i - 1].close; s += Math.max(k.high - k.low, Math.abs(k.high - pc), Math.abs(k.low - pc)); }
-      return s / p;
-    }
-    const trMean = a => a.reduce((s, x) => s + x, 0) / a.length;
-    function trAnalyze(c) {
-      const cl = c.map(x => x.close), n = cl.length, last = cl[n - 1], out = [];
-      const na = (name, need) => ({ name, value: '–', vote: 0, note: `zu wenig Daten (min. ${need} Kerzen)` });
-      // Trendrichtung zuerst: RSI und Bollinger werden je nach Trend anders gelesen
-      const e20a = trEma(cl, 20), e50a = trEma(cl, 50), te20 = e20a[n - 1], te50 = e50a[n - 1];
-      const trend = n >= 50 ? (te20 > te50 && last > te50 ? 1 : te20 < te50 && last < te50 ? -1 : 0) : 0;
-      const r = trRsi(cl);
-      if (r === null) out.push(na('RSI (14)', 15));
-      else {
-        let vote = 0, note = 'neutral';
-        if (trend > 0) { if (r > 80) { vote = 1; note = 'starker Aufwärtstrend, aber überhitzt'; } else if (r >= 50) { vote = 1; note = 'Kaufkraft im Aufwärtstrend'; } else if (r < 40) { vote = 1; note = 'Rücksetzer im Aufwärtstrend (Kaufchance)'; } else note = 'Aufwärtstrend macht Pause'; }
-        else if (trend < 0) { if (r < 20) { vote = -1; note = 'starker Abwärtstrend, aber stark überverkauft'; } else if (r <= 50) { vote = -1; note = 'Verkaufsdruck im Abwärtstrend'; } else if (r > 60) { vote = -1; note = 'Erholung im Abwärtstrend (eher Verkaufschance)'; } else note = 'Abwärtstrend macht Pause'; }
-        else if (r < 30) { vote = 1; note = 'überverkauft, Erholung möglich'; } else if (r > 70) { vote = -1; note = 'überkauft, Rückgang möglich'; }
-        else if (r >= 55) { vote = 1; note = 'Kaufdruck überwiegt'; } else if (r <= 45) { vote = -1; note = 'Verkaufsdruck überwiegt'; }
-        out.push({ name: 'RSI (14)', value: fmtNum(r, 1), vote, note });
-      }
-      if (n < 35) out.push(na('MACD', 35));
-      else {
-        const e12 = trEma(cl, 12), e26 = trEma(cl, 26), macd = e12.map((v, i) => v - e26[i]), sig = trEma(macd, 9);
-        const h = macd[n - 1] - sig[n - 1], hp = macd[n - 2] - sig[n - 2];
-        const vote = h > 0 ? 1 : h < 0 ? -1 : 0;
-        const note = h > 0 ? (h >= hp ? 'Momentum steigt' : 'Momentum positiv, wird schwächer') : (h <= hp ? 'Momentum fällt' : 'Momentum negativ, wird schwächer');
-        out.push({ name: 'MACD', value: h.toPrecision(3), vote, note });
-      }
-      if (n < 50) out.push(na('EMA 20/50', 50));
-      else {
-        const e20 = te20, e50 = te50;
-        let vote = 0, note = 'kein klarer Trend';
-        if (e20 > e50 && last > e20) { vote = 1; note = 'Aufwärtstrend'; } else if (e20 < e50 && last < e20) { vote = -1; note = 'Abwärtstrend'; }
-        out.push({ name: 'EMA 20/50', value: e20 > e50 ? '20 > 50' : '20 < 50', vote, note });
-      }
-      if (n < 20) out.push(na('Bollinger (20,2)', 20));
-      else {
-        const w = cl.slice(-20), m = trMean(w), sd = Math.sqrt(trMean(w.map(x => (x - m) ** 2))), up = m + 2 * sd, lo = m - 2 * sd;
-        const pb = up === lo ? 0.5 : (last - lo) / (up - lo);
-        let vote = 0, note = 'in der Mitte der Spanne';
-        if (trend > 0) { if (pb < 0.35) { vote = 1; note = 'Rücksetzer im Aufwärtstrend (günstiger Einstieg)'; } else if (pb > 1.05) { vote = 1; note = 'über dem oberen Band (sehr stark, aber überhitzt)'; } else note = 'läuft im oberen Bereich mit dem Trend'; }
-        else if (trend < 0) { if (pb > 0.65) { vote = -1; note = 'Erholung im Abwärtstrend (eher verkaufen)'; } else if (pb < -0.05) { vote = -1; note = 'unter dem unteren Band (sehr schwach, stark überverkauft)'; } else note = 'läuft im unteren Bereich mit dem Trend'; }
-        else if (pb < 0.1) { vote = 1; note = 'am unteren Band, Abprall möglich'; } else if (pb > 0.9) { vote = -1; note = 'am oberen Band, Rücksetzer möglich'; }
-        out.push({ name: 'Bollinger (20,2)', value: Math.round(pb * 100) + ' %', vote, note });
-      }
-      const vols = c.map(x => x.volume), noVol = vols.slice(-25).every(v => !v);
-      if (n < 26 || noVol) out.push(Object.assign(na('Volumen', 26), noVol ? { note: 'kein Volumen verfügbar (z. B. Index/Devisen)' } : {}));
-      else {
-        const v5 = trMean(vols.slice(-5)), v20 = trMean(vols.slice(-25, -5)), ratio = v20 ? v5 / v20 : 1, move = last - cl[n - 6];
-        let vote = 0, note = 'normales Volumen';
-        if (ratio > 1.2) { vote = move > 0 ? 1 : -1; note = move > 0 ? 'hohes Volumen bei steigenden Kursen' : 'hohes Volumen bei fallenden Kursen'; }
-        out.push({ name: 'Volumen', value: fmtNum(ratio, 2) + '×', vote, note });
-      }
-      return { methods: out, score: out.reduce((s, x) => s + x.vote, 0) };
+    function trPhi(x) { // Normalverteilung
+      const z = Math.abs(x) / Math.SQRT2, t = 1 / (1 + 0.3275911 * z);
+      const y = 1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-z * z);
+      return 0.5 * (1 + Math.sign(x) * y);
     }
 
-    // ---------- Lohnt es sich? Kaufen / Verkaufen / Abwarten + Zeitpunkt ----------
-    function trHorizon(c, H) {
-      if (c.length < 30) return { H, key: 'na', title: 'Zu wenig Kursdaten', timing: 'Für diesen Zeitraum gibt es noch nicht genug Geschichte.', score: 0 };
-      const a = trAnalyze(c), cl = c.map(x => x.close), p = cl[cl.length - 1], e20 = trEma(cl, 20)[cl.length - 1], r = trRsi(cl), atr = trAtr(c) || p * 0.02;
-      const w = c.slice(-20), sup = Math.min(...w.map(x => x.low)), res = Math.max(...w.map(x => x.high));
-      const o = { H, score: a.score, rsi: r, sup, res, price: p };
-      if (a.score >= 2) {
-        if ((r != null && r > 70) || p > e20 + 1.5 * atr) {
-          const entry = Math.min(p, Math.max(e20, sup));
-          Object.assign(o, { key: 'buywait', title: 'Kaufen lohnt sich – aber nicht sofort', entry, timing: `Der Kurs ist gerade stark gestiegen (überhitzt). Warte auf einen Rücksetzer bis ca. ${trF(entry)} und kaufe dann.` });
-        } else Object.assign(o, { key: 'buy', title: 'Kaufen – guter Zeitpunkt jetzt', entry: p, timing: 'Der Trend zeigt nach oben und der Kurs ist nicht überhitzt.' });
-        o.stop = o.entry - 2 * atr; o.target = o.entry + 3 * atr;
-      } else if (a.score <= -2) {
-        if (r != null && r < 30) {
-          const exit = Math.max(p, Math.min(e20, res));
-          Object.assign(o, { key: 'sellwait', title: 'Verkaufen – aber nicht im Tief', entry: exit, timing: `Der Kurs ist stark gefallen (überverkauft). Wenn du es besitzt: auf eine Erholung bis ca. ${trF(exit)} warten und dort verkaufen. Jetzt nicht kaufen.` });
-        } else Object.assign(o, { key: 'sell', title: 'Verkaufen / nicht kaufen', entry: p, timing: 'Abwärtstrend. Wer es besitzt, sollte über einen Verkauf nachdenken. Neu kaufen lohnt sich gerade nicht.' });
-        o.stop = o.entry + 2 * atr; o.target = o.entry - 3 * atr;
-      } else Object.assign(o, { key: 'wait', title: 'Abwarten – kein klares Signal', timing: `Gute Kaufzone um ${trF(sup)} (Unterstützung), Verkaufszone um ${trF(res)} (Widerstand).` });
-      return o;
+    // ---------- Prognose-Modell ----------
+    // c: Kerzen, tf: Zeitraum, muMonth: langfristige Monatsrendite (log). muCandle: Drift pro Kerze direkt (für Rückblick-Test)
+    function trModel(c, tf, muMonth, muCandle) {
+      const n = c.length; if (n < 40) return null;
+      const [k, , wT] = TR_HZ[tf];
+      const cl = c.map(x => x.close), lc = cl.map(Math.log), r = [];
+      for (let i = Math.max(1, n - 150); i < n; i++) r.push(lc[i] - lc[i - 1]);
+      const m = trMean(r), sig = Math.sqrt(trMean(r.map(x => (x - m) ** 2))) || 1e-6;
+      // Wie viele Kerzen entsprechen einem Monat? (aus den Zeitstempeln)
+      const i0 = Math.max(0, n - 101), days = Math.max((c[n - 1].time - c[i0].time) / 86400, 1e-6), perMonth = (n - 1 - i0) / days * 30.44;
+      const muL = muCandle != null ? muCandle : muMonth != null ? muMonth / perMonth : m;
+      // aktueller Trend = Steigung der letzten 50 Kerzen (log), bei extremen Werten begrenzt
+      const L = Math.min(50, n), ys = lc.slice(-L), xm = (L - 1) / 2, ym = trMean(ys);
+      let sxy = 0, sxx = 0; ys.forEach((y, i) => { sxy += (i - xm) * (y - ym); sxx += (i - xm) ** 2; });
+      const slope = Math.max(-sig / 2, Math.min(sig / 2, sxy / sxx));
+      // Rückkehr zum Mittelwert: weit über/unter der 20er-Linie zieht leicht zurück
+      const e20 = trEma(cl, 20)[n - 1], gap = lc[n - 1] - Math.log(e20);
+      const D = (wT * slope + (1 - wT) * muL) * k - 0.05 * gap, S = sig * Math.sqrt(k);
+      const p = cl[n - 1];
+      return {
+        tf, k, sig, D, S, p, e20, rsi: trRsi(cl), muL, slope,
+        pUp: trPhi(D / S), med: p * Math.exp(D), lo: p * Math.exp(D - S), hi: p * Math.exp(D + S), exp: Math.exp(D) - 1,
+        loR: Math.exp(D - S) - 1, hiR: Math.exp(D + S) - 1
+      };
     }
-    const TR_K = {
-      buy: ['🟢', 'text-emerald-300', 'border-emerald-500/50 bg-emerald-500/10'], buywait: ['🟡', 'text-emerald-300', 'border-amber-500/50 bg-amber-500/10'],
-      sell: ['🔴', 'text-rose-300', 'border-rose-500/50 bg-rose-500/10'], sellwait: ['🟠', 'text-rose-300', 'border-amber-500/50 bg-amber-500/10'],
-      wait: ['⚪', 'text-amber-300', 'border-slate-600 bg-slate-900'], na: ['⚪', 'text-slate-400', 'border-slate-700 bg-slate-900']
-    };
-    function trOverall(hs) {
-      const ok = hs.filter(h => h.key !== 'na'); if (!ok.length) return { key: 'na', label: 'Keine Empfehlung möglich', notes: [] };
-      const wsum = ok.reduce((s, h) => s + h.H.w, 0), total = ok.reduce((s, h) => s + h.score * h.H.w, 0) / wsum;
-      const key = total >= 1.5 ? 'KAUFEN' : total <= -1.5 ? 'VERKAUFEN' : 'ABWARTEN';
-      const get = id => hs.find(h => h.H.id === id && h.key !== 'na') || {}, k = get('kurz'), m = get('mittel'), l = get('lang'), notes = [];
-      if (key === 'KAUFEN') notes.push(m.key === 'buy' || k.key === 'buy' ? '⏱️ Zeitpunkt: jetzt ist ein guter Moment.' : `⏱️ Zeitpunkt: lieber auf einen Rücksetzer bis ca. ${trF(m.entry || k.entry || m.sup)} warten.`);
-      if (key === 'VERKAUFEN') notes.push(m.key === 'sellwait' || k.key === 'sellwait' ? `⏱️ Zeitpunkt: nicht im Tief verkaufen – Erholung bis ca. ${trF(m.entry || k.entry)} abwarten.` : '⏱️ Zeitpunkt: Wer es besitzt, verkauft eher bald. Nicht neu kaufen.');
-      if (key === 'ABWARTEN') notes.push(m.sup != null ? `⏱️ Zeitpunkt: abwarten, bis die Signale klarer sind. Interessant zum Kaufen erst um ${trF(m.sup)}.` : '⏱️ Zeitpunkt: abwarten, bis die Signale klarer sind.');
-      if (l.score >= 2 && k.score <= -2) notes.push('Langfristig gut, kurzfristig aber schwach → in Etappen kaufen oder das kurzfristige Kaufsignal abwarten.');
-      if (l.score <= -2 && k.score >= 2) notes.push('Kurzfristige Erholung in einem langfristigen Abwärtstrend → Vorsicht, eher zum Verkaufen nutzen.');
-      const best = ok.filter(h => h.score >= 2).sort((a, b) => b.score - a.score)[0];
-      if (key !== 'VERKAUFEN' && best) notes.push(`Am meisten lohnt es sich ${best.H.label.toLowerCase()} (Haltedauer ${best.H.hold}).`);
-      return { key, total, label: key === 'KAUFEN' ? '🟢 Kaufen lohnt sich' : key === 'VERKAUFEN' ? '🔴 Eher verkaufen' : '🟡 Abwarten / halten', notes };
-    }
-    // Wie gut hat das Signal früher funktioniert? (Tageskerzen, 20 Handelstage später)
-    function trBacktest(c) {
-      const n = c.length, look = 20; if (n < 90) return null;
-      let bN = 0, bW = 0, bR = 0, sN = 0, sW = 0, sR = 0;
-      for (let i = 60; i < n - look; i += 2) {
-        const s = trAnalyze(c.slice(Math.max(0, i - 150), i + 1)).score, ret = (c[i + look].close - c[i].close) / c[i].close * 100;
-        if (s >= 2) { bN++; bR += ret; if (ret > 0) bW++; }
-        if (s <= -2) { sN++; sR += ret; if (ret < 0) sW++; }
+    // Rückblick: Wie oft lag das Modell früher richtig? (ohne Blick in die Zukunft)
+    function trBacktest(c, tf) {
+      const n = c.length, k = TR_HZ[tf][0]; if (n < 80 + k) return null;
+      const lc = c.map(x => Math.log(x.close)), step = Math.max(1, Math.floor((n - k - 60) / 120));
+      let N = 0, hit = 0, up = 0;
+      for (let i = 60; i < n - k; i += step) {
+        const sub = c.slice(Math.max(0, i - 199), i + 1), muIn = (lc[i] - lc[Math.max(0, i - 199)]) / Math.min(i, 199);
+        const M = trModel(sub, tf, null, muIn); if (!M) continue;
+        const real = lc[i + k] - lc[i]; N++; if (real > 0) up++;
+        if ((M.D > 0) === (real > 0)) hit++;
       }
-      return { bN, bW, bAvg: bN ? bR / bN : 0, sN, sW, sAvg: sN ? sR / sN : 0 };
+      return N >= 15 ? { N, hit: hit / N, base: Math.max(up, N - up) / N, upShare: up / N } : null;
     }
-    // Handelszeiten (Schweizer Zeit)
+    // Entscheidung: Kaufen / Halten / Verkaufen + Long/Short + Zeitpunkt
+    function trDecide(M) {
+      if (!M) return { act: 'NA', label: 'Zu wenig Daten', side: '–', notes: ['Für diesen Zeitraum gibt es zu wenig Kursgeschichte.'] };
+      const p = M.pUp, e = M.exp, notes = [];
+      let act = p >= 0.57 && e > 0.002 ? 'KAUFEN' : p <= 0.43 && e < -0.002 ? 'VERKAUFEN' : 'HALTEN';
+      const side = p >= 0.55 ? 'LONG' : p <= 0.45 ? 'SHORT' : 'KEINS';
+      let entry = M.p;
+      if (act === 'KAUFEN' && M.rsi != null && M.rsi > 75) { entry = Math.min(M.p, M.e20); notes.push(`⏱️ Gerade überhitzt (RSI ${fmtNum(M.rsi, 0)}). Besser auf einen Rücksetzer bis ca. ${trF(entry)} warten und dann kaufen.`); }
+      else if (act === 'KAUFEN') notes.push('⏱️ Zeitpunkt: jetzt ist okay. Wer unsicher ist, kauft in 2–3 Etappen.');
+      if (act === 'VERKAUFEN' && M.rsi != null && M.rsi < 25) { entry = Math.max(M.p, M.e20); notes.push(`⏱️ Stark gefallen (RSI ${fmtNum(M.rsi, 0)}). Nicht im Tief verkaufen – Erholung bis ca. ${trF(entry)} abwarten.`); }
+      else if (act === 'VERKAUFEN') notes.push('⏱️ Zeitpunkt: Wer es besitzt, verkauft eher bald. Jetzt nicht neu kaufen.');
+      if (act === 'HALTEN') notes.push(Math.abs(p - 0.5) < 0.04 ? 'Für diesen Zeitraum ist es fast ein Münzwurf – hier lohnt sich weder Kaufen noch Verkaufen.' : `Leichte Tendenz ${p > 0.5 ? 'nach oben' : 'nach unten'}, aber zu schwach für ein klares Signal.`);
+      const label = act === 'KAUFEN' ? '🟢 Kaufen' : act === 'VERKAUFEN' ? '🔴 Verkaufen' : '🟡 Halten / abwarten';
+      const own = act === 'KAUFEN' ? 'Halten oder nachkaufen' : act === 'VERKAUFEN' ? 'Verkaufen oder absichern' : 'Halten';
+      const fresh = act === 'KAUFEN' ? 'Kaufen' : act === 'VERKAUFEN' ? 'Nicht kaufen' : 'Abwarten';
+      return { act, label, side, notes, entry, own, fresh };
+    }
+    const TR_ACT = { KAUFEN: ['text-emerald-300', 'border-emerald-500/50 bg-emerald-500/10'], VERKAUFEN: ['text-rose-300', 'border-rose-500/50 bg-rose-500/10'], HALTEN: ['text-amber-300', 'border-amber-500/40 bg-amber-500/10'], NA: ['text-slate-400', 'border-slate-700 bg-slate-900'] };
+    async function trAnalyzeTf(sym, tf, drift, ttl) {
+      const key = sym + ':' + tf, old = trModels[key];
+      if (old && Date.now() - old.at < (ttl || 120000)) return old;
+      const src = tf === '1y' ? '1M' : tf;
+      const c = src === '1M' && drift && drift.months ? drift.months : await trCandles(sym, src, ttl || 120000);
+      const M = trModel(c, tf, drift ? drift.mu : null), R = { sym, tf, M, d: trDecide(M), bt: trBacktest(c, tf), at: Date.now() };
+      trModels[key] = R; return R;
+    }
+
+    // ---------- Handelszeiten (Schweizer Zeit) ----------
     function trSession(sym) {
       const now = new Date(new Date().toLocaleString('en-US', { timeZone: 'Europe/Zurich' })), d = now.getDay(), h = now.getHours() + now.getMinutes() / 60, wk = d >= 1 && d <= 5;
       const hm = x => `${String(Math.floor(x)).padStart(2, '0')}:${String(Math.round((x % 1) * 60)).padStart(2, '0')}`;
-      if (/-(USD|EUR|CHF)$/.test(sym)) return { open: true, text: 'Krypto wird rund um die Uhr gehandelt, auch am Wochenende. Am meisten Bewegung: 15:30–22:00 (wenn die US-Börse offen ist). Am Wochenende oft wenig Handel und plötzliche Sprünge.' };
-      if (/=X$/.test(sym)) return { open: wk || (d === 0 && h >= 23), text: 'Devisen: Mo–Fr fast rund um die Uhr. Am meisten Bewegung: 14:00–18:00 (London und New York gleichzeitig offen).' };
-      if (/=F$/.test(sym)) return { open: wk && h < 23, text: 'Rohstoffe (Futures): Mo–Fr fast rund um die Uhr. Am meisten los: 15:30–20:00 Schweizer Zeit.' };
+      if (/-(USD|EUR|CHF)$/.test(sym)) return { open: true, text: 'Krypto: rund um die Uhr, auch am Wochenende. Am meisten Bewegung 15:30–22:00 (US-Börse offen). Am Wochenende oft dünner Handel mit plötzlichen Sprüngen.' };
+      if (/=X$/.test(sym)) return { open: wk, text: 'Devisen: Mo–Fr fast rund um die Uhr. Am meisten Bewegung 14:00–18:00 (London und New York gleichzeitig offen).' };
+      if (/=F$/.test(sym)) return { open: wk && h < 23, text: 'Rohstoffe (Futures): Mo–Fr fast rund um die Uhr. Am meisten los 15:30–20:00.' };
       const IDX = { '^SSMI': 'SW', '^GDAXI': 'DE', '^STOXX50E': 'DE', '^FTSE': 'L', '^N225': 'T' };
       const suf = IDX[sym] || (sym.includes('.') ? sym.split('.').pop() : 'US');
       const EX = { SW: ['SIX Swiss Exchange', 9, 17.5], DE: ['Xetra', 9, 17.5], F: ['Börse Frankfurt', 8, 22], AS: ['Euronext', 9, 17.5], PA: ['Euronext', 9, 17.5], MI: ['Borsa Italiana', 9, 17.5], L: ['London', 9, 17.5], T: ['Tokio', 1, 7], US: ['US-Börse (NYSE/Nasdaq)', 15.5, 22] };
       const [name, o, cz] = EX[suf] || EX.US, open = wk && h >= o && h < cz;
-      return { open, text: `${name}: Mo–Fr ca. ${hm(o)}–${hm(cz)} Schweizer Zeit. Tipp: Die ersten 30 Minuten nach Börsenstart sind oft hektisch, kauf lieber danach. Ruhigere Kurse meist in der Mitte des Handelstags.` };
+      return { open, text: `${name}: Mo–Fr ca. ${hm(o)}–${hm(cz)} Schweizer Zeit. Die ersten 30 Minuten nach Börsenstart sind oft hektisch – kauf lieber danach.` };
     }
 
     // ---------- Ansicht ----------
     function renderTraderWs() {
-      const T = trState(), cat = TR_CATS.find(c => c[0] === T.cat);
+      const T = trState(), cat = TR_CATS.find(c => c[0] === T.cat), watched = T.watch.includes(T.symbol);
       const chip = (on, fn, l) => `<button onclick="${fn}" class="px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap ${on ? 'bg-blue-600 text-white' : 'bg-slate-900 text-slate-400 border border-slate-800'}">${l}</button>`;
-      return `<div class="${BOX}">${panelHead('trending-up', 'Live-Chart')}
+      return `<div class="${BOX}">${panelHead('trending-up', 'Live-Chart mit Prognose')}
           <div class="flex gap-1.5 overflow-x-auto pb-1">${TR_CATS.map(([k, l]) => chip(T.cat === k, `trdSet('cat','${k}')`, l)).join('')}</div>
           <div class="flex gap-1.5 overflow-x-auto pb-1">${cat[2].map(s => chip(T.symbol === s, `trdSym('${s}')`, esc(trLabel(s)))).join('')}</div>
           <div class="flex gap-2"><input id="tr-q" placeholder="Suchen: Name oder Symbol (z. B. Nestlé, Gold, Bitcoin)" onkeydown="if(event.key==='Enter')trdSearch()" class="${IN}"><button onclick="trdSearch()" class="px-4 ${v11Btn}">Suchen</button></div>
           <div id="tr-sres"></div>
           <div class="flex gap-1 overflow-x-auto pb-1">${TR_TF.map(([k, l]) => chip(T.tf === k, `trdSet('tf','${k}')`, l)).join('')}</div>
-          <div><p id="tr-name" class="text-xs text-slate-400">${esc(trLabel(T.symbol))}</p>
-            <div class="flex items-baseline gap-3 flex-wrap"><span id="tr-price" class="text-2xl font-black text-white tabular-nums">–</span><span id="tr-chg" class="text-sm font-bold"></span><span id="tr-upd" class="text-[10px] text-slate-500"></span></div></div>
+          <div class="flex items-start justify-between gap-2"><div class="min-w-0"><p id="tr-name" class="text-xs text-slate-400 truncate">${esc(trLabel(T.symbol))}</p>
+            <div class="flex items-baseline gap-3 flex-wrap"><span id="tr-price" class="text-2xl font-black text-white tabular-nums">–</span><span id="tr-chg" class="text-sm font-bold"></span></div><p id="tr-upd" class="text-[10px] text-slate-500"></p></div>
+            <button onclick="trdWatch()" class="shrink-0 px-3 py-2 rounded-xl text-xs font-bold ${watched ? 'bg-amber-500 text-slate-950' : 'bg-slate-900 text-slate-300 border border-slate-800'}">${watched ? '★ Verfolgt' : '☆ Verfolgen'}</button></div>
           <p id="tr-err" class="text-[11px] text-rose-300"></p>
           <div id="tr-chart" class="rounded-xl overflow-hidden border border-slate-800" style="height:340px"></div>
-          <p class="text-[10px] text-slate-500"><span style="color:#60a5fa">━</span> EMA 20 · <span style="color:#f59e0b">━</span> EMA 50 · aktualisiert jede Minute</p></div>
-        <div class="${BOX}">${panelHead('activity', 'Lohnt es sich? Kaufen oder verkaufen')}
-          <div id="tr-rec"><p class="text-xs text-slate-400">Analysiere kurz-, mittel- und langfristig …</p></div>
+          <p class="text-[10px] text-slate-500"><span style="color:#a78bfa">━</span> wahrscheinlichster Kursverlauf · <span style="color:#a78bfa">┅</span> übliche Schwankungsbreite (2 von 3 Fällen) · <span style="color:#60a5fa">━</span> 20er-Durchschnitt</p></div>
+        <div class="${BOX}">${panelHead('activity', 'Lohnt es sich jetzt?')}
+          <div class="flex items-center gap-2 text-xs text-slate-300">Wenn ich <input id="tr-sim" inputmode="decimal" value="${T.sim}" onchange="trdSim()" class="${IN} text-center" style="width:5.5rem"> investiere …</div>
+          <div id="tr-rec"><p class="text-xs text-slate-400">Rechne …</p></div>
+          <div id="tr-all"></div>
           <div id="tr-hours"></div>
-          <details class="text-xs"><summary class="cursor-pointer font-bold text-slate-300 py-1">Details: die 5 Methoden im aktuellen Chart</summary><div id="tr-methods" class="pt-1"></div></details>
-          <div class="flex items-center gap-2 text-xs text-slate-300">${v11Switch(T.notify, 'trdNotify()', 'Benachrichtigung bei neuer Empfehlung')} Benachrichtigen, wenn sich die Empfehlung ändert</div>
-          <p class="text-[10px] text-slate-500">Die Empfehlung kommt aus Indikatoren (RSI, MACD, Trend, Bollinger, Volumen) auf drei Zeitebenen. Sie kann nichts sicher vorhersagen und ist keine Finanzberatung. Investiere nur Geld, dessen Verlust du verkraften kannst.</p></div>
+          <div class="flex items-center gap-2 text-xs text-slate-300">${v11Switch(T.notify, 'trdNotify()', 'Benachrichtigung bei neuer Empfehlung')} Benachrichtigen, wenn sich die Empfehlung für verfolgte Werte ändert</div>
+          <p class="text-[10px] text-slate-500">So rechnet das Modell: langfristiger Trend des Werts (bis 10 Jahre) + aktueller Trend + Rückkehr zum Durchschnitt, mit der typischen Schwankung. Es ist eine Wahrscheinlichkeit, keine Garantie, und keine Finanzberatung. Investiere nur Geld, dessen Verlust du verkraften kannst.</p></div>
+        <div class="${BOX}">${panelHead('star', 'Meine verfolgten Werte')}<div id="tr-watch"></div></div>
+        <div class="${BOX}">${panelHead('wallet', 'Capital.com-Konto')}<div id="tr-cap"><p class="text-[11px] text-slate-500">Lädt …</p></div></div>
         <div class="${BOX}">${panelHead('wallet', 'Handeln mit Spielgeld')}
           <div class="flex gap-2 items-end"><div style="width:7.5rem">${v11Field('Einsatz', `<input id="tr-amt" inputmode="decimal" value="100" class="${IN} text-center">`)}</div>
-            <button onclick="trdOpen('long')" class="flex-1 py-2.5 rounded-xl text-xs font-bold bg-emerald-600 text-white">▲ Kaufen (Long)</button>
+            <button onclick="trdOpen('long')" class="flex-1 py-2.5 rounded-xl text-xs font-bold bg-emerald-600 text-white">▲ Long</button>
             <button onclick="trdOpen('short')" class="flex-1 py-2.5 rounded-xl text-xs font-bold bg-rose-600 text-white">▼ Short</button></div>
           <div id="tr-pos"></div>
           <div id="tr-tot" class="grid grid-cols-3 gap-2"></div>
@@ -14254,10 +14234,17 @@ html.light, html.light body { background: #eef2f7; color: #0f172a; }
 
     function trdSet(k, v) {
       const T = trState(); if (T[k] === v) return;
-      T[k] = v; if (k === 'cat') { T.symbol = TR_CATS.find(c => c[0] === v)[2][0]; trRes = null; }
+      T[k] = v; if (k === 'cat') T.symbol = TR_CATS.find(c => c[0] === v)[2][0];
       saveUserData(); renderWorkspace();
     }
-    function trdSym(s) { const T = trState(); if (T.symbol === s) return; T.symbol = s; trRes = null; saveUserData(); renderWorkspace(); }
+    function trdSym(s) { const T = trState(); if (T.symbol === s) return; T.symbol = s; saveUserData(); renderWorkspace(); }
+    function trdSim() { const i = document.getElementById('tr-sim'), v = parseFloat(String(i ? i.value : '').replace(/'/g, '').replace(',', '.')); if (v > 0) { trState().sim = v; saveUserData(); trShowRec(); } }
+    function trdWatch() {
+      const T = trState(), i = T.watch.indexOf(T.symbol);
+      if (i >= 0) T.watch.splice(i, 1); else T.watch.push(T.symbol);
+      saveUserData(); renderWorkspace();
+    }
+    function trdUnwatch(s) { const T = trState(); T.watch = T.watch.filter(x => x !== s); saveUserData(); renderWorkspace(); }
     async function trdSearch() {
       const q = (document.getElementById('tr-q') || {}).value, el = document.getElementById('tr-sres'); if (!q || !q.trim() || !el) return;
       el.innerHTML = '<p class="text-[11px] text-slate-400">Suche …</p>';
@@ -14275,7 +14262,7 @@ html.light, html.light body { background: #eef2f7; color: #0f172a; }
     function trStop() { if (trTimer) { clearInterval(trTimer); trTimer = null; } }
     function trAfter() {
       trStop();
-      trRenderRec(); trRenderPos();
+      trRenderPos(); trShowHours(); trRenderCap();
       trLoadLib().then(() => {
         const el = document.getElementById('tr-chart'); if (!el) return;
         try { if (trChart) trChart.remove(); } catch (e) { }
@@ -14284,99 +14271,193 @@ html.light, html.light body { background: #eef2f7; color: #0f172a; }
           autoSize: true,
           layout: { background: { color: light ? '#ffffff' : '#020617' }, textColor: light ? '#334155' : '#cbd5e1' },
           grid: { vertLines: { color: line }, horzLines: { color: line } },
-          rightPriceScale: { borderColor: line }, timeScale: { borderColor: line, timeVisible: true, secondsVisible: false }
+          rightPriceScale: { borderColor: line }, timeScale: { borderColor: line, timeVisible: true, secondsVisible: false, rightOffset: 4 }
         });
         trSeries = trChart.addCandlestickSeries({ upColor: '#10b981', downColor: '#f43f5e', borderVisible: false, wickUpColor: '#10b981', wickDownColor: '#f43f5e' });
         trE20 = trChart.addLineSeries({ color: '#60a5fa', lineWidth: 1, priceLineVisible: false, lastValueVisible: false });
-        trE50 = trChart.addLineSeries({ color: '#f59e0b', lineWidth: 1, priceLineVisible: false, lastValueVisible: false });
+        trFc = trChart.addLineSeries({ color: '#a78bfa', lineWidth: 2, priceLineVisible: false, lastValueVisible: true, title: 'Prognose' });
+        trFcHi = trChart.addLineSeries({ color: '#a78bfa', lineWidth: 1, lineStyle: 2, priceLineVisible: false, lastValueVisible: false });
+        trFcLo = trChart.addLineSeries({ color: '#a78bfa', lineWidth: 1, lineStyle: 2, priceLineVisible: false, lastValueVisible: false });
         trLines = []; trTick = 0;
         trRefresh(true);
         trTimer = setInterval(() => {
           if (!(ws.mod === 'stocks' && ws.tab === 'trader') || !document.getElementById('tr-chart')) { trStop(); return; }
-          trTick++; if (trTick % 5 === 0) trRes = null;
-          trRefresh(false);
+          trTick++; trRefresh(false); if (trTick % 3 === 0) trLoadCap();
         }, 60000);
-      }).catch(e => { const x = document.getElementById('tr-err'); if (x) x.textContent = '⚠️ ' + e.message; if (!trRes) trRecommend(trState().symbol); });
+      }).catch(e => { const x = document.getElementById('tr-err'); if (x) x.textContent = '⚠️ ' + e.message; });
+      trLoadCap(); trRenderWatch();
+    }
+
+    // Prognose-Linie: Kursverlauf in die Zukunft zeichnen
+    function trDrawForecast(c, R) {
+      [trFc, trFcHi, trFcLo].forEach(s => s && s.setData([]));
+      const M = R && R.M; if (!M || !trFc || c.length < 3) return;
+      const yearly = R.tf === '1y', n = c.length, t0 = c[n - 1].time, p0 = c[n - 1].close;
+      const gaps = c.slice(-21).map((x, i, a) => i ? x.time - a[i - 1].time : 0).slice(1).sort((a, b) => a - b), step = gaps[Math.floor(gaps.length / 2)] || 86400;
+      const steps = yearly ? Math.round(M.k / 12) : M.k, per = yearly ? 12 : 1;
+      const med = [{ time: t0, value: p0 }], hi = [{ time: t0, value: p0 }], lo = [{ time: t0, value: p0 }];
+      for (let j = 1; j <= steps; j++) {
+        const kk = j * per, d = M.D * kk / M.k, s = M.sig * Math.sqrt(kk), t = t0 + Math.round(j * (yearly ? 365.25 * 86400 : step));
+        med.push({ time: t, value: p0 * Math.exp(d) }); hi.push({ time: t, value: p0 * Math.exp(d + s) }); lo.push({ time: t, value: p0 * Math.exp(d - s) });
+      }
+      trFc.setData(med); trFcHi.setData(hi); trFcLo.setData(lo);
     }
 
     async function trRefresh(fit) {
       if (trBusy) return; trBusy = true;
       const T = trState(), tf = T.tf, sym = T.symbol, $ = id => document.getElementById(id);
       try {
-        const c = await trCandles(sym, tf);
+        const [c, drift] = await Promise.all([trCandles(sym, tf), trLongDrift(sym).catch(() => null)]);
         if (!c.length) throw new Error('Keine Kursdaten erhalten.');
         if (sym !== trState().symbol || tf !== trState().tf || !$('tr-chart')) return;
         const last = c[c.length - 1].close, prev = c.length > 1 ? c[c.length - 2].close : last, d = trDec(last), meta = trMeta[sym] || {};
         trPrices[sym] = last;
-        trSeries.applyOptions({ priceFormat: { type: 'price', precision: d, minMove: 1 / 10 ** d } });
+        const fmt = { type: 'price', precision: d, minMove: 1 / 10 ** d };
+        [trSeries, trFc, trFcHi, trFcLo].forEach(s => s.applyOptions({ priceFormat: fmt }));
         trSeries.setData(c.map(k => ({ time: k.time, open: k.open, high: k.high, low: k.low, close: k.close })));
-        const cl = c.map(k => k.close), e20 = trEma(cl, 20), e50 = trEma(cl, 50);
+        const cl = c.map(k => k.close), e20 = trEma(cl, 20);
         trE20.setData(c.length >= 20 ? c.map((k, i) => ({ time: k.time, value: e20[i] })).slice(19) : []);
-        trE50.setData(c.length >= 50 ? c.map((k, i) => ({ time: k.time, value: e50[i] })).slice(49) : []);
-        if (fit) trChart.timeScale().fitContent();
         $('tr-err').textContent = '';
         const nm = TR_NAMES[sym] || meta.name || sym;
-        $('tr-name').textContent = [nm, nm !== sym ? sym : '', meta.exchange].filter(Boolean).join(' · ');
+        $('tr-name').textContent = [nm, nm.indexOf(sym) === -1 ? sym : '', meta.exchange].filter(Boolean).join(' · ');
         $('tr-price').textContent = fmtNum(last, d) + (meta.currency ? ' ' + meta.currency : '');
-        const ch = (last - prev) / prev * 100, lbl = (TR_TF.find(x => x[0] === tf) || [])[1];
-        $('tr-chg').textContent = `${ch > 0 ? '+' : ''}${fmtNum(ch, 2)} % (letzte ${lbl}-Kerze)`; $('tr-chg').className = 'text-sm font-bold ' + trCls(ch);
+        const ch = (last - prev) / prev * 100;
+        $('tr-chg').textContent = `${ch > 0 ? '+' : ''}${fmtNum(ch, 2)} % (letzte ${trTfLabel(tf)}-Kerze)`; $('tr-chg').className = 'text-sm font-bold ' + trCls(ch);
         $('tr-upd').textContent = 'aktualisiert ' + new Date().toLocaleTimeString('de-CH');
-        const a = trAnalyze(c);
-        $('tr-methods').innerHTML = a.methods.map(m => `<div class="flex items-center justify-between gap-2 py-1.5 border-b border-slate-800"><div class="min-w-0"><p class="text-xs font-bold text-white">${m.name}</p><p class="text-[10px] text-slate-400">${m.note}</p></div><span class="text-[11px] text-slate-400 tabular-nums">${m.value}</span><span class="text-base font-black ${m.vote > 0 ? 'text-emerald-300' : m.vote < 0 ? 'text-rose-300' : 'text-slate-500'}" style="width:1.25rem;text-align:center">${m.vote > 0 ? '▲' : m.vote < 0 ? '▼' : '●'}</span></div>`).join('') + `<p class="text-[10px] text-slate-400 pt-1">Stimmen in diesem Chart: ${a.score > 0 ? '+' : ''}${a.score} (von −5 bis +5)</p>`;
+        const R = await trAnalyzeTf(sym, tf, drift, 60000);
+        if (sym !== trState().symbol || tf !== trState().tf) return;
+        trDrawForecast(c, R);
+        if (fit) trChart.timeScale().fitContent();
+        trShowRec();
+        trSignal(sym, R);
+        trAllTf(sym, drift);
       } catch (e) {
         const x = $('tr-err'); if (x) x.textContent = '⚠️ ' + (e.message || e);
       } finally { trBusy = false; }
-      if (!trRes || trRes.sym !== sym) await trRecommend(sym);
       await trPosPrices(); trRenderPos();
     }
 
-    async function trComputeRec(sym) {
-      const data = await Promise.all(TR_H.map(H => trCandles(sym, H.tf, 120000).catch(() => [])));
-      const hs = TR_H.map((H, i) => trHorizon(data[i], H));
-      return { sym, hs, all: trOverall(hs), bt: trBacktest(data[1]), at: Date.now() };
-    }
-    async function trRecommend(sym) {
-      try {
-        const r = await trComputeRec(sym);
-        if (sym !== trState().symbol) return;
-        trRes = r; trRenderRec(); trSignal(sym, r.all);
-      } catch (e) { const el = document.getElementById('tr-rec'); if (el) el.innerHTML = `<p class="text-[11px] text-rose-300">${esc(e.message)}</p>`; }
-    }
-    function trRenderRec() {
-      const el = document.getElementById('tr-rec'), hr = document.getElementById('tr-hours'), T = trState();
-      if (hr) { const s = trSession(T.symbol); hr.innerHTML = `<div class="p-3 rounded-2xl border border-slate-800 bg-slate-950/70"><p class="text-xs font-bold text-white">🕒 Handelszeiten · ${s.open ? '<span class="text-emerald-300">jetzt offen</span>' : '<span class="text-rose-300">jetzt geschlossen</span>'}</p><p class="text-[11px] text-slate-300 mt-1">${s.text}</p></div>`; }
-      if (!el || !trRes || trRes.sym !== T.symbol) return;
-      const R = trRes, A = R.all, cur = (trMeta[R.sym] || {}).currency || '';
-      const big = A.key === 'KAUFEN' ? TR_K.buy : A.key === 'VERKAUFEN' ? TR_K.sell : TR_K.wait;
-      const lv = (l, v, c) => v == null ? '' : `<div><p class="text-[10px] text-slate-400">${l}</p><p class="text-xs font-bold tabular-nums ${c || 'text-white'}">${trF(v)}</p></div>`;
-      const bt = R.bt;
-      el.innerHTML = `<div class="p-4 rounded-2xl border ${big[2]} space-y-1.5"><span class="${SUB}">Gesamt-Empfehlung · ${esc(trLabel(R.sym))}</span><p class="text-xl font-black ${big[1]}">${A.label}</p>${A.notes.map(n => `<p class="text-xs text-slate-200">${n}</p>`).join('')}</div>
-        <div class="space-y-2">${R.hs.map(h => { const K = TR_K[h.key]; const long = h.key === 'buy' || h.key === 'buywait'; return `<div class="p-3 rounded-2xl border ${K[2]} space-y-1.5">
-          <div class="flex items-center justify-between gap-2"><span class="${SUB}">${h.H.label} · Haltedauer ${h.H.hold}</span>${h.key !== 'na' ? `<span class="text-[10px] font-bold ${trCls(h.score)}">${h.score > 0 ? '+' : ''}${h.score}/5</span>` : ''}</div>
-          <p class="text-sm font-black ${K[1]}">${K[0]} ${h.title}</p><p class="text-[11px] text-slate-300">${h.timing}</p>
-          ${h.entry != null ? `<div class="grid grid-cols-3 gap-2 pt-1">${lv(long ? 'Kaufen bei' : 'Verkaufen bei', h.entry)}${lv(long ? 'Stop-Loss (raus bei)' : 'Ungültig über', h.stop, 'text-rose-300')}${lv(long ? 'Ziel (Gewinn mitnehmen)' : 'Mögliches Ziel unten', h.target, 'text-emerald-300')}</div>` : ''}</div>`; }).join('')}</div>
-        ${bt ? `<div class="p-3 rounded-2xl border border-slate-800 bg-slate-950/70 space-y-1"><p class="text-xs font-bold text-white">📊 Hat das früher funktioniert? (Tages-Chart, 20 Handelstage später)</p>
-          <p class="text-[11px] text-slate-300">${bt.bN >= 5 ? `Nach einem Kaufsignal stieg der Kurs in <b>${bt.bW} von ${bt.bN}</b> Fällen (${fmtNum(bt.bW / bt.bN * 100, 0)} %), im Schnitt ${trSign(bt.bAvg)} %.` : 'Zu wenige Kaufsignale in der Vergangenheit für eine Aussage.'}</p>
-          <p class="text-[11px] text-slate-300">${bt.sN >= 5 ? `Nach einem Verkaufssignal fiel der Kurs in <b>${bt.sW} von ${bt.sN}</b> Fällen (${fmtNum(bt.sW / bt.sN * 100, 0)} %), im Schnitt ${trSign(bt.sAvg)} %.` : 'Zu wenige Verkaufssignale in der Vergangenheit für eine Aussage.'}</p>
-          <p class="text-[10px] text-slate-500">Unter 55 % heisst: Das Signal war bei diesem Wert früher kaum besser als Zufall.</p></div>` : ''}
-        <p class="text-[10px] text-slate-500">Stand ${new Date(R.at).toLocaleTimeString('de-CH', { hour: '2-digit', minute: '2-digit' })}${cur ? ' · Preise in ' + esc(cur) : ''} · wird alle 5 Minuten neu berechnet</p>`;
+    // Empfehlung für den gewählten Zeitraum anzeigen
+    function trShowRec() {
+      const T = trState(), el = document.getElementById('tr-rec'), R = trModels[T.symbol + ':' + T.tf]; if (!el || !R) return;
+      const M = R.M, D = R.d, A = TR_ACT[D.act], hz = TR_HZ[T.tf][1], cur = (trMeta[T.symbol] || {}).currency || '';
+      if (!M) { el.innerHTML = `<div class="p-3 rounded-2xl border ${A[1]}"><p class="text-sm font-black ${A[0]}">${D.label}</p><p class="text-[11px] text-slate-300">${D.notes[0]}</p></div>`; return; }
+      const sim = T.sim, end = sim * (1 + M.exp), lo = sim * (1 + M.loR), hi = sim * (1 + M.hiR);
+      const sideTxt = D.side === 'LONG' ? '<span class="text-emerald-300">Long</span> lohnt sich eher (du setzt auf steigend)' : D.side === 'SHORT' ? '<span class="text-rose-300">Short</span> lohnt sich eher (du setzt auf fallend)' : 'Weder Long noch Short – kein Vorteil';
+      const bt = R.bt, btTxt = bt ? `📊 Rückblick: In ${bt.N} früheren Fällen lag das Modell auf diesem Zeitraum zu <b>${fmtNum(bt.hit * 100, 0)} %</b> richtig. Einfach immer die häufigere Richtung raten hätte ${fmtNum(bt.base * 100, 0)} % ergeben.${bt.hit >= bt.base + 0.02 ? ' <span class="text-emerald-300">→ Das Modell war hier besser als Raten.</span>' : bt.base >= 0.6 && bt.hit >= bt.base - 0.03 ? ` <span class="text-emerald-300">→ Der Wert ist über diesen Zeitraum früher in ${fmtNum(bt.base * 100, 0)} % der Fälle ${bt.upShare > 0.5 ? 'gestiegen' : 'gefallen'}. Das Modell folgt diesem langfristigen Trend.</span>` : ' <span class="text-amber-300">→ Hier ist das Modell nicht besser als Raten, also vorsichtig sein.</span>'}` : '📊 Für einen Rückblick-Test gibt es auf diesem Zeitraum zu wenig Daten.';
+      const long = D.side !== 'SHORT';
+      el.innerHTML = `<div class="p-4 rounded-2xl border ${A[1]} space-y-2">
+          <div class="flex items-center justify-between gap-2"><span class="${SUB}">${esc(trLabel(T.symbol))} · Zeitraum ${trTfLabel(T.tf)} · Blick ${hz} voraus</span></div>
+          <p class="text-xl font-black ${A[0]}">${D.label}</p>
+          <div class="grid grid-cols-2 gap-2 text-[11px]"><div class="p-2 rounded-xl bg-slate-950/60 border border-slate-800"><p class="text-slate-400">Hast du es noch nicht?</p><p class="font-bold text-white">${D.fresh}</p></div><div class="p-2 rounded-xl bg-slate-950/60 border border-slate-800"><p class="text-slate-400">Besitzt du es schon?</p><p class="font-bold text-white">${D.own}</p></div></div>
+          <p class="text-xs text-slate-200">💰 Wenn du jetzt <b>${fmtNum(sim, 2)} ${esc(cur)}</b> investierst, hast du in ${hz} am wahrscheinlichsten <b class="${trCls(M.exp)}">${fmtNum(end, 2)}</b> (${trPct(M.exp)}). Übliche Spanne: ${fmtNum(lo, 2)} bis ${fmtNum(hi, 2)}.</p>
+          <p class="text-xs text-slate-200">🎯 Chance auf Gewinn: <b class="${trCls(M.pUp - 0.5)}">${fmtNum(M.pUp * 100, 0)} %</b> · Risiko Verlust: ${fmtNum((1 - M.pUp) * 100, 0)} %</p>
+          <p class="text-xs text-slate-200">↕️ ${sideTxt}</p>
+          ${D.notes.map(n => `<p class="text-xs text-slate-200">${n}</p>`).join('')}
+          ${D.act !== 'HALTEN' ? `<div class="grid grid-cols-3 gap-2 pt-1">
+            <div><p class="text-[10px] text-slate-400">${long ? 'Einstieg' : 'Verkaufen bei'}</p><p class="text-xs font-bold tabular-nums text-white">${trF(D.entry)}</p></div>
+            <div><p class="text-[10px] text-slate-400">Ziel (Prognose)</p><p class="text-xs font-bold tabular-nums text-violet-300">${trF(M.med)}</p></div>
+            <div><p class="text-[10px] text-slate-400">${long ? 'Stop-Loss' : 'Stop (über)'}</p><p class="text-xs font-bold tabular-nums text-rose-300">${trF(long ? M.lo : M.hi)}</p></div></div>` : ''}
+          <p class="text-[11px] text-slate-400">${btTxt}</p></div>`;
     }
 
-    function trSignal(sym, all) {
-      const T = trState(), prev = T.recs[sym];
-      if (prev === all.key) return;
-      T.recs[sym] = all.key; saveUserData();
-      if (T.notify && prev) nfShow(`💡 ${trLabel(sym)}: ${all.label}`, `Empfehlung gewechselt von ${prev} zu ${all.key}. ${all.notes[0] || ''}`, 'stocks', 'trader');
+    // Übersicht über alle Zeiträume – antippen wechselt den Chart
+    async function trAllTf(sym, drift) {
+      const el = document.getElementById('tr-all'); if (!el) return;
+      const rows = await Promise.all(TR_TF.map(([tf]) => trAnalyzeTf(sym, tf, drift, 300000).catch(() => null)));
+      if (sym !== trState().symbol || !document.getElementById('tr-all')) return;
+      const T = trState();
+      const longOk = rows.filter(r => r && r.M && ['1w', '1M', '1y'].includes(r.tf) && r.d.act === 'KAUFEN').length >= 2;
+      const shortWeak = rows.filter(r => r && r.M && ['15m', '1h', '4h', '1d'].includes(r.tf) && r.d.act !== 'KAUFEN').length >= 2;
+      el.innerHTML = `<div class="p-3 rounded-2xl border border-slate-800 bg-slate-950/70 space-y-1"><p class="text-xs font-bold text-white">🗓️ Alle Zeiträume auf einen Blick</p>
+        ${rows.map((r, i) => { const tf = TR_TF[i][0]; if (!r) return ''; const A = TR_ACT[r.d.act]; return `<button onclick="trdSet('tf','${tf}')" class="w-full flex items-center justify-between gap-2 py-1.5 border-b border-slate-800 text-left ${T.tf === tf ? 'opacity-100' : 'opacity-90'}">
+          <span class="text-[11px] text-slate-300" style="min-width:4.5rem">${trTfLabel(tf)} <span class="text-slate-500">(${TR_HZ[tf][1]})</span></span>
+          <span class="text-[11px] font-bold ${A[0]}">${r.d.label}</span>
+          <span class="text-[11px] tabular-nums ${r.M ? trCls(r.M.exp) : 'text-slate-500'}">${r.M ? fmtNum(r.M.pUp * 100, 0) + ' % · ' + trPct(r.M.exp) : '–'}</span></button>`; }).join('')}
+        ${longOk && shortWeak ? '<p class="text-[11px] text-emerald-300 pt-1">💡 Typisch für Werte wie QQQ: Kurzfristig ist es ein Münzwurf, aber wer lange hält, lag früher meist im Gewinn. Langfristig anlegen lohnt sich hier eher als schnelles Traden.</p>' : ''}
+        <p class="text-[10px] text-slate-500">Prozent = Chance auf Gewinn · danach erwartete Veränderung</p></div>`;
     }
-    // Prüft weiter, solange MyLife offen ist – auch wenn der Tab zu ist
+    function trShowHours() {
+      const hr = document.getElementById('tr-hours'); if (!hr) return;
+      const s = trSession(trState().symbol);
+      hr.innerHTML = `<div class="p-3 rounded-2xl border border-slate-800 bg-slate-950/70"><p class="text-xs font-bold text-white">🕒 Handelszeiten · ${s.open ? '<span class="text-emerald-300">jetzt offen</span>' : '<span class="text-rose-300">jetzt geschlossen</span>'}</p><p class="text-[11px] text-slate-300 mt-1">${s.text}</p></div>`;
+    }
+
+    // ---------- Watchlist ----------
+    const trWid = s => 'trw-' + String(s).replace(/[^A-Za-z0-9]/g, '_');
+    async function trWatchOne(sym) {
+      const old = trWatchRes[sym]; if (old && Date.now() - old.at < 300000) return old;
+      const drift = await trLongDrift(sym).catch(() => null);
+      const [mid, lng] = await Promise.all([trAnalyzeTf(sym, '1d', drift, 300000), trAnalyzeTf(sym, '1M', drift, 300000)]);
+      const r = { sym, mid, lng, at: Date.now() }; trWatchRes[sym] = r; return r;
+    }
+    async function trRenderWatch() {
+      const el = document.getElementById('tr-watch'), T = trState(); if (!el) return;
+      if (!T.watch.length) { el.innerHTML = '<p class="text-[11px] text-slate-500">Noch nichts gespeichert. Tippe oben beim Chart auf „☆ Verfolgen".</p>'; return; }
+      el.innerHTML = T.watch.map(s => `<div id="${trWid(s)}" class="py-1.5 border-b border-slate-800 text-[11px] text-slate-400">${esc(trLabel(s))} …</div>`).join('');
+      for (const s of T.watch) {
+        const box = document.getElementById(trWid(s)); if (!box) continue;
+        try {
+          const r = await trWatchOne(s), m = r.mid, l = r.lng, side = m.d.side;
+          const sideTxt = side === 'LONG' ? '<span class="text-emerald-300 font-bold">Long lohnt sich</span>' : side === 'SHORT' ? '<span class="text-rose-300 font-bold">Short lohnt sich</span>' : '<span class="text-amber-300 font-bold">Neutral</span>';
+          box.innerHTML = `<div class="flex items-center gap-2"><button onclick="trdSym('${esc(s)}')" class="flex-1 min-w-0 text-left"><p class="text-xs font-bold text-white truncate">${esc(trLabel(s))}</p>
+            <p class="text-[10px] text-slate-400">1 Monat: ${sideTxt} (${m.M ? fmtNum(m.M.pUp * 100, 0) + ' %' : '–'}) · 1 Jahr: <span class="${TR_ACT[l.d.act][0]}">${l.d.label}</span></p></button>
+            <button onclick="trdUnwatch('${esc(s)}')" class="px-2 py-1 rounded-lg text-[11px] bg-slate-800 text-slate-300">✕</button></div>`;
+        } catch (e) { box.innerHTML = `<p class="text-[11px] text-rose-300">${esc(trLabel(s))}: ${esc(e.message)}</p>`; }
+      }
+    }
+
+    // ---------- Benachrichtigungen ----------
+    function trSignal(sym, R) {
+      const T = trState(); if (!R || !R.d) return;
+      const k = sym + ':' + R.tf, prev = T.recs[k]; if (prev === R.d.act) return;
+      T.recs[k] = R.d.act; saveUserData();
+      if (T.notify && prev && (T.watch.includes(sym) || sym === T.symbol)) nfShow(`💡 ${trLabel(sym)} (${trTfLabel(R.tf)}): ${R.d.label}`, `Vorher: ${prev}. Chance auf Gewinn ${R.M ? fmtNum(R.M.pUp * 100, 0) + ' %' : '–'}. ${R.d.notes[0] || ''}`, 'stocks', 'trader');
+    }
+    // läuft, solange MyLife offen ist: prüft alle verfolgten Werte (Zeitraum 24 h) alle 10 Minuten
     setInterval(async () => {
       try {
         if (!currentUser || !currentUser.trader || !currentUser.trader.notify) return;
-        if (ws.mod === 'stocks' && ws.tab === 'trader') return;
-        const sym = currentUser.trader.symbol, r = await trComputeRec(sym);
-        trSignal(sym, r.all);
+        for (const s of (currentUser.trader.watch || [])) { delete trWatchRes[s]; const r = await trWatchOne(s); trSignal(s, r.mid); }
       } catch (e) { }
-    }, 300000);
+    }, 600000);
+
+    // ---------- Capital.com (nur lesen) ----------
+    function trCapSym(epic) {
+      const m = String(epic || '').toUpperCase().match(/^([A-Z0-9]{2,6}?)(USD|EUR|CHF|GBP)$/);
+      return m ? `${m[1]}-${m[2]}` : null;
+    }
+    async function trLoadCap() {
+      if (trCapBusy) return;
+      const tok = typeof getToken === 'function' ? getToken() : null;
+      if (!tok) { trCap = { ok: false, code: 'no_session' }; trRenderCap(); return; }
+      trCapBusy = true;
+      try {
+        const r = await fetch('/api/capital', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token: tok }) });
+        trCap = (r.headers.get('content-type') || '').includes('json') ? await r.json() : { ok: false, code: 'missing' };
+      } catch (e) { trCap = { ok: false, error: e.message }; }
+      finally { trCapBusy = false; }
+      trRenderCap();
+    }
+    function trRenderCap() {
+      const el = document.getElementById('tr-cap'); if (!el) return;
+      if (!trCap) { el.innerHTML = '<p class="text-[11px] text-slate-500">Lädt …</p>'; return; }
+      if (!trCap.ok) {
+        const msg = { missing: 'Die Datei functions/api/capital.js ist noch nicht auf Cloudflare.', not_configured: 'Noch nicht verbunden. Trage in Cloudflare die Secrets CAPITAL_API_KEY, CAPITAL_IDENTIFIER, CAPITAL_PASSWORD und CAPITAL_OWNER ein (Anleitung im Chat).', no_session: 'Melde dich in MyLife mit deinem Cloud-Konto an, damit dein Capital.com-Konto geschützt angezeigt werden kann.' }[trCap.code] || trCap.error || 'Fehler';
+        el.innerHTML = `<p class="text-[11px] text-slate-400">${esc(msg)}</p><button onclick="trLoadCap()" class="w-full mt-2 ${v11Btn}">Erneut versuchen</button>`; return;
+      }
+      const acc = trCap.accounts.find(a => a.preferred) || trCap.accounts[0];
+      const pos = trCap.positions, totUpl = pos.reduce((s, p) => s + (p.upl || 0), 0);
+      el.innerHTML = `${trCap.demo ? '<p class="text-[10px] text-amber-300">Demo-Konto</p>' : ''}
+        ${acc ? `<div class="grid grid-cols-3 gap-2">${[['Kontostand', acc.balance], ['Verfügbar', acc.available], ['Offen +/−', acc.profitLoss != null ? acc.profitLoss : totUpl]].map(([l, v], i) => `<div class="p-2 rounded-xl bg-slate-950/70 border border-slate-800"><p class="text-[10px] text-slate-400">${l}</p><p class="text-sm font-black tabular-nums ${i === 2 ? trCls(v || 0) : 'text-white'}">${v == null ? '–' : (i === 2 ? trSign(v) : fmtNum(v, 2))}</p></div>`).join('')}</div><p class="text-[10px] text-slate-500">${esc(acc.name || '')} · ${esc(acc.currency || '')}</p>` : ''}
+        <div>${pos.length ? pos.map(p => { const ys = trCapSym(p.epic), hint = ys && trModels[ys + ':1d'] ? trModels[ys + ':1d'].d : null; const fits = hint ? ((p.direction === 'BUY' && hint.side === 'LONG') || (p.direction === 'SELL' && hint.side === 'SHORT')) : null;
+          return `<div class="py-1.5 border-b border-slate-800"><div class="flex items-center justify-between gap-2"><div class="min-w-0"><p class="text-xs font-bold text-white truncate">${esc(p.name)} <span class="${p.direction === 'BUY' ? 'text-emerald-300' : 'text-rose-300'}">${p.direction === 'BUY' ? 'Long' : 'Short'}</span></p><p class="text-[10px] text-slate-400">Grösse ${fmtNum(p.size || 0, 4)} · Einstieg ${trF(p.open)} · Jetzt ${trF(p.direction === 'BUY' ? p.bid : p.offer)}${p.leverage ? ' · Hebel ' + p.leverage + '×' : ''}</p></div><p class="text-sm font-black tabular-nums ${trCls(p.upl || 0)}">${p.upl == null ? '–' : trSign(p.upl)} ${esc(p.currency)}</p></div>
+            ${ys ? `<div class="flex items-center justify-between gap-2 mt-1"><p class="text-[10px] ${fits == null ? 'text-slate-500' : fits ? 'text-emerald-300' : 'text-amber-300'}">${hint ? (fits ? '✓ Passt zur Prognose (1 Monat): ' : '⚠️ Prognose (1 Monat) sieht es anders: ') + hint.label : 'Prognose noch nicht berechnet'}</p><button onclick="trdCapOpen('${esc(ys)}')" class="text-[10px] font-bold text-blue-300">Analyse →</button></div>` : ''}</div>`; }).join('') : '<p class="text-[11px] text-slate-500">Keine offenen Positionen.</p>'}</div>
+        <p class="text-[10px] text-slate-500">Nur Anzeige – MyLife kann bei Capital.com nichts kaufen oder verkaufen. Stand ${new Date(trCap.at).toLocaleTimeString('de-CH', { hour: '2-digit', minute: '2-digit' })}.</p>`;
+      // Prognosen für Krypto-Positionen im Hintergrund nachladen
+      pos.map(p => trCapSym(p.epic)).filter(s => s && !trModels[s + ':1d']).forEach(s => trLongDrift(s).then(d => trAnalyzeTf(s, '1d', d, 300000)).then(() => trRenderCap()).catch(() => { }));
+    }
+    function trdCapOpen(s) { const T = trState(); T.cat = 'crypto'; T.symbol = s; T.tf = '1d'; saveUserData(); renderWorkspace(); }
 
     // ---------- Spielgeld ----------
     async function trPosPrices() {
@@ -14392,7 +14473,7 @@ html.light, html.light body { background: #eef2f7; color: #0f172a; }
         return `<div class="flex items-center gap-2 py-1.5 border-b border-slate-800"><div class="flex-1 min-w-0"><p class="text-xs font-bold text-white">${esc(trLabel(p.sym))} <span class="${p.side === 'long' ? 'text-emerald-300' : 'text-rose-300'}">${p.side === 'long' ? 'Long' : 'Short'}</span></p><p class="text-[10px] text-slate-400">Einsatz ${fmtNum(p.amount, 2)} ${esc(p.cur || '')} · Einstieg ${trF(p.entry)} · Jetzt ${cur == null ? '…' : trF(cur)}</p></div>
           <div class="text-right"><p class="text-sm font-black tabular-nums ${trCls(pnl || 0)}">${pnl == null ? '…' : trSign(pnl)}</p><p class="text-[10px] ${trCls(pnl || 0)}">${pct == null ? '' : (pct > 0 ? '+' : '') + fmtNum(pct, 2) + ' %'}</p></div>
           <button onclick="trdClose('${p.id}')" class="px-2 py-1.5 rounded-lg text-[11px] font-bold bg-slate-800 text-white">Schliessen</button></div>`;
-      }).join('') : '<p class="text-[11px] text-slate-500">Noch keine Positionen. Wähle einen Einsatz und tippe auf Kaufen (du setzt auf steigend) oder Short (auf fallend).</p>';
+      }).join('') : '<p class="text-[11px] text-slate-500">Noch keine Positionen. Long = du setzt auf steigend, Short = auf fallend.</p>';
       const eq = TR_START + T.realized + open, tile = (l, v, c) => `<div class="p-2 rounded-xl bg-slate-950/70 border border-slate-800"><p class="text-[10px] text-slate-400">${l}</p><p class="text-sm font-black tabular-nums ${c}">${v}</p></div>`;
       tot.innerHTML = tile('Offen +/−', trSign(open), trCls(open)) + tile('Realisiert', trSign(T.realized), trCls(T.realized)) + tile('Kontostand', fmtNum(eq, 2), trCls(eq - TR_START));
       trDrawLines();
@@ -14429,8 +14510,8 @@ html.light, html.light body { background: #eef2f7; color: #0f172a; }
     renderInvestWs = (function (orig) { return function (tab) { return tab === 'trader' ? renderTraderWs() : orig(tab); }; })(renderInvestWs);
     afterInvestRender = (function (orig) { return function () { if (ws.tab === 'trader') { trAfter(); return; } trStop(); return orig(); }; })(afterInvestRender);
     try {
-      QUICK_ACTIONS.push(['🕯️', 'Live-Trader: Kaufen oder verkaufen?', 'trading krypto bitcoin gold etf index chart signal kaufen verkaufen long short', 'stocks', () => openWorkspace('stocks', 'trader')]);
-      TOOL_KEYWORDS.stocks = (TOOL_KEYWORDS.stocks || '') + ' trading trader krypto bitcoin gold rohstoffe indizes kerzen signal kaufen verkaufen';
+      QUICK_ACTIONS.push(['🕯️', 'Live-Trader: Lohnt sich Kaufen?', 'trading krypto bitcoin gold etf qqq index chart prognose kaufen verkaufen long short capital', 'stocks', () => openWorkspace('stocks', 'trader')]);
+      TOOL_KEYWORDS.stocks = (TOOL_KEYWORDS.stocks || '') + ' trading trader krypto bitcoin gold rohstoffe indizes prognose kaufen verkaufen capital';
     } catch (e) { }
 </script>
 <script>
