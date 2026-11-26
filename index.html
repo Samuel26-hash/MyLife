@@ -10,11 +10,11 @@
   <meta name="apple-mobile-web-app-title" content="MyLife">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="format-detection" content="telephone=no">
-  <meta name="mylife-build" content="15.6">
+  <meta name="mylife-build" content="15.7">
   <script>
     // Update-Wächter: lädt automatisch die neue Version, falls noch eine alte im Speicher ist
     (function () {
-      var BUILD = '15.6';
+      var BUILD = '15.7';
       if (!/^https?:$/.test(location.protocol)) return;
       var hadController = !!(navigator.serviceWorker && navigator.serviceWorker.controller);
       if (navigator.serviceWorker) navigator.serviceWorker.addEventListener('controllerchange', function () {
@@ -14761,6 +14761,640 @@ html.light, html.light body { background: #eef2f7; color: #0f172a; }
       QUICK_ACTIONS.push(['🎯', 'Alle Fortschritte & Ziele', 'fortschritt ziele gelernt lernen notiz zeitspanne erfolge titel noten geld', null, () => openWorkspace('fortschritt')]);
     } catch (e) { }
 </script>
+<script>
+    // =====================================================================
+    //  MYLIFE V15.7 – Investment-Umbau
+    //  · 5-Methoden-Analyse läuft automatisch im Live-Trader
+    //  · Schul-WLAN (edubs-byod): Chart & News funktionieren auch, wenn
+    //    fremde Dienste (unpkg, rss2json) gesperrt sind
+    //  · Portfolio: eigener Capital.com-Abzug vom Endbetrag
+    //  · Markt + Watchlist in einem Tab, Tab „Chart“ entfernt
+    //  · Verlauf & Statistik (Trefferquote, Zeiten, Haltedauer, Rendite …)
+    //  · Ziele & Fortschritt: Gewinn/Depotwert aktualisieren sich selbst
+    // =====================================================================
+
+    // ---------- Tabs neu ordnen ----------
+    (function () {
+      const T = WS_DEF.stocks.tabs;
+      T.splice(0, T.length, ['portfolio', 'Portfolio'], ['trader', 'Live-Trader'], ['market', 'Markt & Watchlist'], ['verlauf', 'Verlauf & Statistik'], ['accounts', 'Konten & Rechner'], ['alerts', 'Alarme']);
+    })();
+    const INV_REDIRECT = { detail: 'trader', list: 'market', analyse: 'trader' };
+    let tr5Scroll = false;
+    renderWorkspace = (function (orig) {
+      return function (resetScroll) {
+        if (ws.mod === 'stocks' && INV_REDIRECT[ws.tab]) {
+          const from = ws.tab; ws.tab = INV_REDIRECT[from];
+          try {
+            if (from === 'detail' && stockSel) { trState().symbol = stockSel; saveUserData(); }
+            if (from === 'analyse') { tr5Scroll = true; if (iaD && iaD.symbol) { trState().symbol = iaD.symbol; saveUserData(); } }
+          } catch (e) { }
+        }
+        const r = orig(resetScroll);
+        try { if (ws.mod === 'stocks' && ws.tab === 'progress' && pgGoalOpen) pgGoalTypeUi(); } catch (e) { }
+        return r;
+      };
+    })(renderWorkspace);
+
+    // ---------- Markt + Suche & Watchlist zusammen ----------
+    renderInvestWs = (function (orig) { return function (tab) { return tab === 'market' ? orig('market') + orig('list') : orig(tab); }; })(renderInvestWs);
+    afterInvestRender = (function (orig) { return function () { const r = orig(); if (ws.tab === 'market') loadStockTrends(); return r; }; })(afterInvestRender);
+    addStock = function (s) {
+      if (!currentUser.stocks.list.includes(s)) currentUser.stocks.list.push(s);
+      saveUserData(); stockSearchRes = null;
+      if (ws.mod === 'stocks') { renderWorkspace(); try { drawSearchResults(); } catch (e) { } }
+    };
+
+    // =====================================================================
+    //  SCHUL-WLAN: Chart-Bibliothek mit Ersatz-Quellen + eigener Ersatz-Chart
+    // =====================================================================
+    const TR_LIB_URLS = [
+      'https://unpkg.com/lightweight-charts@4.1.3/dist/lightweight-charts.standalone.production.js',
+      'https://cdn.jsdelivr.net/npm/lightweight-charts@4.1.3/dist/lightweight-charts.standalone.production.js'
+    ];
+    let trLibMode = null;
+    function trLoadScript(src, ms) {
+      return new Promise((res, rej) => {
+        const s = document.createElement('script'); let done = false;
+        const fin = (ok, err) => { if (done) return; done = true; clearTimeout(t); if (ok && window.LightweightCharts) res(); else { s.remove(); rej(err || new Error('leer')); } };
+        const t = setTimeout(() => fin(false, new Error('Zeitüberschreitung')), ms);
+        s.src = src; s.onload = () => fin(true); s.onerror = () => fin(false, new Error('blockiert'));
+        document.head.appendChild(s);
+      });
+    }
+    function trSimpleOn() { try { return localStorage.getItem('mylife_simplechart') === '1'; } catch (e) { return false; } }
+    trLoadLib = function () {
+      if (window.LightweightCharts) return Promise.resolve();
+      if (trLoadLib.p) return trLoadLib.p;
+      trLoadLib.p = (async () => {
+        if (!trSimpleOn()) for (const u of TR_LIB_URLS) { try { await trLoadScript(u, 6000); trLibMode = 'lw'; window.__lwReal = window.LightweightCharts; return; } catch (e) { } }
+        window.LightweightCharts = { createChart: trSimpleChart, __simple: true }; trLibMode = 'simple';
+      })();
+      return trLoadLib.p;
+    };
+    function trSimpleToggle() {
+      try { localStorage.setItem('mylife_simplechart', trSimpleOn() ? '0' : '1'); } catch (e) { }
+      if (trSimpleOn()) { if (window.LightweightCharts && !window.LightweightCharts.__simple) window.__lwReal = window.LightweightCharts; window.LightweightCharts = { createChart: trSimpleChart, __simple: true }; }
+      else window.LightweightCharts = window.__lwReal || undefined;
+      trLoadLib.p = null; renderWorkspace();
+    }
+    // Ersatz-Chart mit dem fest eingebauten Chart.js – gleiche Befehle wie die Chart-Bibliothek
+    function trSimpleChart(el) {
+      el.innerHTML = '<div style="position:relative;height:100%;width:100%"><canvas></canvas></div>';
+      const cv = el.querySelector('canvas'), list = []; let ch = null, pend = false, dec = 2;
+      const draw = () => {
+        pend = false; if (!document.body.contains(cv) || typeof Chart === 'undefined') return;
+        const xs = []; list.forEach(s => s.data.forEach(p => xs.push(p.time)));
+        if (!xs.length) return;
+        const x0 = Math.min(...xs), x1 = Math.max(...xs), span = x1 - x0, ds = [];
+        list.forEach(s => {
+          if (s.kind === 'candle' && s.data.length) {
+            const pts = s.data.map(k => ({ x: k.time, y: k.close })), up = pts[pts.length - 1].y >= pts[0].y, col = up ? '#10b981' : '#f43f5e';
+            ds.push({ label: 'Kurs', data: pts, borderColor: col, backgroundColor: col + '18', fill: true, pointRadius: 0, borderWidth: 2, tension: 0 });
+          } else if (s.data.length) ds.push({ label: s.opt.title || '', data: s.data.map(p => ({ x: p.time, y: p.value })), borderColor: s.opt.color || '#a78bfa', borderWidth: s.opt.lineWidth || 1, borderDash: s.opt.lineStyle === 2 ? [5, 4] : [], pointRadius: 0, fill: false, tension: 0 });
+          s.lines.forEach(l => ds.push({ label: l.title || '', data: [{ x: x0, y: l.price }, { x: x1, y: l.price }], borderColor: l.color || '#94a3b8', borderWidth: 1, borderDash: [4, 4], pointRadius: 0, fill: false }));
+        });
+        const tick = v => { const d = new Date(v * 1000); return span < 2 * 86400 ? d.toLocaleTimeString('de-CH', { hour: '2-digit', minute: '2-digit' }) : span < 400 * 86400 ? d.toLocaleDateString('de-CH', { day: '2-digit', month: '2-digit' }) : d.toLocaleDateString('de-CH', { month: '2-digit', year: '2-digit' }); };
+        const light = document.documentElement.classList.contains('light'), grid = light ? '#e2e8f0' : 'rgba(148,163,184,0.12)', txt = light ? '#334155' : '#94a3b8';
+        if (ch) ch.destroy();
+        ch = new Chart(cv.getContext('2d'), {
+          type: 'line', data: { datasets: ds },
+          options: {
+            animation: false, responsive: true, maintainAspectRatio: false, interaction: { mode: 'nearest', intersect: false },
+            plugins: { legend: { display: false }, tooltip: { callbacks: { title: it => it.length ? tick(it[0].parsed.x) : '', label: it => (it.dataset.label ? it.dataset.label + ': ' : '') + fmtNum(it.parsed.y, Math.min(dec, 6)) } } },
+            scales: { x: { type: 'linear', min: x0, max: x1, ticks: { color: txt, maxRotation: 0, autoSkip: true, maxTicksLimit: 6, callback: tick }, grid: { color: grid } }, y: { position: 'right', ticks: { color: txt, callback: v => fmtNum(v, Math.min(dec, 4)) }, grid: { color: grid } } }
+          }
+        });
+      };
+      const sched = () => { if (!pend) { pend = true; requestAnimationFrame(draw); } };
+      const mk = (kind, o) => {
+        const s = {
+          kind, opt: Object.assign({}, o), data: [], lines: [],
+          setData(d) { this.data = (d || []).filter(p => p && p.time != null); sched(); },
+          applyOptions(o2) { Object.assign(this.opt, o2); if (o2 && o2.priceFormat && o2.priceFormat.precision != null) dec = o2.priceFormat.precision; sched(); },
+          createPriceLine(o2) { const l = Object.assign({}, o2); this.lines.push(l); sched(); return l; },
+          removePriceLine(l) { this.lines = this.lines.filter(x => x !== l); sched(); }
+        };
+        list.push(s); return s;
+      };
+      return { addCandlestickSeries: o => mk('candle', o), addLineSeries: o => mk('line', o), timeScale: () => ({ fitContent() { } }), applyOptions() { }, remove() { try { if (ch) ch.destroy(); } catch (e) { } list.length = 0; } };
+    }
+    trAfter = (function (orig) {
+      return function () {
+        orig();
+        trLoadLib().then(() => {
+          const el = document.getElementById('tr-chart'); if (!el || document.getElementById('tr-libnote')) return;
+          const simple = !!(window.LightweightCharts && window.LightweightCharts.__simple);
+          el.insertAdjacentHTML('afterend', `<div id="tr-libnote" class="flex items-center justify-between gap-2 text-[10px] ${simple ? 'text-amber-300' : 'text-slate-500'}"><span>${simple ? (trSimpleOn() ? '📶 Einfacher Chart (eingestellt für Schul-WLAN)' : '📶 Einfacher Chart – die Chart-Bibliothek ist in diesem Netz gesperrt (z. B. Schul-WLAN). Kurse & Prognose funktionieren trotzdem.') : 'Kerzen-Chart'}</span><button onclick="trSimpleToggle()" class="font-bold text-blue-300 whitespace-nowrap">${trSimpleOn() ? 'Kerzen-Chart versuchen' : 'Einfachen Chart nutzen'}</button></div>`);
+        });
+      };
+    })(trAfter);
+
+    // ---------- News über den eigenen Server (gesperrte Dienste umgehen) ----------
+    fetchRss = (function (orig) {
+      return async function (url) {
+        if (/^https:\/\/news\.google\.com\/rss/.test(url)) {
+          try {
+            const r = await fetch('/api/news?url=' + encodeURIComponent(url));
+            if (r.ok && r.headers.get('x-mylife-feed') === 'url') {
+              const x = new DOMParser().parseFromString(await r.text(), 'text/xml');
+              const items = [...x.querySelectorAll('item')].map(i => { const g = s => ((i.querySelector(s) || {}).textContent || '').trim(), d = new Date(g('pubDate')); return { title: g('title'), link: g('link'), date: isNaN(d) ? '' : d.toISOString(), source: g('source') }; });
+              if (items.length) { try { localStorage.setItem('mylife_rss_' + url.length + '_' + url.slice(-40), JSON.stringify({ at: Date.now(), items })); } catch (e) { } return items; }
+            }
+          } catch (e) { }
+        }
+        return orig(url);
+      };
+    })(fetchRss);
+
+    // =====================================================================
+    //  5-METHODEN-ANALYSE direkt im Live-Trader (automatisch)
+    // =====================================================================
+    const TR5_POS = ['rekord', 'steigt', 'steigen', 'gewinnt', 'übertrifft', 'kaufempfehlung', 'hochgestuft', 'kursziel erhöht', 'rally', 'rallye', 'wachstum', 'erholt', 'erholung', 'legt zu', 'zulegen', 'aufwärts', 'beats', 'surge', 'soars', 'record', 'upgrade', 'raises', 'bullish', 'jumps', 'gains', 'rebound'];
+    const TR5_NEG = ['fällt', 'fallen', 'verlust', 'warnung', 'warnt', 'klage', 'crash', 'einbruch', 'bricht ein', 'herabgestuft', 'kursziel gesenkt', 'senkt', 'rückgang', 'schwach', 'betrug', 'ermittlung', 'rezession', 'pleite', 'insolvenz', 'abwärts', 'misses', 'plunge', 'falls', 'drops', 'downgrade', 'cuts', 'bearish', 'lawsuit', 'sell-off', 'slump', 'tumbles'];
+    const tr5News = {};
+    let tr5Seq = 0, tr5Last = null;
+    async function tr5NewsFor(sym) {
+      const c = tr5News[sym]; if (c && Date.now() - c.at < 900000) return c.items;
+      const nm = String(TR_NAMES[sym] || (trMeta[sym] || {}).name || '').replace(/\s*\(.*\)$/, '').replace(/[,.]? (Inc|Corp|Corporation|Trust|ETF|Ltd|AG|SA|plc|N\.V\.)\b.*$/i, '').trim();
+      const base = sym.replace(/-USD$|=X$|=F$|\.[A-Z]+$/g, '').replace(/^\^/, '');
+      const q = nm && nm.toUpperCase() !== base ? `"${nm}" OR "${base}"` : `"${base}"`;
+      const items = await fetchRss('https://news.google.com/rss/search?q=' + encodeURIComponent(q + ' when:3d') + '&hl=de&gl=CH&ceid=CH:de');
+      tr5News[sym] = { at: Date.now(), items: (items || []).slice(0, 15) }; return tr5News[sym].items;
+    }
+    function tr5Compute(c, tf, news) {
+      const n = c.length, cl = c.map(x => x.close), L = n - 1, R = {};
+      const lr = []; for (let i = Math.max(1, n - 100); i < n; i++) lr.push(Math.log(cl[i] / cl[i - 1]));
+      const sig = Math.sqrt(trMean(lr.map(x => x * x))) || 0.01;
+      // 1. Technische Analyse: Unterstützung / Widerstand der letzten 20 Kerzen
+      const win = c.slice(-21, -1), support = Math.min(...win.map(x => x.low)), resist = Math.max(...win.map(x => x.high));
+      const ref = cl[Math.max(0, L - 5)], ch = (cl[L] - ref) / ref, thr = Math.max(0.002, sig * Math.sqrt(5) * 0.5);
+      const d = { price: String(cl[L]), support: String(support), resist: String(resist), dir: ch > thr ? 'up' : ch < -thr ? 'down' : 'side', kw: {}, expect: '' };
+      R.tech = iaScTech(d); R.support = support; R.resist = resist; R.dir = d.dir;
+      // 3. Indikatoren
+      const rsi = iaRSI(cl), mac = iaMACD(cl), sma = iaSMA(cl, 50);
+      if (rsi[L] != null) d.rsi = String(rsi[L]);
+      if (mac.m[L] != null && mac.sig[L] != null) { d.macd = String(mac.m[L]); d.sig = String(mac.sig[L]); }
+      if (sma[L] != null) d.sma = String(sma[L]);
+      R.ind = iaScInd(d); R.rsi = rsi[L];
+      // 4. Angebot, Nachfrage & Volumen (letzte abgeschlossene Kerze)
+      const vols = c.map(x => x.volume || 0), k = L - 1, hasVol = vols.slice(-22, -1).filter(v => v > 0).length >= 15;
+      const dch = (cl[k] - cl[k - 1]) / cl[k - 1];
+      d.move = dch > sig * 0.3 ? 'up' : dch < -sig * 0.3 ? 'down' : 'flat';
+      if (hasVol) { const av = trMean(vols.slice(-22, -2)); d.vol = vols[k] > av * 1.3 ? 'high' : vols[k] < av * 0.7 ? 'low' : 'normal'; R.vol = iaScVol(d); }
+      else R.vol = null;
+      R.hasVol = hasVol;
+      // 5. Statistik: welches Signal kam zuletzt – und was passierte früher danach?
+      const S = { c: cl, rsi, m: mac.m, sig: mac.sig, sma }, h = Math.max(3, Math.min(TR_HZ[tf][0], Math.floor(n / 8)));
+      let best = null;
+      Object.entries(IA_SIGNALS).forEach(([key, [label, fn]]) => {
+        let last = -1, N = 0, K = 0;
+        for (let i = 1; i < n; i++) if (fn(S, i)) { last = i; if (i < n - h) { N++; if (cl[i + h] > cl[i]) K++; } }
+        if (last >= 0 && (!best || last > best.last)) best = { key, label, last, N, K };
+      });
+      if (best && best.N > 0) {
+        const r = best.K / best.N; let sc = r >= 0.7 ? 2 : r >= 0.55 ? 1 : r <= 0.3 ? -2 : r <= 0.45 ? -1 : 0; if (best.N < 10) sc = sc / 2;
+        R.stat = [sc, `Letztes Signal: ${best.label} (vor ${L - best.last} Kerze${L - best.last === 1 ? '' : 'n'}). Früher stieg der Kurs danach in ${best.K} von ${best.N} Fällen (${fmtNum(r * 100, 0)} %) innerhalb von ${h} Kerzen.${best.N < 10 ? ' Wenige Fälle → wenig aussagekräftig.' : ''}`];
+      } else R.stat = null;
+      // 2. Nachrichten
+      R.news = null; R.hits = [];
+      if (news && news.length) {
+        const K = (ia().keywords || []); let pos = 0, neg = 0;
+        news.forEach(it => {
+          const t = ' ' + String(it.title || '').toLowerCase() + ' ';
+          let p = TR5_POS.some(w => t.includes(w)), q = TR5_NEG.some(w => t.includes(w));
+          K.forEach(kw => { if (kw.word && t.includes(String(kw.word).toLowerCase())) { if (kw.eff === 'neg') q = true; else if (kw.eff === 'pos') p = true; } });
+          const v = p && !q ? 1 : q && !p ? -1 : 0; if (v > 0) pos++; if (v < 0) neg++;
+          if (p || q) R.hits.push([it, v]);
+        });
+        const sc = Math.max(-2, Math.min(2, Math.round((pos - neg) / Math.max(3, news.length / 3) * 4) / 2));
+        R.news = [sc, `${news.length} Schlagzeilen der letzten 3 Tage: ${pos} eher positiv, ${neg} eher negativ → ${sc > 0 ? 'Stimmung eher gut' : sc < 0 ? 'Stimmung eher schlecht' : 'neutral'}.`];
+      }
+      R.newsState = news === undefined ? 'loading' : news === null ? 'error' : news.length ? 'ok' : 'empty';
+      return R;
+    }
+    function tr5Verdict(R) {
+      const M = ia().methods, rows = [['tech', R.tech], ['news', R.news], ['ind', R.ind], ['vol', R.vol], ['stat', R.stat]], used = rows.filter(r => M[r[0]] && r[1]);
+      if (!used.length) return null;
+      const avg = used.reduce((s, r) => s + r[1][0], 0) / used.length, pos = used.some(r => r[1][0] >= 1), neg = used.some(r => r[1][0] <= -1);
+      return { key: pos && neg && Math.abs(avg) < 0.75 ? 'unclear' : avg >= 0.75 ? 'up' : avg <= -0.75 ? 'down' : 'flat', avg, n: used.length };
+    }
+    function tr5Render(R) {
+      const el = document.getElementById('tr-5m'); if (!el) return;
+      const T = trState(), M = ia().methods, v = tr5Verdict(R), V = v ? IA_V[v.key] : null, model = trModels[T.symbol + ':' + T.tf];
+      const tag = r => r ? `<span class="text-[11px] font-black ${r[0] > 0 ? 'text-emerald-300' : r[0] < 0 ? 'text-rose-300' : 'text-amber-300'}">${r[0] > 0 ? '+' : ''}${fmtNum(r[0], 1)}</span>` : '<span class="text-[10px] text-slate-500">–</span>';
+      const info = {
+        tech: `Unterstützung ${trF(R.support)} · Widerstand ${trF(R.resist)} · Richtung ${R.dir === 'up' ? 'steigend' : R.dir === 'down' ? 'fallend' : 'seitwärts'}`,
+        news: R.newsState === 'loading' ? 'Nachrichten werden geladen …' : R.newsState === 'error' ? 'Nachrichten gerade nicht erreichbar.' : R.newsState === 'empty' ? 'Keine aktuellen Nachrichten gefunden.' : '',
+        ind: R.rsi != null ? `RSI ${fmtNum(R.rsi, 0)}` : '',
+        vol: R.hasVol ? '' : 'Für diesen Wert liefert die Börse keine Volumen-Daten (z. B. Devisen, Indizes).',
+        stat: R.stat ? '' : 'Noch kein auswertbares Signal in diesem Zeitraum.'
+      };
+      const rows = [['tech', '1. Technische Analyse', R.tech], ['news', '2. Nachrichten & Stimmung', R.news], ['ind', '3. Indikatoren (RSI, MACD, 50er-Schnitt)', R.ind], ['vol', '4. Angebot, Nachfrage & Volumen', R.vol], ['stat', '5. Statistische Analyse', R.stat]];
+      let agree = '';
+      if (v && model && model.M) {
+        const mk = model.M.pUp >= 0.55 ? 'up' : model.M.pUp <= 0.45 ? 'down' : 'flat';
+        agree = mk === v.key ? '<p class="text-xs font-bold text-emerald-300">✅ Prognose-Modell und 5 Methoden sind sich einig – das Signal ist stärker.</p>'
+          : (mk === 'up' && v.key === 'down') || (mk === 'down' && v.key === 'up') ? '<p class="text-xs font-bold text-amber-300">⚠️ Prognose-Modell und 5 Methoden widersprechen sich – lieber abwarten oder nur mit kleinem Einsatz.</p>'
+            : '<p class="text-[11px] text-slate-300">ℹ️ Mindestens eine Seite ist neutral oder unklar – kein starkes Signal.</p>';
+      }
+      el.innerHTML = `<p class="text-[11px] text-slate-400">${esc(trLabel(T.symbol))} · Zeitraum ${trTfLabel(T.tf)} · alles automatisch aus den Live-Kursen berechnet. Tippe eine Methode an, um sie ein- oder auszuschalten.</p>
+        ${V ? `<div class="p-3 rounded-2xl border ${V[2]} space-y-1"><span class="${SUB}">Ergebnis aus ${v.n} Methode${v.n > 1 ? 'n' : ''}</span><p class="text-lg font-black ${V[1]}">${V[0]}</p><p class="text-[11px] text-slate-300">Durchschnitt ${v.avg > 0 ? '+' : ''}${fmtNum(v.avg, 2)} (von −2 bis +2)</p>${agree}<p class="text-[11px] text-white">${esc(iaAdvice(v.key, T.symbol))}</p></div>` : '<p class="text-xs text-slate-400">Schalte mindestens eine Methode ein.</p>'}
+        <div class="space-y-1.5">${rows.map(([k, l, r]) => `<div class="p-2.5 rounded-xl border border-slate-800 bg-slate-950/60 ${M[k] ? '' : 'opacity-50'}">
+          <div class="flex items-center justify-between gap-2"><button onclick="ia().methods.${k}=!ia().methods.${k};saveUserData();tr5Draw()" class="flex items-center gap-2 text-left text-xs font-bold text-white"><span class="text-sm">${M[k] ? '☑' : '☐'}</span>${l}</button>${M[k] ? tag(r) : ''}</div>
+          ${M[k] ? `${r ? `<p class="text-[11px] text-slate-300 mt-1">${r[1]}</p>` : ''}${info[k] ? `<p class="text-[10px] text-slate-500 mt-0.5">${info[k]}</p>` : ''}${k === 'news' && R.hits.length ? `<div class="mt-1 space-y-0.5">${R.hits.slice(0, 3).map(([it, s]) => `<a href="${esc(it.link)}" target="_blank" rel="noopener" class="block text-[10px] ${s > 0 ? 'text-emerald-300' : s < 0 ? 'text-rose-300' : 'text-slate-400'} truncate">${s > 0 ? '▲' : s < 0 ? '▼' : '•'} ${esc(it.title)}</a>`).join('')}</div>` : ''}` : ''}</div>`).join('')}</div>
+        ${v ? `<button onclick="tr5Save()" class="w-full ${v11Btn}">📌 Analyse mit Datum speichern</button>` : ''}
+        ${(ia().hist || []).length ? `<details class="rounded-xl bg-slate-950/60 border border-slate-800"><summary class="cursor-pointer px-3 py-2 text-[11px] font-bold text-slate-300">Gespeicherte Analysen (${ia().hist.length})</summary><div class="px-3 pb-2">${[...ia().hist].reverse().slice(0, 12).map(h => `<div class="flex justify-between text-[11px] py-1 border-b border-slate-800 last:border-0"><span class="text-slate-300">${fmtDate(h.date)} · <b class="text-white">${esc(h.symbol)}</b>${h.tf ? ' · ' + esc(trTfLabel(h.tf)) : ''}${h.price ? ' @ ' + trF(h.price) : ''}</span><span class="font-bold ${(IA_V[h.key] || IA_V.unclear)[1]}">${(IA_V[h.key] || IA_V.unclear)[0].split(' –')[0]}</span></div>`).join('')}</div></details>` : ''}
+        <p class="text-[10px] text-slate-500">Keine Methode kann Kurse sicher vorhersagen – das ist eine Denkhilfe, keine Anlageberatung. Eigene Begriffe für die Nachrichten-Bewertung (${(ia().keywords || []).length}): <button onclick="tr5Kw()" class="underline font-bold text-blue-300">verwalten</button></p>`;
+      if (tr5Scroll) { tr5Scroll = false; try { el.closest('.' + BOX.split(' ')[0]).scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (e) { } }
+    }
+    function tr5Draw() { if (tr5Last) tr5Render(tr5Last.R); }
+    async function tr5Run() {
+      const T = trState(), sym = T.symbol, tf = T.tf, my = ++tr5Seq, el = document.getElementById('tr-5m'); if (!el) return;
+      try {
+        const c = await trCandles(sym, tf === '1y' ? '1M' : tf, 120000);
+        if (my !== tr5Seq) return;
+        if (c.length < 40) { el.innerHTML = '<p class="text-[11px] text-slate-400">Für diesen Zeitraum gibt es zu wenig Kursdaten.</p>'; return; }
+        const cached = tr5News[sym] && Date.now() - tr5News[sym].at < 900000 ? tr5News[sym].items : undefined;
+        tr5Last = { sym, tf, R: tr5Compute(c, tf, cached) }; tr5Render(tr5Last.R);
+        if (cached !== undefined) return;
+        let news = null; try { news = await tr5NewsFor(sym); } catch (e) { news = null; }
+        if (my !== tr5Seq || sym !== trState().symbol || tf !== trState().tf) return;
+        tr5Last = { sym, tf, R: tr5Compute(c, tf, news) }; tr5Render(tr5Last.R);
+      } catch (e) { if (my === tr5Seq) el.innerHTML = `<p class="text-[11px] text-rose-300">⚠️ ${esc(e.message || e)}</p>`; }
+    }
+    function tr5Save() {
+      if (!tr5Last) return; const v = tr5Verdict(tr5Last.R); if (!v) return;
+      const R = tr5Last.R, H = ia().hist;
+      H.push({ id: uid(), at: Date.now(), date: getTodayString(), symbol: tr5Last.sym, tf: tr5Last.tf, key: v.key, avg: +v.avg.toFixed(2), price: trPrices[tr5Last.sym] || null, parts: [['tech', R.tech], ['news', R.news], ['ind', R.ind], ['vol', R.vol], ['stat', R.stat]].filter(x => x[1]).map(x => [x[0], x[1][0]]) });
+      if (H.length > 60) H.splice(0, H.length - 60); saveUserData(); tr5Draw();
+    }
+    function tr5Kw() {
+      const K = ia().keywords || (ia().keywords = []);
+      const list = K.length ? K.map((k, i) => `${i + 1}. ${k.word} (${k.eff === 'neg' ? 'negativ' : 'positiv'})`).join('\n') : '(noch keine)';
+      const a = prompt(`Eigene Begriffe für die Nachrichten-Bewertung:\n${list}\n\nNeuer Begriff: einfach eintippen (z. B. „Zölle“). Mit + davor = positiv, sonst negativ.\nZum Löschen die Nummer eingeben.`, '');
+      if (a === null || !a.trim()) return;
+      const t = a.trim(), num = parseInt(t, 10);
+      if (String(num) === t && K[num - 1]) K.splice(num - 1, 1);
+      else K.push({ id: uid(), word: t.replace(/^\+/, '').trim(), eff: t.startsWith('+') ? 'pos' : 'neg' });
+      saveUserData(); delete tr5News[trState().symbol]; tr5Run();
+    }
+    renderTraderWs = (function (orig) {
+      return function () {
+        const h = orig(), j = h.indexOf('Meine verfolgten Werte'), i = j > 0 ? h.lastIndexOf('<div class="' + BOX + '">', j) : -1;
+        const box = `<div class="${BOX}">${panelHead('list-checks', '5-Methoden-Analyse (automatisch)')}<div id="tr-5m" class="space-y-2"><p class="text-xs text-slate-400">Rechne …</p></div></div>`;
+        return i > 0 ? h.slice(0, i) + box + h.slice(i) : h + box;
+      };
+    })(renderTraderWs);
+    trShowRec = (function (orig) { return function () { orig(); tr5Run(); }; })(trShowRec);
+
+    // =====================================================================
+    //  PORTFOLIO: eigener Capital.com-Abzug vom Endbetrag
+    // =====================================================================
+    function invCapCfg() { const st = currentUser.stocks; if (!st.capFee || typeof st.capFee !== 'object') st.capFee = { val: '', unit: 'pct' }; return st.capFee; }
+    const invIsCap = p => /capital/i.test(String((p && p.broker) || ''));
+    function invCapFeeFor(p) {
+      if (!invIsCap(p)) return null;
+      const own = p.capFee && typeof p.capFee === 'object' ? p.capFee : null, cfg = invCapCfg();
+      const val = pNum(own ? own.val : cfg.val), unit = (own ? own.unit : cfg.unit) === 'chf' ? 'chf' : 'pct';
+      return val > 0 ? { val, unit, own: !!own } : null;
+    }
+    const invCapTxt = f => f ? (f.unit === 'chf' ? fmtNum(f.val, 2) + ' CHF' : fmtNum(f.val, 2) + ' % vom Endbetrag') : 'kein Abzug';
+    posCalc = (function (orig) {
+      return function (p, price) {
+        const c = orig(p, price), f = invCapFeeFor(p);
+        if (!f || c.plCHF === null || c.plCHF === undefined || isNaN(c.plCHF)) return c;
+        const mg = c.margin > 0 ? c.margin : (+p.margin || 0), end = mg + c.plCHF;
+        const ded = f.unit === 'chf' ? f.val : Math.max(0, end) * f.val / 100;
+        c.capFee = ded; c.capCfg = f; c.plCHFGross = c.plCHF; c.plCHF = c.plCHF - ded; c.endCHF = end - ded;
+        if (mg > 0) c.plPct = c.plCHF / mg * 100;
+        return c;
+      };
+    })(posCalc);
+    function invCapSet(k, v) { invCapCfg()[k] = String(v).trim(); saveUserData(); renderWorkspace(); }
+    function invCapEdit(id) {
+      const p = currentUser.stocks.positions.find(x => x.id === id); if (!p) return;
+      const cfg = invCapCfg(), cur = p.capFee ? (fmtNum(pNum(p.capFee.val), 2) + (p.capFee.unit === 'chf' ? ' CHF' : ' %')) : '';
+      const a = prompt(`Capital.com-Abzug nur für ${p.symbol}:\nz. B. „0,7“ (= 0,7 % vom Endbetrag) oder „2 CHF“.\nLeer lassen = Standard (${invCapTxt(invCapFeeFor(Object.assign({}, p, { capFee: null })) || null)}).`, cur);
+      if (a === null) return;
+      const t = a.trim(); if (!t) delete p.capFee;
+      else { const v = pNum(t.replace(/[^0-9.,'-]/g, '')); if (!(v >= 0)) return alert('Ungültige Zahl.'); p.capFee = { val: String(v), unit: /chf|fr/i.test(t) ? 'chf' : /%/.test(t) ? 'pct' : (cfg.unit === 'chf' ? 'chf' : 'pct') }; }
+      saveUserData(); renderWorkspace();
+    }
+    renderPortfolioShell = (function (orig) {
+      return function () {
+        let h = orig();
+        const cfg = invCapCfg(), f = pNum(cfg.val) > 0 ? { val: pNum(cfg.val), unit: cfg.unit } : null;
+        if (invFormOpen && invDraft && invDraft.broker === 'Capital.com') {
+          const fld = `<div class="grid gap-2" style="grid-template-columns:minmax(0,1fr) 8.5rem"><div><label class="${LBL}">Capital.com-Abzug für diese Position</label><input inputmode="decimal" value="${esc(invDraft.capVal || '')}" placeholder="leer = Standard (${esc(invCapTxt(f))})" oninput="invDraft.capVal=this.value" class="${IN} text-center"></div><div><label class="${LBL}">Einheit</label><select onchange="invDraft.capUnit=this.value" class="${IN}"><option value="pct" ${invDraft.capUnit !== 'chf' ? 'selected' : ''}>% vom Endbetrag</option><option value="chf" ${invDraft.capUnit === 'chf' ? 'selected' : ''}>CHF fix</option></select></div></div>`;
+          const k = `<div><label class="${LBL}">Notiz (optional)</label>`; if (h.includes(k)) h = h.replace(k, fld + k);
+        }
+        const box = `<details class="rounded-2xl border ${f ? 'border-amber-500/40 bg-amber-500/5' : 'border-slate-800 bg-slate-900/80'}"><summary class="cursor-pointer px-3.5 py-3 text-xs font-bold text-white">💸 Capital.com-Abzug: <span class="${f ? 'text-amber-300' : 'text-slate-400'}">${esc(invCapTxt(f))}</span></summary>
+          <div class="px-3.5 pb-3.5 space-y-2"><p class="text-[11px] text-slate-400">Gilt <b>nur</b> für Positionen mit Broker Capital.com. Der Betrag wird vom Endbetrag (Einsatz + Gewinn/Verlust) abgezogen – z. B. für Spread, Gebühren oder Übernacht-Finanzierung. Bei jeder Position kannst du ihn auch einzeln ändern.</p>
+          <div class="grid gap-2" style="grid-template-columns:minmax(0,1fr) 9rem"><div><label class="${LBL}">Abzug</label><input inputmode="decimal" value="${esc(cfg.val || '')}" placeholder="z. B. 0,7" onchange="invCapSet('val',this.value)" class="${IN} text-center"></div><div><label class="${LBL}">Einheit</label><select onchange="invCapSet('unit',this.value)" class="${IN}"><option value="pct" ${cfg.unit !== 'chf' ? 'selected' : ''}>% vom Endbetrag</option><option value="chf" ${cfg.unit === 'chf' ? 'selected' : ''}>CHF pro Position</option></select></div></div>
+          ${f ? `<p class="text-[11px] text-slate-300">Beispiel: Endbetrag 500 CHF → Abzug ${fmtCHF(f.unit === 'chf' ? f.val : 500 * f.val / 100)} → du bekommst ${fmtCHF(500 - (f.unit === 'chf' ? f.val : 500 * f.val / 100))}.</p>` : '<p class="text-[11px] text-slate-500">Leer = kein Abzug.</p>'}</div></details>`;
+        const m = '<div id="pf-body"'; return h.includes(m) ? h.replace(m, box + m) : h + box;
+      };
+    })(renderPortfolioShell);
+    savePosition = (function (orig) {
+      return async function () {
+        const d = invDraft, n = currentUser.stocks.positions.length, cv = d && d.broker === 'Capital.com' ? pNum(d.capVal) : NaN, cu = d && d.capUnit;
+        await orig();
+        const P = currentUser.stocks.positions;
+        if (P.length > n && cv >= 0) { P[P.length - 1].capFee = { val: String(cv), unit: cu === 'chf' ? 'chf' : 'pct' }; saveUserData(); renderWorkspace(); }
+      };
+    })(savePosition);
+    loadPortfolio = (function (orig) {
+      return async function () {
+        await orig();
+        for (const p of currentUser.stocks.positions.filter(invIsCap)) {
+          const card = document.querySelector(`[data-pos="${p.id}"]`); if (!card || card.querySelector('[data-capfee]')) continue;
+          const f = invCapFeeFor(p), row = document.createElement('div'); row.dataset.capfee = '1';
+          row.className = 'flex items-center justify-between gap-2 text-[11px] p-2 rounded-lg border border-amber-500/30 bg-amber-500/5';
+          let txt = `💸 Capital.com-Abzug: ${esc(invCapTxt(f))}${f && f.own ? ' (nur diese Position)' : ''}`;
+          if (f) { try { const q = await marketGet({ action: 'chart', symbol: p.symbol, range: '1d' }); const c = posCalc(p, q.price); if (c.capFee != null) txt += ` → <b class="text-amber-300">−${fmtNum(c.capFee, 2)} CHF</b> · Endbetrag <b class="text-white">${fmtCHF(c.endCHF)}</b> <span class="text-slate-500">(im Gewinn/Verlust schon abgezogen)</span>`; } catch (e) { } }
+          row.innerHTML = `<span class="text-slate-300">${txt}</span><button onclick="invCapEdit('${p.id}')" class="font-bold text-blue-300 shrink-0">Ändern</button>`;
+          const btns = card.querySelector('.flex.justify-end'); if (btns) card.insertBefore(row, btns); else card.appendChild(row);
+        }
+      };
+    })(loadPortfolio);
+    closePosition = (function (orig) {
+      return async function (id) {
+        const st = currentUser.stocks, n = st.closed.length;
+        await orig(id);
+        if (st.closed.length > n) { st.closed[st.closed.length - 1].closedTs = Date.now(); saveUserData(); invSyncProgress(); }
+      };
+    })(closePosition);
+    // Spielgeld-Trades für die Statistik merken
+    trdClose = (function (orig) {
+      return function (id) {
+        const T = trState(), p = T.positions.find(x => x.id === id), pnl = p ? trPnl(p) : null, exit = p ? trPrices[p.sym] : null;
+        orig(id);
+        if (p && pnl != null) {
+          if (!Array.isArray(T.hist)) T.hist = [];
+          T.hist.push({ id: p.id, sym: p.sym, side: p.side, amount: p.amount, entry: p.entry, exit, pnl: Math.round(pnl * 100) / 100, cur: p.cur, at: p.at, closedTs: Date.now() });
+          if (T.hist.length > 500) T.hist.splice(0, T.hist.length - 500);
+          saveUserData();
+        }
+      };
+    })(trdClose);
+
+    // =====================================================================
+    //  VERLAUF & STATISTIK
+    // =====================================================================
+    let ihSrc = null, ihPer = 'all', ihData = null;
+    const IH_PER = [['all', 'Alles', 0], ['1y', '1 Jahr', 365], ['3m', '3 Monate', 91], ['1m', '1 Monat', 30], ['1w', '1 Woche', 7]];
+    const ihDay = ts => { const d = new Date(ts); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
+    function ihAll(src) {
+      if (src === 'sim') {
+        const T = currentUser.trader || {};
+        return (T.hist || []).map(h => ({ src, id: h.id, sym: h.sym, dir: h.side === 'short' ? 'short' : 'long', pnl: +h.pnl || 0, stake: +h.amount || 0, open: h.at || h.closedTs, close: h.closedTs, exact: true, broker: 'Spielgeld', entry: h.entry, exit: h.exit, cur: h.cur || '' }));
+      }
+      return ((currentUser.stocks && currentUser.stocks.closed) || []).map(p => {
+        const open = p.createdAt || (p.date ? new Date(p.date + 'T12:00:00').getTime() : null);
+        const close = p.closedTs || (p.closedAt ? new Date(p.closedAt + 'T12:00:00').getTime() : open);
+        return { src, id: p.id, sym: p.symbol, dir: p.dir === 'short' ? 'short' : 'long', pnl: +p.realized || 0, stake: +p.margin || 0, open, close, exact: !!(p.closedTs && p.createdAt), days: p.date && p.closedAt ? Math.max(0, daysBetween(p.date, p.closedAt)) : null, broker: p.broker || '', entry: p.entry, exit: p.exit, lev: p.lev, openDate: p.date, closeDate: p.closedAt, cur: 'CHF' };
+      });
+    }
+    const ihHold = r => r.exact && r.open && r.close ? Math.max(0, (r.close - r.open) / 3600000) : r.days != null ? r.days * 24 : null;
+    const ihHoldTxt = h => h == null ? '–' : h < 1 ? Math.max(1, Math.round(h * 60)) + ' Min' : h < 48 ? fmtNum(h, h < 10 ? 1 : 0) + ' Std' : fmtNum(h / 24, h < 240 ? 1 : 0) + ' Tage';
+    function ihStats(rows) {
+      const W = rows.filter(r => r.pnl > 0), Lo = rows.filter(r => r.pnl <= 0), sum = a => a.reduce((s, r) => s + r.pnl, 0);
+      const gains = sum(W), losses = sum(Lo), total = gains + losses, stake = rows.reduce((s, r) => s + r.stake, 0);
+      const holds = rows.map(ihHold).filter(h => h != null);
+      let ws = 0, ls = 0, cw = 0, cl = 0; rows.forEach(r => { if (r.pnl > 0) { cw++; cl = 0; } else { cl++; cw = 0; } ws = Math.max(ws, cw); ls = Math.max(ls, cl); });
+      const dirStat = d => { const a = rows.filter(r => r.dir === d); return a.length ? { n: a.length, rate: a.filter(r => r.pnl > 0).length / a.length, net: sum(a) } : null; };
+      return {
+        n: rows.length, wins: W.length, losses: Lo.length, rate: rows.length ? W.length / rows.length : 0, gains, lossSum: losses, total, stake,
+        ret: stake > 0 ? total / stake * 100 : null, avgW: W.length ? gains / W.length : 0, avgL: Lo.length ? losses / Lo.length : 0,
+        pf: losses < 0 ? gains / -losses : null, exp: rows.length ? total / rows.length : 0,
+        avgHold: holds.length ? holds.reduce((s, x) => s + x, 0) / holds.length : null, maxHold: holds.length ? Math.max(...holds) : null, minHold: holds.length ? Math.min(...holds) : null,
+        winStreak: ws, lossStreak: ls, long: dirStat('long'), short: dirStat('short'),
+        best: rows.slice().sort((a, b) => b.pnl - a.pnl).slice(0, 3).filter(r => r.pnl > 0), worst: rows.slice().sort((a, b) => a.pnl - b.pnl).slice(0, 3).filter(r => r.pnl < 0)
+      };
+    }
+    function ihGroup(rows, keyFn, labels) {
+      const G = labels.map(() => ({ n: 0, w: 0, net: 0 }));
+      rows.forEach(r => { const k = keyFn(r); if (k == null || !G[k]) return; G[k].n++; if (r.pnl > 0) G[k].w++; G[k].net += r.pnl; });
+      return G;
+    }
+    function ihBest(G, labels, money) {
+      const ok = G.map((g, i) => [g, labels[i]]).filter(([g]) => g.n >= 2); if (ok.length < 2) return null;
+      const b = ok.slice().sort((x, y) => y[0].net - x[0].net)[0], w = ok.slice().sort((x, y) => x[0].net - y[0].net)[0];
+      return `<b class="text-emerald-300">${b[1]}</b> (${fmtNum(b[0].w / b[0].n * 100, 0)} % Treffer, ${money(b[0].net)})${w[1] !== b[1] && w[0].net < 0 ? ` · am schwächsten: <b class="text-rose-300">${w[1]}</b> (${fmtNum(w[0].w / w[0].n * 100, 0)} %, ${money(w[0].net)})` : ''}`;
+    }
+    renderInvHistory = function () {
+      const real = ihAll('real'), sim = ihAll('sim'), accs = (currentUser.invAccounts.list || []).filter(a => (a.hist || []).length >= 2);
+      if (!ihSrc) ihSrc = real.length || !sim.length ? 'real' : 'sim';
+      const src = ihSrc, days = (IH_PER.find(p => p[0] === ihPer) || IH_PER[0])[2], from = days ? Date.now() - days * 86400000 : 0;
+      const rows = (src === 'sim' ? sim : real).filter(r => !from || (r.close || 0) >= from).sort((a, b) => (a.close || 0) - (b.close || 0));
+      const money = src === 'sim' ? (v => (v > 0 ? '+' : '') + fmtNum(v, 2)) : (v => fmtCHF(v, true)), unit = src === 'sim' ? 'Spielgeld' : 'CHF';
+      const cls = v => v > 0 ? 'text-emerald-300' : v < 0 ? 'text-rose-300' : 'text-white';
+      const chips = `<div class="flex gap-1.5 overflow-x-auto pb-1">${[['real', `💼 Echte Trades (${real.length})`], ['sim', `🎮 Spielgeld (${sim.length})`]].map(([k, l]) => chip(l, src === k, `ihSrc='${k}';renderWorkspace()`)).join('')}</div>
+        <div class="flex gap-1.5 overflow-x-auto pb-1">${IH_PER.map(([k, l]) => chip(l, ihPer === k, `ihPer='${k}';renderWorkspace()`)).join('')}</div>`;
+      const openBox = `<div class="${BOX}">${panelHead('activity', 'Aktuell offen')}<div id="ih-open" class="grid grid-cols-3 gap-2"><p class="text-[11px] text-slate-400 col-span-3">Kurse werden geladen …</p></div></div>`;
+      ihData = null;
+      if (!rows.length) {
+        return chips + openBox + `<div class="${BOX} text-center"><p class="text-sm text-slate-300">${(src === 'sim' ? sim : real).length ? 'Im gewählten Zeitraum keine abgeschlossenen Trades.' : src === 'sim' ? 'Noch keine Spielgeld-Trades abgeschlossen.' : 'Noch keine geschlossenen Positionen.'}</p><p class="text-[11px] text-slate-500">${src === 'sim' ? 'Im Live-Trader Long/Short mit Spielgeld eröffnen und wieder schliessen – ab dann erscheint hier deine Statistik.' : 'Schliesse im Tab „Portfolio“ eine Position – dann siehst du hier Trefferquote, Rendite, Haltedauer und wann du am besten handelst.'}</p></div>`
+          + (src === 'real' ? accs.map(a => `<div class="${BOX}"><span class="${SUB}">Eigenkapital ${esc(a.name)}</span><div class="h-40 relative"><canvas id="ih-eq-${a.id}"></canvas></div></div>`).join('') : '');
+      }
+      const s = ihStats(rows);
+      const HOURS = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0') + ' Uhr'), WD = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
+      const HB = ['< 1 Std', '1 Std – 1 Tag', '1–7 Tage', '1–4 Wochen', '> 4 Wochen'];
+      const hb = r => { const h = ihHold(r); if (h == null) return null; return !r.exact && h === 0 ? 1 : h < 1 ? 0 : h < 24 ? 1 : h < 168 ? 2 : h < 672 ? 3 : 4; };
+      const gH = ihGroup(rows, r => r.open ? new Date(r.open).getHours() : null, HOURS), gW = ihGroup(rows, r => r.open ? (new Date(r.open).getDay() + 6) % 7 : null, WD), gB = ihGroup(rows, hb, HB);
+      let cum = 0;
+      ihData = {
+        src, accs: src === 'real' ? accs : [],
+        cum: { labels: rows.map(r => fmtShort(ihDay(r.close))), data: rows.map(r => +(cum += r.pnl).toFixed(2)) },
+        per: rows.slice(-40), hours: gH, wd: gW, hold: gB, HOURS, WD, HB,
+        dist: [['< −100', x => x < -100], ['−100…−20', x => x >= -100 && x < -20], ['−20…0', x => x >= -20 && x <= 0], ['0…20', x => x > 0 && x <= 20], ['20…100', x => x > 20 && x <= 100], ['> 100', x => x > 100]].map(b => [b[0], rows.filter(r => b[1](r.pnl)).length])
+      };
+      const T2 = (l, v, c, sub) => `<div class="bg-slate-950 rounded-xl border border-slate-800 p-2 text-center"><p class="text-[10px] text-slate-400">${l}</p><p class="text-sm font-black ${c || 'text-white'}">${v}</p>${sub ? `<p class="text-[9px] text-slate-500">${sub}</p>` : ''}</div>`;
+      const tradeLine = r => `<div class="flex items-center justify-between text-xs py-1.5 border-b border-slate-800 last:border-0 gap-2"><span class="min-w-0"><span class="block text-white font-bold">${esc(r.sym)} ${r.dir === 'short' ? '↓ Short' : '↑ Long'} <span class="font-normal text-slate-400">${esc(r.broker)}${r.lev > 1 ? ' · ' + r.lev + '×' : ''}</span></span><span class="block text-[10px] text-slate-400">${r.open ? fmtDate(ihDay(r.open)) : '–'}${r.exact && r.open ? ' ' + new Date(r.open).toLocaleTimeString('de-CH', { hour: '2-digit', minute: '2-digit' }) : ''} → ${r.close ? fmtDate(ihDay(r.close)) : '–'} · ${ihHoldTxt(ihHold(r))}${r.entry ? ` · ${trF(r.entry)} → ${trF(r.exit)}` : ''}</span></span><span class="text-right shrink-0"><b class="${cls(r.pnl)}">${money(r.pnl)}</b>${r.stake ? `<br><span class="text-[10px] text-slate-400">${fmtNum(r.pnl / r.stake * 100, 1)} %</span>` : ''}</span></div>`;
+      const ins = [['🕒 Beste Tageszeit (Einstieg)', ihBest(gH, HOURS, money)], ['📅 Bester Wochentag', ihBest(gW, WD, money)], ['⏳ Beste Haltedauer', ihBest(gB, HB, money)]].filter(x => x[1]);
+      return chips + `<div class="${BOX}">${panelHead('activity', `Statistik · ${s.n} Trade${s.n === 1 ? '' : 's'}`)}
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            ${T2('Netto Gewinn/Verlust', money(s.total), cls(s.total), unit)}
+            ${T2('Gewinn-Wahrscheinlichkeit', fmtNum(s.rate * 100, 0) + ' %', s.rate >= 0.5 ? 'text-emerald-300' : 'text-amber-300', `${s.wins} von ${s.n} im Plus`)}
+            ${T2('Verlust-Wahrscheinlichkeit', fmtNum((1 - s.rate) * 100, 0) + ' %', 'text-rose-300', `${s.losses} von ${s.n} im Minus`)}
+            ${T2('Rendite', s.ret == null ? '–' : (s.ret > 0 ? '+' : '') + fmtNum(s.ret, 1) + ' %', cls(s.ret || 0), 'auf deinen Einsatz')}
+            ${T2('Gesamtgewinn', money(s.gains), 'text-emerald-300')}
+            ${T2('Gesamtverlust', money(s.lossSum), 'text-rose-300')}
+            ${T2('Ø Gewinn-Trade', money(s.avgW), 'text-emerald-300')}
+            ${T2('Ø Verlust-Trade', money(s.avgL), 'text-rose-300')}
+            ${T2('Ø Haltedauer', ihHoldTxt(s.avgHold), 'text-white', s.maxHold != null ? 'längste ' + ihHoldTxt(s.maxHold) : '')}
+            ${T2('Erwartung pro Trade', money(s.exp), cls(s.exp))}
+            ${T2('Profit-Faktor', s.pf == null ? (s.gains > 0 ? '∞' : '–') : fmtNum(s.pf, 2), s.pf == null ? 'text-white' : s.pf >= 1 ? 'text-emerald-300' : 'text-rose-300', 'Gewinne ÷ Verluste')}
+            ${T2('Serien', `${s.winStreak}× / ${s.lossStreak}×`, 'text-white', 'Gewinn / Verlust am Stück')}
+          </div>
+          <p class="text-[11px] text-slate-300">${s.long ? `↑ Long: ${fmtNum(s.long.rate * 100, 0)} % Treffer bei ${s.long.n} Trades (${money(s.long.net)})` : ''}${s.long && s.short ? ' · ' : ''}${s.short ? `↓ Short: ${fmtNum(s.short.rate * 100, 0)} % Treffer bei ${s.short.n} Trades (${money(s.short.net)})` : ''}</p>
+          <p class="text-xs ${s.exp >= 0 ? 'text-emerald-300' : 'text-rose-300'}">${s.exp >= 0 ? '👍 Bisher bringt dir ein Trade im Schnitt Geld.' : '⚠️ Bisher verlierst du im Schnitt pro Trade – Stop-Loss, Positionsgrösse und Einstiegszeit prüfen.'}</p>
+          ${s.n < 20 ? '<p class="text-[10px] text-slate-500">Mit weniger als 20 Trades sind die Prozente noch stark vom Zufall abhängig.</p>' : ''}</div>
+        ${src === 'real' ? openBox : ''}
+        <div class="${BOX}"><span class="${SUB}">Netto-Gewinn über die Zeit (${unit})</span><div class="h-44 relative"><canvas id="ih-cum"></canvas></div></div>
+        <div class="${BOX}"><span class="${SUB}">Gewinn/Verlust pro Trade${rows.length > 40 ? ' (letzte 40)' : ''}</span><div class="h-40 relative"><canvas id="ih-per"></canvas></div></div>
+        <div class="${BOX}"><span class="${SUB}">Wann du handelst – nach Uhrzeit des Einstiegs</span><div class="h-44 relative"><canvas id="ih-hour"></canvas></div>
+          <span class="${SUB}">Nach Wochentag (Netto ${unit})</span><div class="h-36 relative"><canvas id="ih-wd"></canvas></div>
+          <span class="${SUB}">Nach Haltedauer (Netto ${unit})</span><div class="h-36 relative"><canvas id="ih-hold"></canvas></div>
+          ${ins.length ? ins.map(([l, t]) => `<p class="text-[11px] text-slate-300">${l}: ${t}</p>`).join('') : '<p class="text-[10px] text-slate-500">Ab 2 Trades pro Zeitfenster zeigt MyLife hier, wann du am erfolgreichsten bist.</p>'}
+          ${src === 'real' && rows.some(r => !r.exact) ? '<p class="text-[10px] text-slate-500">Uhrzeit = wann du die Position in MyLife erfasst hast. Bei älteren Trades ist die Schliess-Uhrzeit nicht bekannt – ab jetzt wird sie mitgespeichert.</p>' : ''}</div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div class="${BOX}"><span class="${SUB}">🏆 Beste Trades</span>${s.best.length ? s.best.map(tradeLine).join('') : '<p class="text-[11px] text-slate-500">Noch kein Gewinn-Trade.</p>'}</div>
+          <div class="${BOX}"><span class="${SUB}">📉 Schlechteste Trades</span>${s.worst.length ? s.worst.map(tradeLine).join('') : '<p class="text-[11px] text-slate-500">Noch kein Verlust-Trade.</p>'}</div></div>
+        ${src === 'real' ? `<div class="${BOX}"><span class="${SUB}">Verteilung (Anzahl Trades nach CHF)</span><div class="h-36 relative"><canvas id="ih-dist"></canvas></div></div>` : ''}
+        ${ihData.accs.map(a => `<div class="${BOX}"><span class="${SUB}">Eigenkapital ${esc(a.name)}</span><div class="h-40 relative"><canvas id="ih-eq-${a.id}"></canvas></div></div>`).join('')}
+        <div class="${BOX}"><span class="${SUB}">Alle Trades (${rows.length})</span><div class="max-h-96 overflow-y-auto pr-1">${rows.slice().reverse().map(tradeLine).join('')}</div>
+          ${src === 'sim' ? `<button onclick="if(confirm('Spielgeld-Verlauf (nur die Statistik) löschen?')){trState().hist=[];saveUserData();renderWorkspace()}" class="text-[11px] font-semibold text-slate-500">Spielgeld-Verlauf löschen</button>` : ''}</div>
+        <p class="text-[10px] text-slate-500">Vergangene Ergebnisse sagen nichts Sicheres über die Zukunft. Keine Anlageberatung.</p>`;
+    };
+    invHistAfter = function () {
+      const D = ihData;
+      const accs = D ? D.accs : (currentUser.invAccounts.list || []).filter(a => (a.hist || []).length >= 2);
+      accs.forEach(a => drawLineChart('ih-eq-' + a.id, a.hist.map(h => fmtShort(h.date)), [{ label: 'Eigenkapital', data: a.hist.map(h => h.equity), borderColor: '#3b82f6', fill: true, backgroundColor: '#3b82f622' }]));
+      ihLoadOpen();
+      if (!D) return;
+      const G = '#10b981', R = '#f43f5e', col = v => v >= 0 ? G : R, noLeg = id => { const c = perfCharts[id]; if (c) { c.options.plugins.legend.display = false; c.update(); } };
+      const last = D.cum.data[D.cum.data.length - 1] || 0;
+      drawLineChart('ih-cum', D.cum.labels, [{ label: 'Netto', data: D.cum.data, borderColor: col(last), backgroundColor: col(last) + '22', fill: true, pointRadius: D.cum.data.length > 30 ? 0 : 2 }]); noLeg('ih-cum');
+      barChart('ih-per', D.per.map(r => r.sym + ' ' + fmtShort(ihDay(r.close))), [{ label: 'Gewinn/Verlust', data: D.per.map(r => +r.pnl.toFixed(2)), backgroundColor: D.per.map(r => col(r.pnl)) }]);
+      const hrs = D.hours.map((g, i) => [g, i]).filter(([g]) => g.n), hi = hrs.length ? [Math.min(...hrs.map(x => x[1])), Math.max(...hrs.map(x => x[1]))] : [8, 22];
+      const H = D.hours.slice(hi[0], hi[1] + 1), HL = D.HOURS.slice(hi[0], hi[1] + 1);
+      barChart('ih-hour', HL, [{ label: 'Gewinn-Trades', data: H.map(g => g.w), backgroundColor: G }, { label: 'Verlust-Trades', data: H.map(g => g.n - g.w), backgroundColor: R }], { stacked: true, yTitle: 'Anzahl' });
+      barChart('ih-wd', D.WD, [{ label: 'Netto', data: D.wd.map(g => +g.net.toFixed(2)), backgroundColor: D.wd.map(g => col(g.net)) }]);
+      barChart('ih-hold', D.HB, [{ label: 'Netto', data: D.hold.map(g => +g.net.toFixed(2)), backgroundColor: D.hold.map(g => col(g.net)) }]);
+      if (D.src === 'real') barChart('ih-dist', D.dist.map(x => x[0]), [{ label: 'Anzahl Trades', data: D.dist.map(x => x[1]), backgroundColor: ['#be123c', '#f43f5e', '#fb7185', '#34d399', '#10b981', '#047857'] }]);
+      ['ih-per', 'ih-wd', 'ih-hold'].forEach(id => { try { const c = perfCharts[id]; if (c) { c.options.plugins.tooltip.callbacks.label = it => ' ' + (D.src === 'sim' ? fmtNum(it.parsed.y, 2) : fmtCHF(it.parsed.y, true)); c.update(); } } catch (e) { } });
+    };
+    async function ihLoadOpen() {
+      const el = document.getElementById('ih-open'); if (!el) return;
+      const cls = v => v > 0 ? 'text-emerald-300' : v < 0 ? 'text-rose-300' : 'text-white';
+      const t3 = (l, v, c, sub) => `<div class="bg-slate-950 rounded-xl border border-slate-800 p-2 text-center"><p class="text-[10px] text-slate-400">${l}</p><p class="text-sm font-black ${c}">${v}</p>${sub ? `<p class="text-[9px] text-slate-500">${sub}</p>` : ''}</div>`;
+      try {
+        if (ihSrc === 'sim') {
+          const T = trState(); if (!T.positions.length) { el.innerHTML = '<p class="text-[11px] text-slate-500 col-span-3">Keine offenen Spielgeld-Positionen.</p>'; return; }
+          await Promise.all([...new Set(T.positions.map(p => p.sym))].map(async s => { try { const q = await marketGet({ action: 'chart', symbol: s, range: '1d' }, 60000); if (q.price != null) trPrices[s] = q.price; } catch (e) { } }));
+          const open = T.positions.reduce((s, p) => s + (trPnl(p) || 0), 0), real = T.realized || 0;
+          if (document.getElementById('ih-open')) el.innerHTML = t3('Offen +/−', trSign(open), cls(open), T.positions.length + ' Position' + (T.positions.length === 1 ? '' : 'en')) + t3('Realisiert', trSign(real), cls(real)) + t3('Kontostand', fmtNum(TR_START + real + open, 2), cls(real + open), 'Start ' + fmtNum(TR_START, 0));
+          return;
+        }
+        const st = currentUser.stocks; if (!st.positions.length) { el.innerHTML = '<p class="text-[11px] text-slate-500 col-span-3">Keine offenen Positionen im Portfolio.</p>'; return; }
+        const t = await portfolioTotals(), real = invRealizedTotal();
+        if (!document.getElementById('ih-open')) return;
+        el.innerHTML = t3('Offen +/−', fmtCHF(t.pl, true), cls(t.pl), `${st.positions.length} Position${st.positions.length === 1 ? '' : 'en'} · ${fmtPct(t.plPct)}`) + t3('Geschlossen', fmtCHF(real, true), cls(real)) + t3('Total', fmtCHF(real + t.pl, true), cls(real + t.pl), 'geschlossen + offen') + (!t.complete ? '<p class="text-[10px] text-amber-300 col-span-3">Für einzelne Positionen gibt es gerade keinen Kurs.</p>' : '');
+      } catch (e) { el.innerHTML = `<p class="text-[11px] text-rose-300 col-span-3">${esc(e.message || e)}</p>`; }
+    }
+
+    // =====================================================================
+    //  ZIELE & FORTSCHRITT: Investment aktualisiert sich automatisch
+    // =====================================================================
+    function invRealizedTotal() { return ((currentUser.stocks || {}).closed || []).reduce((s, p) => s + (+p.realized || 0), 0); }
+    function invProfitNow() { const st = currentUser.stocks || {}; return invRealizedTotal() + ((st.positions || []).length ? (st.lastOpenPL || 0) : 0); }
+    function invSyncProgress(openPL, t) {
+      if (!currentUser || !currentUser.stocks || typeof pgStore !== 'function') return false;
+      const st = currentUser.stocks;
+      if (openPL != null && isFinite(openPL)) { st.lastOpenPL = Math.round(openPL * 100) / 100; st.lastOpenAt = Date.now(); if (t && isFinite(t.margin)) st.lastMargin = t.margin; }
+      const accs = ((currentUser.invAccounts || {}).list || []).map(a => pNum(a.equity)).filter(v => !isNaN(v));
+      if (!(st.closed || []).length && !(st.positions || []).length && !accs.length) return false;
+      const S = pgStore('stocks'), today = getTodayString(); let changed = false;
+      const up = (name, value, text) => {
+        if (value == null || !isFinite(value)) return; value = Math.round(value * 100) / 100;
+        const e = S.entries.find(x => x.auto && x.date === today && x.name === name);
+        if (e) { if (e.value !== value) { e.value = value; e.at = Date.now(); changed = true; } }
+        else { S.entries.push({ id: uid(), date: today, kind: 'metric', name, value, unit: 'CHF', text, auto: true, at: Date.now() }); changed = true; }
+      };
+      if ((st.closed || []).length || (st.positions || []).length) up('Gewinn', invProfitNow(), 'automatisch: geschlossene Trades + offene Positionen');
+      const depot = accs.length ? accs.reduce((s, v) => s + v, 0) : (st.positions || []).length ? (st.lastMargin || st.positions.reduce((s, p) => s + (+p.margin || 0), 0)) + (st.lastOpenPL || 0) : null;
+      up('Depotwert', depot, accs.length ? 'automatisch: Eigenkapital deiner Investment-Konten' : 'automatisch: Einsatz + offener Gewinn/Verlust');
+      const reached = S.goals.filter(g => !g.notified && pgGoalState('stocks', g).pct >= 1);
+      reached.forEach(g => { g.notified = true; changed = true; try { nfShow('🎯 Investment-Ziel erreicht!', g.title, 'stocks', 'progress'); } catch (x) { } });
+      if (changed) saveUserData();
+      return changed;
+    }
+    portfolioTotals = (function (orig) {
+      return async function () { const t = await orig(); try { if (t && t.complete) invSyncProgress(t.pl, t); else invSyncProgress(); } catch (e) { } return t; };
+    })(portfolioTotals);
+    // Geld-Ziele im Investment zählen Trading-Gewinne automatisch mit
+    pgGoalState = (function (orig) {
+      return function (mod, g) {
+        const s = orig(mod, g);
+        if (mod !== 'stocks' || g.type !== 'money') return s;
+        const inR = d => d && d >= g.from && d <= g.to, st = currentUser.stocks || {}, today = getTodayString();
+        const real = (st.closed || []).filter(p => inR(p.closedAt)).reduce((a, p) => a + (+p.realized || 0), 0);
+        const open = today >= g.from && today <= g.to && (st.positions || []).length ? (st.lastOpenPL || 0) : 0;
+        const cur = s.cur + real + open, pct = Math.max(0, Math.min(1, g.target ? cur / g.target : 0));
+        const r = Object.assign({}, s, { cur, pct, auto: real + open });
+        if (pct >= 1 || g.done) { r.status = '✅ Erreicht'; r.cls = 'text-emerald-300'; }
+        else if (s.left < 0) { r.status = '❌ Zeit abgelaufen'; r.cls = 'text-rose-300'; }
+        else if (today < g.from) { r.status = s.status; r.cls = s.cls; }
+        else if (pct + 0.05 >= s.timePct) { r.status = `👍 Im Plan · noch ${s.left} Tage`; r.cls = 'text-emerald-300'; }
+        else { r.status = `⚠️ Hinter dem Plan · noch ${s.left} Tage`; r.cls = 'text-amber-300'; }
+        return r;
+      };
+    })(pgGoalState);
+    pgGoalCard = (function (orig) {
+      return function (mod, g, showMod) {
+        let h = orig(mod, g, showMod);
+        if (mod === 'stocks' && g.type === 'money') h = h.replace('Eingenommen:', 'Gewinn (inkl. Trades):');
+        if (mod === 'stocks' && g.type === 'value' && /^(gewinn|depotwert)$/i.test(g.name || '')) h = h.replace('🎯 ' + esc(g.title), '🎯 ' + esc(g.title) + ' <span class="text-[10px] font-semibold text-blue-300">🔄 automatisch</span>');
+        return h;
+      };
+    })(pgGoalCard);
+    pgStreak = (function (orig) { return function (entries) { return orig((entries || []).filter(e => !e.auto)); }; })(pgStreak);
+    pgGoalForm = (function (orig) {
+      return function (mod, names, units) {
+        let h = orig(mod, names, units);
+        if (mod !== 'stocks') return h;
+        const k = 'onchange="pgGoalTypeUi()">';
+        h = h.replace(k, k + '<option value="invprofit">💹 Investment-Gewinn erreichen (automatisch aus Portfolio)</option><option value="invdepot">🏦 Depotwert erreichen (automatisch)</option>');
+        const dep = pgStore('stocks').entries.filter(e => e.auto && e.name === 'Depotwert').slice(-1)[0];
+        return h.replace('<div id="pgg-amount-ui" class="hidden">', `<p id="pgg-inv-ui" class="text-[11px] text-blue-200 p-2 rounded-lg border border-blue-500/30 bg-blue-500/10">🔄 Aktuell: Gewinn <b>${fmtCHF(invProfitNow(), true)}</b>${dep ? ` · Depotwert <b>${fmtCHF(dep.value)}</b>` : ''}. Der Fortschritt aktualisiert sich bei jedem Kurs-Update, Trade und Kontostand von selbst.</p><div id="pgg-amount-ui" class="hidden">`);
+      };
+    })(pgGoalForm);
+    pgGoalTypeUi = (function (orig) {
+      return function () {
+        orig();
+        const t = pgVal('pgg-type'), inv = t === 'invprofit' || t === 'invdepot', v = document.getElementById('pgg-value-ui'), a = document.getElementById('pgg-amount-ui'), i = document.getElementById('pgg-inv-ui');
+        if (i) i.classList.toggle('hidden', !inv);
+        if (inv) { if (v) v.classList.add('hidden'); if (a) { a.classList.remove('hidden'); const l = a.querySelector('label'); if (l) l.textContent = t === 'invprofit' ? 'Gewinn-Ziel gesamt (CHF)' : 'Depotwert-Ziel (CHF)'; const x = document.getElementById('pgg-amount'); if (x) x.placeholder = 'z. B. 1000'; } }
+      };
+    })(pgGoalTypeUi);
+    pgSaveGoal = (function (orig) {
+      return function (mod) {
+        const t = pgVal('pgg-type');
+        if (mod !== 'stocks' || (t !== 'invprofit' && t !== 'invdepot')) return orig(mod);
+        const from = pgVal('pgg-from'), to = pgVal('pgg-to'), target = pgNum(pgVal('pgg-amount')), title = pgVal('pgg-title') || (t === 'invprofit' ? `Investment-Gewinn ${fmtNum(target || 0, 0)} CHF` : `Depotwert ${fmtNum(target || 0, 0)} CHF`);
+        if (!from || !to || to <= from) return alert('Das Enddatum muss nach dem Startdatum liegen.');
+        if (target == null) return alert('Bitte das Ziel in CHF eingeben.');
+        invSyncProgress();
+        const name = t === 'invprofit' ? 'Gewinn' : 'Depotwert', last = pgStore('stocks').entries.filter(e => e.auto && e.name === name).slice(-1)[0];
+        const start = last ? last.value : t === 'invprofit' ? Math.round(invProfitNow() * 100) / 100 : 0;
+        if (target <= start) return alert(`Du bist schon bei ${fmtCHF(start)} – wähle ein höheres Ziel.`);
+        const S = pgStore('stocks'); S.goals.push({ id: uid(), title, type: 'value', name, start, target, unit: 'CHF', from, to, at: Date.now(), auto: true });
+        saveUserData(); pgGoalOpen = false; pgFlash = '<p class="text-xs text-emerald-300 px-1">✓ Ziel gespeichert – es aktualisiert sich ab jetzt automatisch</p>'; renderWorkspace();
+      };
+    })(pgSaveGoal);
+    let invProgFetchAt = 0;
+    renderProgressWs = (function (orig) {
+      return function (mod) {
+        if (mod !== 'stocks') return orig(mod);
+        invSyncProgress();
+        const st = currentUser.stocks;
+        if (st.positions.length && Date.now() - invProgFetchAt > 120000) {
+          invProgFetchAt = Date.now();
+          const before = invProfitNow();
+          portfolioTotals().then(() => { if (ws.mod === 'stocks' && ws.tab === 'progress' && Math.abs(invProfitNow() - before) > 0.009) renderWorkspace(); }).catch(() => { });
+        }
+        const dep = pgStore('stocks').entries.filter(e => e.auto && e.name === 'Depotwert').slice(-1)[0];
+        const info = (st.closed.length || st.positions.length || dep) ? `<div class="p-3 rounded-2xl border border-blue-500/30 bg-blue-500/10 space-y-1"><p class="text-xs font-bold text-white">🔄 Automatisch aus deinem Investment</p>
+          <p class="text-[11px] text-slate-300">Gewinn: <b class="${invProfitNow() >= 0 ? 'text-emerald-300' : 'text-rose-300'}">${fmtCHF(invProfitNow(), true)}</b>${dep ? ` · Depotwert: <b class="text-white">${fmtCHF(dep.value)}</b>` : ''}${st.positions.length && st.lastOpenAt ? ` <span class="text-slate-500">(Kurse ${new Date(st.lastOpenAt).toLocaleTimeString('de-CH', { hour: '2-digit', minute: '2-digit' })})</span>` : ''}</p>
+          <p class="text-[10px] text-slate-400">Ziele mit „Gewinn“ oder „Depotwert“ und Geld-Ziele rücken von selbst näher, sobald du im Profit zulegst – du musst nichts eintragen.</p></div>` : '';
+        return info + orig(mod);
+      };
+    })(renderProgressWs);
+    // beim Start einmal im Hintergrund aktualisieren
+    setTimeout(() => { try { if (currentUser && currentUser.stocks && currentUser.stocks.positions && currentUser.stocks.positions.length) portfolioTotals().catch(() => { }); else invSyncProgress(); } catch (e) { } }, 4000);
+</script>
+
 <script>
     const _showApp9 = showApp;
     showApp = function () { _showApp9(); try { const g = new URLSearchParams(location.search).get('go'); if (g && WS_DEF[g]) { history.replaceState(null, '', location.pathname); setTimeout(() => openWorkspace(g), 250); } } catch (e) { } };
