@@ -17,7 +17,7 @@ const UA_STR = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KH
 const UA = { 'User-Agent': UA_STR, 'Accept': 'application/json,text/plain,*/*', 'Accept-Language': 'de-CH,de;q=0.9,en;q=0.8' };
 const RANGES = { '1d': '5m', '5d': '30m', '1mo': '1d', '6mo': '1d', '1y': '1d', '5y': '1wk' };
 const json = (obj, status = 200, maxAge = 60) => new Response(JSON.stringify(obj), {
-  status, headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': `public, max-age=${maxAge}` }
+  status, headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': `public, max-age=${maxAge}`, 'Access-Control-Allow-Origin': '*' }
 });
 // Wichtige Werte je Kategorie für die Markt-Übersicht
 const UNIVERSE = {
@@ -29,7 +29,41 @@ const UNIVERSE = {
   fx: ['USDCHF=X', 'EURCHF=X', 'EURUSD=X', 'GBPCHF=X', 'JPY=X']
 };
 const CRYPTO_NAMES = { BTC: 'Bitcoin', ETH: 'Ethereum', SOL: 'Solana', XRP: 'XRP', BNB: 'BNB', DOGE: 'Dogecoin', ADA: 'Cardano' };
-const cleanSymbol = s => String(s || '').trim().toUpperCase().replace(/[^A-Z0-9.^=\-]/g, '').slice(0, 20);
+// Namen wie bei Capital.com / umgangssprachlich → Yahoo-Symbol
+const ALIAS = {
+  US100: '^NDX', NAS100: '^NDX', USTEC: '^NDX', NASDAQ: '^NDX', NASDAQ100: '^NDX', NDX: '^NDX',
+  US500: '^GSPC', SPX500: '^GSPC', SP500: '^GSPC', SPX: '^GSPC', 'S&P500': '^GSPC',
+  US30: '^DJI', DOW: '^DJI', DOWJONES: '^DJI', DJ30: '^DJI',
+  DE40: '^GDAXI', GER40: '^GDAXI', DAX: '^GDAXI', DAX40: '^GDAXI',
+  SWI20: '^SSMI', SMI: '^SSMI', CH20: '^SSMI', SWISS20: '^SSMI',
+  UK100: '^FTSE', FTSE: '^FTSE', FTSE100: '^FTSE', J225: '^N225', JP225: '^N225', NIKKEI: '^N225',
+  EU50: '^STOXX50E', EUSTX50: '^STOXX50E', STOXX50: '^STOXX50E', FR40: '^FCHI', CAC40: '^FCHI',
+  GOLD: 'GC=F', XAUUSD: 'GC=F', SILVER: 'SI=F', SILBER: 'SI=F', XAGUSD: 'SI=F',
+  OILCRUDE: 'CL=F', OIL: 'CL=F', WTI: 'CL=F', USOIL: 'CL=F', CRUDE: 'CL=F', OEL: 'CL=F',
+  BRENT: 'BZ=F', OILBRENT: 'BZ=F', UKOIL: 'BZ=F', NATURALGAS: 'NG=F', NATGAS: 'NG=F', GAS: 'NG=F', COPPER: 'HG=F', KUPFER: 'HG=F',
+  BITCOIN: 'BTC-USD', ETHEREUM: 'ETH-USD', SOLANA: 'SOL-USD', DOGECOIN: 'DOGE-USD', CARDANO: 'ADA-USD', RIPPLE: 'XRP-USD',
+  NESTLE: 'NESN.SW', NOVARTIS: 'NOVN.SW', ROCHE: 'ROG.SW', UBS: 'UBSG.SW', ZURICH: 'ZURN.SW', ABB: 'ABBN.SW', LOGITECH: 'LOGN.SW', SWATCH: 'UHR.SW',
+  APPLE: 'AAPL', MICROSOFT: 'MSFT', NVIDIA: 'NVDA', AMAZON: 'AMZN', GOOGLE: 'GOOGL', ALPHABET: 'GOOGL', TESLA: 'TSLA', NETFLIX: 'NFLX'
+};
+const CRYPTO_CODES = ['BTC', 'ETH', 'SOL', 'XRP', 'BNB', 'DOGE', 'ADA', 'AVAX', 'DOT', 'LTC', 'LINK', 'MATIC', 'TRX', 'SHIB', 'PEPE', 'SUI', 'TON'];
+const FX_CODES = ['USD', 'EUR', 'CHF', 'GBP', 'JPY', 'CAD', 'AUD', 'NZD', 'SEK', 'NOK'];
+function resolveSymbol(raw) {
+  const s = String(raw || '').trim().toUpperCase().replace(/\s+/g, ''), k = s.replace(/[^A-Z0-9&]/g, '');
+  if (ALIAS[k]) return ALIAS[k];
+  let m;
+  if (CRYPTO_CODES.includes(k)) return k + '-USD';
+  if ((m = k.match(/^([A-Z0-9]{2,6})(USDT|USD|EUR|CHF)$/)) && CRYPTO_CODES.includes(m[1])) return m[1] + '-' + (m[2] === 'USDT' ? 'USD' : m[2]);
+  if ((m = k.match(/^([A-Z]{3})([A-Z]{3})$/)) && FX_CODES.includes(m[1]) && FX_CODES.includes(m[2])) return m[1] === 'USD' && m[2] === 'JPY' ? 'JPY=X' : m[1] + m[2] + '=X';
+  if ((m = s.match(/^([A-Z]{3})\/([A-Z]{3})$/)) && FX_CODES.includes(m[1])) return m[1] + m[2] + '=X';
+  return s.replace(/[^A-Z0-9.^=\-]/g, '').slice(0, 20);
+}
+const cleanSymbol = s => resolveSymbol(s);
+// Unbekannter Name (z. B. „Coca Cola“) → per Suche das passende Symbol finden
+async function searchFirst(q) {
+  const j = await yahoo(`https://query2.finance.yahoo.com/v1/finance/search?q=${encodeURIComponent(q)}&quotesCount=5&newsCount=0&lang=de-CH`, 3600);
+  const hit = (j.quotes || []).find(x => x.symbol && /EQUITY|ETF|INDEX|CRYPTOCURRENCY|FUTURE|CURRENCY|MUTUALFUND/.test(x.quoteType || ''));
+  return hit ? hit.symbol : null;
+}
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const isCrypto = s => /^[A-Z0-9]{2,10}-(USD|USDT|EUR|CHF)$/.test(s);
 class NotFound extends Error { }
@@ -284,18 +318,29 @@ async function manyPrices(list, env) {
 }
 
 // =====================================================================
+// Symbol direkt versuchen; wenn unbekannt → per Suche das richtige finden und nochmal
+async function withSearch(u, symbol, fn) {
+  try { return await fn(symbol); }
+  catch (e) {
+    if (!(e instanceof NotFound)) throw e;
+    const raw = String(u.searchParams.get('symbol') || '').trim();
+    let alt = null; try { alt = await searchFirst(raw.replace(/[_\-]+/g, ' ')); } catch (x) { }
+    if (!alt || alt === symbol) throw e;
+    const d = await fn(alt); d.resolvedFrom = raw; return d;
+  }
+}
 export async function onRequestGet({ request, env }) {
   const u = new URL(request.url); const action = u.searchParams.get('action');
   try {
     if (action === 'chart') {
       const symbol = cleanSymbol(u.searchParams.get('symbol')); if (!symbol) return json({ ok: false, error: 'Kein Symbol' }, 400);
       const range = RANGES[u.searchParams.get('range')] ? u.searchParams.get('range') : '1mo';
-      return json(Object.assign({ ok: true }, await chart(symbol, range, env)), 200, range === '1d' ? 60 : 600);
+      return json(Object.assign({ ok: true }, await withSearch(u, symbol, s => chart(s, range, env))), 200, range === '1d' ? 60 : 600);
     }
     if (action === 'candles') {
       const symbol = cleanSymbol(u.searchParams.get('symbol')); if (!symbol) return json({ ok: false, error: 'Kein Symbol' }, 400);
       const tf = CANDLE_TF[u.searchParams.get('tf')] ? u.searchParams.get('tf') : '1d';
-      return json(Object.assign({ ok: true }, await candles(symbol, tf, env)), 200, ['15m', '1h', '4h'].includes(tf) ? 30 : 300);
+      return json(Object.assign({ ok: true }, await withSearch(u, symbol, s => candles(s, tf, env))), 200, ['15m', '1h', '4h'].includes(tf) ? 30 : 300);
     }
     if (action === 'search') {
       const q = String(u.searchParams.get('q') || '').trim().slice(0, 50); if (!q) return json({ ok: true, results: [] });
@@ -349,4 +394,9 @@ export async function onRequestGet({ request, env }) {
   } catch (e) {
     return json({ ok: false, error: e.message || 'Fehler' }, e instanceof NotFound ? 404 : 502, 0);
   }
+}
+
+// Erlaubt Aufrufe von deinen anderen MyLife-Adressen (Ersatz, wenn ein Netz eine Adresse sperrt)
+export function onRequestOptions() {
+  return new Response(null, { status: 204, headers: { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET, OPTIONS', 'Access-Control-Max-Age': '86400' } });
 }
