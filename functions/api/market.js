@@ -21,11 +21,28 @@ const UNIVERSE = {
 };
 const cleanSymbol = s => String(s || '').trim().toUpperCase().replace(/[^A-Z0-9.^=\-]/g, '').slice(0, 20);
 
+// Yahoo hat zwei gleichwertige Server (query1 / query2). Fällt einer aus oder bremst
+// (Fehler 429 „zu viele Anfragen“), wird automatisch der andere versucht.
+// Wichtig: Nur ERFOLGREICHE Antworten werden bei Cloudflare zwischengespeichert –
+// sonst bleibt ein kurzer Yahoo-Fehler bis zu 10 Minuten „hängen“.
+const sleep = ms => new Promise(r => setTimeout(r, ms));
 async function yahoo(url, ttl) {
-  const r = await fetch(url, { headers: UA, cf: { cacheTtl: ttl, cacheEverything: true } });
-  if (r.status === 404) throw new Error('Symbol nicht gefunden – prüfe die Schreibweise (z. B. NESN.SW für Nestlé).');
-  if (!r.ok) throw new Error('Datenquelle antwortet nicht (' + r.status + ')');
-  return r.json();
+  const alt = url.includes('://query1.') ? url.replace('://query1.', '://query2.') : url.replace('://query2.', '://query1.');
+  const tries = [url, alt, url];
+  let last = null;
+  for (let i = 0; i < tries.length; i++) {
+    if (i) await sleep(400 * i);
+    let r;
+    try {
+      r = await fetch(tries[i], { headers: UA, cf: { cacheTtlByStatus: { '200-299': ttl, '404': 60, '400-599': 0 }, cacheEverything: true } });
+    } catch (e) { last = 'Netzwerkfehler'; continue; }
+    if (r.status === 404) throw new Error('Symbol nicht gefunden – prüfe die Schreibweise (z. B. NESN.SW für Nestlé).');
+    if (r.ok) {
+      try { return await r.json(); } catch (e) { last = 'ungültige Antwort'; continue; }
+    }
+    last = r.status;
+  }
+  throw new Error(last === 429 ? 'Die Börsen-Datenquelle (Yahoo) bremst gerade zu viele Anfragen (429). Bitte in 1–2 Minuten nochmal versuchen.' : 'Datenquelle antwortet nicht (' + last + ')');
 }
 async function chart(symbol, range) {
   const interval = RANGES[range] || '1d';
