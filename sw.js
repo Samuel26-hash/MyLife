@@ -1,7 +1,7 @@
-// MyLife Service Worker – V15.7
+// MyLife Service Worker – V15.7.1
 // Wichtig: Die Seite (index.html) wird IMMER zuerst frisch aus dem Internet geladen.
 // Nur wenn du offline bist, kommt die gespeicherte Version. So sind Updates sofort sichtbar.
-const CACHE = 'mylife-v15-7';
+const CACHE = 'mylife-v15-7-1';
 const CORE = ['./', './index.html', './favicon.ico', './favicon-32.png', './apple-touch-icon.png', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', e => {

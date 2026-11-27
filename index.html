@@ -10,11 +10,11 @@
   <meta name="apple-mobile-web-app-title" content="MyLife">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="format-detection" content="telephone=no">
-  <meta name="mylife-build" content="15.7">
+  <meta name="mylife-build" content="15.7.1">
   <script>
     // Update-Wächter: lädt automatisch die neue Version, falls noch eine alte im Speicher ist
     (function () {
-      var BUILD = '15.7';
+      var BUILD = '15.7.1';
       if (!/^https?:$/.test(location.protocol)) return;
       var hadController = !!(navigator.serviceWorker && navigator.serviceWorker.controller);
       if (navigator.serviceWorker) navigator.serviceWorker.addEventListener('controllerchange', function () {
@@ -6182,9 +6182,15 @@ html.light, html.light body { background: #eef2f7; color: #0f172a; }
     async function marketGet(params, ttl = 60000) {
       const key = JSON.stringify(params);
       if (mCache[key] && Date.now() - mCache[key].at < ttl) return mCache[key].data;
-      const r = await fetch(MARKET_URL + '?' + new URLSearchParams(params));
-      if (!(r.headers.get('content-type') || '').includes('json')) throw new Error('Die Börsen-Datei (functions/api/market.js) ist noch nicht auf Cloudflare.');
-      const j = await r.json(); if (!j.ok) throw new Error(j.error || 'Fehler');
+      let r = null, j = null;
+      for (let i = 0; i < 2; i++) {   // bei kurzem Aussetzer der Datenquelle einmal neu versuchen
+        if (i) await new Promise(ok => setTimeout(ok, 1500));
+        try { r = await fetch(MARKET_URL + '?' + new URLSearchParams(params), i ? { cache: 'no-store' } : undefined); } catch (e) { r = null; j = { ok: false, error: 'Keine Verbindung zum Server.' }; continue; }
+        if (!(r.headers.get('content-type') || '').includes('json')) throw new Error('Die Börsen-Datei (functions/api/market.js) ist noch nicht auf Cloudflare.');
+        try { j = await r.json(); } catch (e) { j = { ok: false, error: 'Ungültige Antwort vom Server.' }; }
+        if (j.ok || /nicht gefunden|Unbekannte|Kein Symbol/i.test(j.error || '')) break;
+      }
+      if (!j || !j.ok) throw new Error((j && j.error) || 'Fehler');
       mCache[key] = { at: Date.now(), data: j }; return j;
     }
     const fmtPrice = (v, cur) => v === null || v === undefined ? '–' : fmtNum(v, v >= 1000 ? 0 : 2) + (cur ? ' ' + cur : '');
