@@ -10,11 +10,11 @@
   <meta name="apple-mobile-web-app-title" content="MyLife">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="format-detection" content="telephone=no">
-  <meta name="mylife-build" content="15.7.1">
+  <meta name="mylife-build" content="15.8">
   <script>
     // Update-Wächter: lädt automatisch die neue Version, falls noch eine alte im Speicher ist
     (function () {
-      var BUILD = '15.7.1';
+      var BUILD = '15.8';
       if (!/^https?:$/.test(location.protocol)) return;
       var hadController = !!(navigator.serviceWorker && navigator.serviceWorker.controller);
       if (navigator.serviceWorker) navigator.serviceWorker.addEventListener('controllerchange', function () {
@@ -6186,12 +6186,47 @@ html.light, html.light body { background: #eef2f7; color: #0f172a; }
       for (let i = 0; i < 2; i++) {   // bei kurzem Aussetzer der Datenquelle einmal neu versuchen
         if (i) await new Promise(ok => setTimeout(ok, 1500));
         try { r = await fetch(MARKET_URL + '?' + new URLSearchParams(params), i ? { cache: 'no-store' } : undefined); } catch (e) { r = null; j = { ok: false, error: 'Keine Verbindung zum Server.' }; continue; }
-        if (!(r.headers.get('content-type') || '').includes('json')) throw new Error('Die Börsen-Datei (functions/api/market.js) ist noch nicht auf Cloudflare.');
+        if (!(r.headers.get('content-type') || '').includes('json')) { j = { ok: false, error: 'Die Börsen-Datei (functions/api/market.js) ist noch nicht auf Cloudflare.' }; break; }
         try { j = await r.json(); } catch (e) { j = { ok: false, error: 'Ungültige Antwort vom Server.' }; }
         if (j.ok || /nicht gefunden|Unbekannte|Kein Symbol/i.test(j.error || '')) break;
       }
+      // Notfall: Krypto-Kurse direkt im Browser holen (Binance / Coinbase), wenn der Server keine liefert
+      if ((!j || !j.ok) && (params.action === 'candles' || params.action === 'chart') && mgIsCrypto(params.symbol)) {
+        try { j = await mgBrowserCrypto(params); } catch (e) { j = j || { ok: false }; j.error = (j.error || 'Fehler') + ' · Browser-Ersatz: ' + e.message; }
+      }
       if (!j || !j.ok) throw new Error((j && j.error) || 'Fehler');
       mCache[key] = { at: Date.now(), data: j }; return j;
+    }
+    const mgIsCrypto = s => /^[A-Z0-9]{2,10}-(USD|USDT|EUR|CHF)$/.test(String(s || '').toUpperCase());
+    const MG_CNAMES = { BTC: 'Bitcoin', ETH: 'Ethereum', SOL: 'Solana', XRP: 'XRP', BNB: 'BNB', DOGE: 'Dogecoin', ADA: 'Cardano' };
+    async function mgCryptoRows(sym, tf) {
+      const base = sym.split('-')[0].toUpperCase(), q = sym.split('-')[1].toUpperCase() === 'EUR' ? 'EUR' : 'USDT';
+      const iv = { '15m': '15m', '1h': '1h', '4h': '4h', '1d': '1d', '1w': '1w', '1M': '1M', '1y': '1M' }[tf] || '1d';
+      let rows = null, src = '';
+      try {
+        const r = await fetch(`https://data-api.binance.vision/api/v3/klines?symbol=${base}${q}&interval=${iv}&limit=1000`);
+        if (!r.ok) throw new Error('Binance ' + r.status);
+        rows = (await r.json()).map(k => [Math.floor(k[0] / 1000), +k[1], +k[2], +k[3], +k[4], +k[5]]); src = 'Binance';
+      } catch (e) {
+        const g = { '15m': 900, '1h': 3600, '4h': 21600 }[tf] || 86400;
+        const r = await fetch(`https://api.exchange.coinbase.com/products/${base}-${q === 'EUR' ? 'EUR' : 'USD'}/candles?granularity=${g}`);
+        if (!r.ok) throw new Error('Binance & Coinbase nicht erreichbar');
+        rows = (await r.json()).map(k => [k[0], +k[3], +k[2], +k[1], +k[4], +k[5]]).sort((a, b) => a[0] - b[0]); src = 'Coinbase';
+      }
+      if (tf === '1y') { const out = []; rows.forEach(r => { const k = Date.UTC(new Date(r[0] * 1000).getUTCFullYear(), 0, 1) / 1000, a = out[out.length - 1]; if (a && a[0] === k) { a[2] = Math.max(a[2], r[2]); a[3] = Math.min(a[3], r[3]); a[4] = r[4]; a[5] += r[5]; } else out.push([k, r[1], r[2], r[3], r[4], r[5]]); }); rows = out; }
+      if (!rows.length) throw new Error('keine Daten');
+      return { rows, src, name: (MG_CNAMES[base] || base) + ' (' + base + ')', cur: q === 'EUR' ? 'EUR' : 'USD' };
+    }
+    async function mgBrowserCrypto(p) {
+      if (p.action === 'candles') {
+        const d = await mgCryptoRows(p.symbol, p.tf || '1d');
+        return { ok: true, symbol: p.symbol, name: d.name, currency: d.cur, exchange: d.src, type: 'CRYPTOCURRENCY', tf: p.tf, source: d.src + ' (Browser)', price: d.rows[d.rows.length - 1][4], candles: d.rows.slice(-500) };
+      }
+      const tf = { '1d': '15m', '5d': '1h', '5y': '1w' }[p.range] || '1d', span = { '1d': 1, '5d': 5, '1mo': 31, '6mo': 183, '1y': 366, '5y': 1830 }[p.range] || 31;
+      const d = await mgCryptoRows(p.symbol, tf), rows = d.rows, last = rows[rows.length - 1];
+      const dayAgo = rows.filter(r => r[0] <= last[0] - 86400 + 60).pop(), prev = tf === '1d' || tf === '1w' ? (rows[rows.length - 2] || last)[4] : (dayAgo || rows[0])[4];
+      const pts = rows.filter(r => r[0] >= last[0] - span * 86400).map(r => [r[0] * 1000, r[4]]);
+      return { ok: true, symbol: p.symbol, name: d.name, currency: d.cur, exchange: d.src, type: 'CRYPTOCURRENCY', price: last[4], prevClose: prev, dayChangePct: prev ? (last[4] - prev) / prev * 100 : null, marketTime: last[0] * 1000, range: p.range, points: pts, source: d.src + ' (Browser)' };
     }
     const fmtPrice = (v, cur) => v === null || v === undefined ? '–' : fmtNum(v, v >= 1000 ? 0 : 2) + (cur ? ' ' + cur : '');
     const chgCls = v => v === null || v === undefined ? 'text-slate-400' : v >= 0 ? 'text-emerald-400' : 'text-rose-400';
@@ -14098,7 +14133,7 @@ html.light, html.light body { background: #eef2f7; color: #0f172a; }
       let j;
       try { j = await marketGet({ action: 'candles', symbol: sym, tf }, ttl == null ? 25000 : ttl); }
       catch (e) { throw new Error(/Unbekannte Aktion/.test(e.message) ? 'Bitte die neue functions/api/market.js hochladen (die alte kennt die Kerzen-Daten noch nicht).' : e.message); }
-      trMeta[sym] = { name: j.name, currency: j.currency, exchange: j.exchange, type: j.type };
+      trMeta[sym] = { name: j.name, currency: j.currency, exchange: j.exchange, type: j.type, source: j.source || '' };
       return j.candles.map(r => ({ time: r[0], open: r[1], high: r[2], low: r[3], close: r[4], volume: r[5] }));
     }
     // Langfristiger Trend: durchschnittliche Monatsrendite der letzten bis zu 10 Jahre
@@ -14329,7 +14364,7 @@ html.light, html.light body { background: #eef2f7; color: #0f172a; }
         $('tr-price').textContent = fmtNum(last, d) + (meta.currency ? ' ' + meta.currency : '');
         const ch = (last - prev) / prev * 100;
         $('tr-chg').textContent = `${ch > 0 ? '+' : ''}${fmtNum(ch, 2)} % (letzte ${trTfLabel(tf)}-Kerze)`; $('tr-chg').className = 'text-sm font-bold ' + trCls(ch);
-        $('tr-upd').textContent = 'aktualisiert ' + new Date().toLocaleTimeString('de-CH');
+        $('tr-upd').textContent = 'aktualisiert ' + new Date().toLocaleTimeString('de-CH') + (meta.source ? ' · Quelle: ' + meta.source : '');
         const R = await trAnalyzeTf(sym, tf, drift, 60000);
         if (sym !== trState().symbol || tf !== trState().tf) return;
         trDrawForecast(c, R);
